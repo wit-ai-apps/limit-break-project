@@ -338,7 +338,7 @@
       transition: width 420ms ease;
     }
 
-    .mission-list, .review-list, .log-list, .permission-list, .exam-list, .level-list, .week-list {
+    .mission-list, .review-list, .log-list, .permission-list, .exam-list, .level-list, .week-list, .material-list {
       display: grid;
       gap: 12px;
     }
@@ -473,7 +473,7 @@
       gap: 10px;
     }
 
-    .metric, .review-card, .log-card, .permission-card, .exam-card, .level-card, .week-card, .ai-check {
+    .metric, .review-card, .log-card, .permission-card, .exam-card, .level-card, .week-card, .ai-check, .material-card {
       padding: 13px;
       border: 1px solid rgba(125, 211, 252, 0.2);
       border-radius: 16px;
@@ -488,7 +488,7 @@
       text-shadow: 0 0 16px rgba(0, 191, 255, 0.48);
     }
 
-    .metric span, .review-card span, .log-card span, .permission-card span, .exam-card span, .level-card span, .week-card span, .ai-check span {
+    .metric span, .review-card span, .log-card span, .permission-card span, .exam-card span, .level-card span, .week-card span, .ai-check span, .material-card span {
       display: block;
       margin-top: 6px;
       color: var(--muted);
@@ -496,7 +496,7 @@
       font-weight: 760;
     }
 
-    .review-card strong, .log-card strong, .permission-card strong, .exam-card strong, .level-card strong, .week-card strong, .ai-check strong {
+    .review-card strong, .log-card strong, .permission-card strong, .exam-card strong, .level-card strong, .week-card strong, .ai-check strong, .material-card strong {
       display: block;
       color: var(--text);
     }
@@ -691,6 +691,13 @@
             <h2 id="level-heading">Level Tasks</h2>
           </div>
           <div class="level-list" id="levelList"></div>
+        </section>
+
+        <section aria-labelledby="materials-heading">
+          <div class="topline">
+            <h2 id="materials-heading">Materials First DB</h2>
+          </div>
+          <div class="material-list" id="materialList"></div>
         </section>
 
         <section aria-labelledby="role-view-heading">
@@ -983,10 +990,28 @@
       ]
     };
 
+    const FALLBACK_MATERIALS = {
+      policy_version: "1.7.0",
+      principle: "スタディサプリ教材を最優先教材とし、Mission / Today's Memory / AI Check Testは教材順に沿って設計する。ただし教材本文・問題文の複製配布はしない。",
+      materials: [
+        { subject: "数学Ⅰ", course_name: "ベーシックレベル数学Ⅰ", file_name: "Eベーシックレベル数学Ⅰ_KZB450000_03.pdf", extraction_status: "cataloged" },
+        { subject: "数学A", course_name: "ベーシックレベル数学A", file_name: "ベーシックレベル数学Ａ_EKZB460000_01.pdf", extraction_status: "cataloged" },
+        { subject: "数学Ⅱ", course_name: "ベーシックレベル数学Ⅱ", file_name: "ベーシックレベル数学Ⅱ_EKZC620000.pdf", extraction_status: "cataloged" },
+        { subject: "数学B", course_name: "ベーシックレベル数学B", file_name: "ベーシックレベル数学Ｂ_EKZC630000.pdf", extraction_status: "cataloged" },
+        { subject: "英語", course_name: "ベーシックレベル英語", file_name: "ベーシックレベル英語_EKZB31000_04.pdf", extraction_status: "cataloged" },
+        { subject: "英語", course_name: "スタンダードレベル英語 文法・読解", file_name: "高1・高2スタンダードレベル英語＜文法・読解編＞　前編_EKZB32000_251212.pdf", extraction_status: "cataloged" },
+        { subject: "英語", course_name: "スタンダードレベル英語 長文", file_name: "高1・高2 スタンダードレベル英語＜長文編＞_MKZB49000_251208.pdf", extraction_status: "cataloged" },
+        { subject: "物理基礎", course_name: "ベーシックレベル物理基礎", file_name: "ベーシックレベル物理基礎_EKZB420000_250530.pdf", extraction_status: "cataloged" },
+        { subject: "物理", course_name: "ベーシックレベル物理", file_name: "ベーシックレベル物理_EKZB540000_260615.pdf", extraction_status: "cataloged" },
+        { subject: "化学基礎", course_name: "ベーシックレベル化学基礎", file_name: "ベーシックレベル化学基礎_EKZB400000_260701.pdf", extraction_status: "cataloged" }
+      ]
+    };
+
     let dailyPlan = FALLBACK_DAILY;
     let examSchedule = FALLBACK_EXAMS;
     let summerPlan = FALLBACK_SUMMER;
     let levelTasks = FALLBACK_LEVELS;
+    let materialsCatalog = FALLBACK_MATERIALS;
     let currentRole = localStorage.getItem(ROLE_KEY) || "student";
     let records = loadRecords();
 
@@ -1000,6 +1025,7 @@
     const examList = document.querySelector("#examList");
     const levelList = document.querySelector("#levelList");
     const summerWeekList = document.querySelector("#summerWeekList");
+    const materialList = document.querySelector("#materialList");
     const recordDialog = document.querySelector("#recordDialog");
     const recordForm = document.querySelector("#recordForm");
 
@@ -1015,17 +1041,20 @@
           const payload = await examResponse.json();
           examSchedule = payload.exams || FALLBACK_EXAMS;
         }
-        const [summerResponse, levelsResponse] = await Promise.all([
+        const [summerResponse, levelsResponse, materialsResponse] = await Promise.all([
           fetch("data/summer_plan_2026.json", { cache: "no-store" }),
-          fetch("data/level_tasks.json", { cache: "no-store" })
+          fetch("data/level_tasks.json", { cache: "no-store" }),
+          fetch("data/materials_catalog.json", { cache: "no-store" })
         ]);
         if (summerResponse.ok) summerPlan = await summerResponse.json();
         if (levelsResponse.ok) levelTasks = await levelsResponse.json();
+        if (materialsResponse.ok) materialsCatalog = await materialsResponse.json();
       } catch (_) {
         dailyPlan = FALLBACK_DAILY;
         examSchedule = FALLBACK_EXAMS;
         summerPlan = FALLBACK_SUMMER;
         levelTasks = FALLBACK_LEVELS;
+        materialsCatalog = FALLBACK_MATERIALS;
       }
       render();
     }
@@ -1092,6 +1121,7 @@
       renderExamList();
       renderSummerPlan();
       renderLevelTasks();
+      renderMaterials();
       renderPermissions();
       renderLogs();
     }
@@ -1257,6 +1287,17 @@
         card.innerHTML = `<strong>${level.level}</strong><span>${level.purpose}</span><div>${level.evidence || ""}</div>`;
         levelList.appendChild(card);
       });
+    }
+
+    function renderMaterials() {
+      const subjects = [...new Set(materialsCatalog.materials.map((item) => item.subject))];
+      materialList.innerHTML = `
+        <div class="material-card">
+          <strong>${materialsCatalog.materials.length}教材をカタログ化</strong>
+          <span>${subjects.join(" / ")}</span>
+          <div>${materialsCatalog.principle}</div>
+        </div>
+      `;
     }
 
     function renderPermissions() {

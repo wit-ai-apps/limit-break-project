@@ -1,0 +1,117 @@
+{
+  "policy_version": "1.7.0",
+  "principle": "スタディサプリ教材を最優先教材とし、Mission / Today's Memory / AI Check Testは教材順に沿って設計する。ただし教材本文・問題文の複製配布はしない。",
+  "allowed_usage": [
+    "教材名、講、PART、Chapter、学習順序を参照する",
+    "POINT、講義問題、確認問題、重要公式、重要構文などの構造をメタデータ化する",
+    "教材内容を理解できたか確認するためのオリジナルAI Check Testを生成する",
+    "生徒が契約済み教材を使う前提で、該当箇所への学習ナビゲーションを行う"
+  ],
+  "prohibited_usage": [
+    "教材本文をアプリ内に転載する",
+    "問題文や解答解説をそのまま複製して配布する",
+    "PDFそのものをGitHub Pagesに置いて公開する",
+    "教材の代替物として機能する量の本文・問題を再構成して公開する"
+  ],
+  "materials": [
+    {
+      "subject": "数学",
+      "course_name": "中学総復習数学",
+      "file_name": "中学総復習数学_KG117010.pdf",
+      "priority": 1,
+      "extraction_status": "cataloged"
+    },
+    {
+      "subject": "数学Ⅰ",
+      "course_name": "ベーシックレベル数学Ⅰ",
+      "file_name": "Eベーシックレベル数学Ⅰ_KZB450000_03.pdf",
+      "priority": 2,
+      "extraction_status": "cataloged"
+    },
+    {
+      "subject": "数学A",
+      "course_name": "ベーシックレベル数学A",
+      "file_name": "ベーシックレベル数学Ａ_EKZB460000_01.pdf",
+      "priority": 3,
+      "extraction_status": "cataloged"
+    },
+    {
+      "subject": "数学Ⅱ",
+      "course_name": "ベーシックレベル数学Ⅱ",
+      "file_name": "ベーシックレベル数学Ⅱ_EKZC620000.pdf",
+      "priority": 4,
+      "extraction_status": "cataloged"
+    },
+    {
+      "subject": "数学B",
+      "course_name": "ベーシックレベル数学B",
+      "file_name": "ベーシックレベル数学Ｂ_EKZC630000.pdf",
+      "priority": 5,
+      "extraction_status": "cataloged"
+    },
+    {
+      "subject": "英語",
+      "course_name": "中学総復習英語",
+      "file_name": "中学総復習英語_KZ473000_01.pdf",
+      "priority": 6,
+      "extraction_status": "cataloged"
+    },
+    {
+      "subject": "英語",
+      "course_name": "高1・高2・高3 英語超入門",
+      "file_name": "高1・高2・高3 英語超入門_web_all.pdf",
+      "priority": 7,
+      "extraction_status": "cataloged"
+    },
+    {
+      "subject": "英語",
+      "course_name": "ベーシックレベル英語",
+      "file_name": "ベーシックレベル英語_EKZB31000_04.pdf",
+      "priority": 8,
+      "extraction_status": "cataloged"
+    },
+    {
+      "subject": "英語",
+      "course_name": "スタンダードレベル英語 文法・読解",
+      "file_name": "高1・高2スタンダードレベル英語＜文法・読解編＞　前編_EKZB32000_251212.pdf",
+      "priority": 9,
+      "extraction_status": "cataloged"
+    },
+    {
+      "subject": "英語",
+      "course_name": "スタンダードレベル英語 長文",
+      "file_name": "高1・高2 スタンダードレベル英語＜長文編＞_MKZB49000_251208.pdf",
+      "priority": 10,
+      "extraction_status": "cataloged"
+    },
+    {
+      "subject": "物理基礎",
+      "course_name": "ベーシックレベル物理基礎",
+      "file_name": "ベーシックレベル物理基礎_EKZB420000_250530.pdf",
+      "priority": 11,
+      "extraction_status": "cataloged"
+    },
+    {
+      "subject": "物理",
+      "course_name": "ベーシックレベル物理",
+      "file_name": "ベーシックレベル物理_EKZB540000_260615.pdf",
+      "priority": 12,
+      "extraction_status": "cataloged"
+    },
+    {
+      "subject": "化学基礎",
+      "course_name": "ベーシックレベル化学基礎",
+      "file_name": "ベーシックレベル化学基礎_EKZB400000_260701.pdf",
+      "priority": 13,
+      "extraction_status": "cataloged"
+    },
+    {
+      "subject": "世界史",
+      "course_name": "世界史教材",
+      "file_name": "",
+      "priority": 20,
+      "extraction_status": "planned"
+    }
+  ]
+}
+

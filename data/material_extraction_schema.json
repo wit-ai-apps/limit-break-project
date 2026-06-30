@@ -1,0 +1,44 @@
+{
+  "schema_version": "1.7.0",
+  "purpose": "教材PDFを解析して、教材の順番を維持したMission / Today's Memory / AI Check Test生成のためのメタデータを保存する。教材本文・問題文の複製配布はしない。",
+  "unit_shape": {
+    "subject": "数学Ⅰ",
+    "course_name": "ベーシックレベル数学Ⅰ",
+    "lesson": "第1講",
+    "part_or_chapter": "PART1",
+    "title": "単項式と多項式",
+    "source_file": "Eベーシックレベル数学Ⅰ_KZB450000_03.pdf",
+    "source_page_range": {
+      "start": 1,
+      "end": 3
+    },
+    "teaching_order": [
+      "POINT",
+      "講義問題",
+      "確認問題",
+      "注意",
+      "重要公式"
+    ],
+    "metadata_only": {
+      "points_count": 0,
+      "lecture_problem_count": 0,
+      "check_problem_count": 0,
+      "important_formula_count": 0,
+      "important_structure_count": 0,
+      "diagram_count": 0
+    },
+    "concept_tags": [],
+    "generated_outputs": {
+      "mission_template": "",
+      "todays_memory_template": "",
+      "ai_check_test_original": [],
+      "review_schedule": ["翌日", "3日後", "7日後"]
+    },
+    "copyright_guardrails": {
+      "store_verbatim_problem_text": false,
+      "store_verbatim_explanations": false,
+      "publish_pdf": false,
+      "generate_original_questions_only": true
+    }
+  }
+}
