@@ -1,0 +1,41 @@
+{
+  "schedule_version": "1.2.0",
+  "baseline_date": "2026-06-30",
+  "exams": [
+    {
+      "exam_name": "共通テスト本試験",
+      "exam_type": "common_test",
+      "date_start": "2027-01-16",
+      "date_end": "2027-01-17",
+      "countdown_target": "2027-01-16",
+      "priority": 1,
+      "notes": "2026-06-30時点であと200日。Phase 4までに実戦演習と弱点回収へ寄せる。"
+    },
+    {
+      "exam_name": "私立一般入試開始",
+      "exam_type": "private_general",
+      "date_start": "2027-02-01",
+      "date_end": "2027-03-25",
+      "countdown_target": "2027-02-01",
+      "priority": 3,
+      "notes": "2026-06-30時点で2/1まであと216日。Phase1では仮データ。候補校入力は後続で実装する。"
+    },
+    {
+      "exam_name": "国公立前期・二次試験",
+      "exam_type": "national_secondary",
+      "date_start": "2027-02-25",
+      "date_end": "2027-02-25",
+      "countdown_target": "2027-02-25",
+      "priority": 2,
+      "notes": "2026-06-30時点であと240日。共通テスト後は記述対策へ配分を切り替える。"
+    }
+  ],
+  "private_university_candidates": [
+    "東京理科大学",
+    "早稲田大学",
+    "慶應義塾大学",
+    "明治大学",
+    "中央大学",
+    "芝浦工業大学"
+  ]
+}

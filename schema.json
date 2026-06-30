@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "LIMIT BREAK PROJECT v1.1.0 Record",
+  "title": "LIMIT BREAK PROJECT v1.2.0 Record",
   "type": "object",
   "required": [
     "date",
