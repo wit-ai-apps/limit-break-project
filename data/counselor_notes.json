@@ -1,0 +1,30 @@
+{
+  "version": "2.0.0",
+  "policy": {
+    "scope": "学習継続、声かけ、心理的安全性の支援に限定する",
+    "medical_diagnosis": false,
+    "emergency_notice": "緊急性がある内容は、アプリ内対応ではなく、保護者・専門機関・学校・医療機関への連絡を優先する"
+  },
+  "counselor_notes": [
+    {
+      "note_id": "COUNSELOR_NOTE_0001",
+      "student_id": "STU_0001",
+      "created_by": "USER_COUNSELOR_0001",
+      "visibility": ["student", "parent", "teacher", "admin"],
+      "category": "mental_support",
+      "body": "今週は学習量が増えています。達成率だけでなく、睡眠と休憩も評価してください。",
+      "risk_level": "normal",
+      "created_at": "2026-07-01T06:47:00+09:00"
+    },
+    {
+      "note_id": "COUNSELOR_NOTE_0002",
+      "student_id": "STU_0001",
+      "created_by": "USER_COUNSELOR_0001",
+      "visibility": ["parent", "teacher", "admin"],
+      "category": "load_warning",
+      "body": "疲労度が高い日は、追加課題よりも短い復習と睡眠を優先してください。",
+      "risk_level": "watch",
+      "created_at": "2026-07-01T06:47:00+09:00"
+    }
+  ]
+}
