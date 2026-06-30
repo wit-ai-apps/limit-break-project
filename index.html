@@ -1,0 +1,678 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>LIMIT BREAK PROJECT</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #15202b;
+      --muted: #667085;
+      --line: #d6dce5;
+      --paper: #f7f9fc;
+      --panel: #ffffff;
+      --primary: #1f7a6d;
+      --accent: #c94848;
+      --level: #27364a;
+      --ok: #2d8a4e;
+      --warn: #b25f00;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      color: var(--ink);
+      background: var(--paper);
+    }
+
+    header {
+      background: #111827;
+      color: #fff;
+      padding: 28px min(5vw, 48px) 24px;
+      border-bottom: 5px solid var(--primary);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2rem, 5vw, 4.5rem);
+      line-height: 0.95;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 12px 0 0;
+      color: #d8dee9;
+      font-size: clamp(1rem, 2vw, 1.35rem);
+      font-weight: 650;
+    }
+
+    main {
+      width: min(1180px, calc(100% - 28px));
+      margin: 22px auto 48px;
+      display: grid;
+      grid-template-columns: minmax(0, 1.35fr) minmax(320px, 0.65fr);
+      gap: 18px;
+    }
+
+    section, aside, dialog {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: 0 10px 30px rgba(21, 32, 43, 0.06);
+    }
+
+    section, aside { padding: 18px; }
+
+    .topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    h2, h3 {
+      margin: 0;
+      letter-spacing: 0;
+    }
+
+    h2 { font-size: 1.45rem; }
+    h3 { font-size: 1rem; }
+
+    .date-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 34px;
+      padding: 0 12px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      font-weight: 650;
+      white-space: nowrap;
+    }
+
+    .mission-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .mission {
+      border: 1px solid var(--line);
+      border-left: 5px solid var(--primary);
+      border-radius: 8px;
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+      background: #fff;
+    }
+
+    .mission.complete {
+      border-left-color: var(--ok);
+      background: #f4fbf6;
+    }
+
+    .mission-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .mission-title {
+      font-weight: 800;
+      font-size: 1.05rem;
+    }
+
+    .level {
+      min-width: max-content;
+      border-radius: 999px;
+      padding: 5px 9px;
+      background: var(--level);
+      color: #fff;
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+
+    .mission-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .mission-meta span {
+      padding: 4px 8px;
+      border-radius: 999px;
+      background: #eef2f7;
+    }
+
+    .mission-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    button {
+      min-height: 38px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      padding: 0 12px;
+      font-weight: 800;
+      cursor: pointer;
+      background: var(--primary);
+      color: #fff;
+    }
+
+    button.secondary {
+      background: #fff;
+      color: var(--ink);
+      border-color: var(--line);
+    }
+
+    button.warning {
+      background: var(--accent);
+    }
+
+    .week-tabs {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      margin-bottom: 14px;
+    }
+
+    .week-tabs button {
+      padding: 0;
+      font-size: 0.88rem;
+      background: #fff;
+      color: var(--ink);
+      border-color: var(--line);
+    }
+
+    .week-tabs button.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .stat {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 12px;
+      background: #fff;
+    }
+
+    .stat strong {
+      display: block;
+      font-size: 1.7rem;
+      line-height: 1;
+      color: var(--primary);
+    }
+
+    .stat span {
+      display: block;
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 0.84rem;
+      font-weight: 700;
+    }
+
+    .level-list {
+      display: grid;
+      gap: 8px;
+      margin: 14px 0 18px;
+    }
+
+    .level-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: #fff;
+    }
+
+    .level-row.current {
+      border-color: var(--primary);
+      box-shadow: inset 4px 0 0 var(--primary);
+    }
+
+    .log-list {
+      display: grid;
+      gap: 8px;
+      max-height: 360px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .log {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 10px;
+      background: #fff;
+      font-size: 0.92rem;
+    }
+
+    .log strong { display: block; }
+    .log span { color: var(--muted); }
+
+    dialog {
+      width: min(560px, calc(100% - 24px));
+      padding: 0;
+      border: 1px solid var(--line);
+    }
+
+    dialog::backdrop { background: rgba(17, 24, 39, 0.45); }
+
+    form {
+      padding: 18px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .field {
+      display: grid;
+      gap: 6px;
+    }
+
+    label {
+      font-weight: 800;
+      font-size: 0.92rem;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      min-height: 40px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 9px 10px;
+      font: inherit;
+      background: #fff;
+    }
+
+    textarea { min-height: 92px; resize: vertical; }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .empty {
+      color: var(--muted);
+      border: 1px dashed var(--line);
+      border-radius: 8px;
+      padding: 16px;
+      text-align: center;
+      background: #fff;
+    }
+
+    @media (max-width: 860px) {
+      main { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: 1fr; }
+      .week-tabs { grid-template-columns: repeat(4, 1fr); }
+      .form-grid { grid-template-columns: 1fr; }
+      .mission-head { display: grid; }
+      .level { width: fit-content; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>LIMIT BREAK PROJECT</h1>
+    <p class="subtitle">Every Day, Beyond Yesterday.</p>
+  </header>
+
+  <main>
+    <section aria-labelledby="mission-heading">
+      <div class="topline">
+        <h2 id="mission-heading">Today&apos;s Mission</h2>
+        <div class="date-pill" id="todayLabel"></div>
+      </div>
+      <nav class="week-tabs" id="weekTabs" aria-label="曜日選択"></nav>
+      <div class="mission-list" id="missionList"></div>
+    </section>
+
+    <aside aria-labelledby="status-heading">
+      <div class="topline">
+        <h2 id="status-heading">LIMIT BREAK +1</h2>
+      </div>
+
+      <div class="stats">
+        <div class="stat"><strong id="clearCount">0</strong><span>Mission Clear</span></div>
+        <div class="stat"><strong id="avgScore">-</strong><span>平均点</span></div>
+        <div class="stat"><strong id="streakCount">0</strong><span>連続記録日数</span></div>
+      </div>
+
+      <h3>Level Map</h3>
+      <div class="level-list" id="levelList"></div>
+
+      <div class="topline">
+        <h3>Recent Records</h3>
+        <button class="secondary" id="exportCsvButton" type="button">CSV出力</button>
+      </div>
+      <div class="log-list" id="logList"></div>
+      <button class="warning" id="resetButton" type="button" style="width: 100%; margin-top: 12px;">検証データをリセット</button>
+    </aside>
+  </main>
+
+  <dialog id="recordDialog">
+    <form method="dialog" id="recordForm">
+      <div class="topline">
+        <h2>Mission Clear</h2>
+        <button class="secondary" type="button" id="closeDialogButton">閉じる</button>
+      </div>
+      <input type="hidden" id="missionId">
+      <div class="field">
+        <label for="missionTitle">ミッション</label>
+        <input id="missionTitle" readonly>
+      </div>
+      <div class="form-grid">
+        <div class="field">
+          <label for="score">点数</label>
+          <input id="score" type="number" min="0" max="100" step="1" required>
+        </div>
+        <div class="field">
+          <label for="understanding">理解度</label>
+          <select id="understanding" required>
+            <option value="5">5: 自力で説明できる</option>
+            <option value="4">4: ほぼ理解</option>
+            <option value="3">3: 要復習</option>
+            <option value="2">2: かなり不安</option>
+            <option value="1">1: もう一度基礎から</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="fatigue">疲労度</label>
+          <select id="fatigue" required>
+            <option value="1">1: 余裕</option>
+            <option value="2">2: 普通</option>
+            <option value="3">3: やや疲れ</option>
+            <option value="4">4: 疲れた</option>
+            <option value="5">5: 限界近い</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label for="mistakeReason">間違い理由</label>
+        <textarea id="mistakeReason" placeholder="計算ミス、読み違い、暗記不足、時間配分など"></textarea>
+      </div>
+      <div class="field">
+        <label for="note">次に超えること</label>
+        <textarea id="note" placeholder="明日の自分に渡す一言"></textarea>
+      </div>
+      <div class="form-actions">
+        <button class="secondary" type="button" id="deleteRecordButton">記録を削除</button>
+        <button type="submit">保存</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script>
+    const STORAGE_KEY = "limitBreakProjectRecordsV1";
+    const DAY_NAMES = ["日", "月", "火", "水", "木", "金", "土"];
+    const LEVELS = [
+      "LEVEL 1 FOUNDATION",
+      "LEVEL 2 CORE",
+      "LEVEL 3 ADVANCE",
+      "LEVEL 4 BREAKTHROUGH",
+      "LEVEL 5 ELITE"
+    ];
+
+    const MISSIONS = {
+      0: [
+        { id: "sun-review", title: "週間レビュー", level: 1, minutes: 35, subject: "Review", detail: "今週の正答率と理解度を見直し、次週の重点を1つ決める。" },
+        { id: "sun-reset", title: "弱点リセット演習", level: 2, minutes: 45, subject: "Mixed", detail: "間違い理由が同じ問題を3問選び、解き直して型を確認する。" }
+      ],
+      1: [
+        { id: "mon-math-basic", title: "数学 基礎フォーム", level: 1, minutes: 50, subject: "Math", detail: "公式と典型問題を短時間で回し、解法の入口を迷わない状態にする。" },
+        { id: "mon-english-read", title: "英語 精読10行", level: 2, minutes: 30, subject: "English", detail: "構文を取り、本文の根拠に線を引いて要約する。" }
+      ],
+      2: [
+        { id: "tue-english-vocab", title: "英語 語彙・文法", level: 1, minutes: 35, subject: "English", detail: "覚えた単語を例文で確認し、文法ミスの理由を1つ残す。" },
+        { id: "tue-science-core", title: "理科 コア確認", level: 2, minutes: 45, subject: "Science", detail: "基本概念を図で整理し、確認問題で理解を測る。" }
+      ],
+      3: [
+        { id: "wed-math-core", title: "数学 コア演習", level: 2, minutes: 60, subject: "Math", detail: "標準問題を解き、途中式の抜けと条件確認を点検する。" },
+        { id: "wed-japanese", title: "国語 根拠読み", level: 2, minutes: 35, subject: "Japanese", detail: "設問ごとに本文根拠を明示して、感覚解答を減らす。" }
+      ],
+      4: [
+        { id: "thu-science-advance", title: "理科 応用ブリッジ", level: 3, minutes: 55, subject: "Science", detail: "基礎公式から応用問題へつなぐ条件整理を練習する。" },
+        { id: "thu-english-output", title: "英語 要約アウトプット", level: 3, minutes: 35, subject: "English", detail: "読んだ英文を短く再構成し、論理の流れを確認する。" }
+      ],
+      5: [
+        { id: "fri-mixed-speed", title: "混合 スピード確認", level: 4, minutes: 50, subject: "Mixed", detail: "時間を測って解き、焦りで発生したミスを分類する。" },
+        { id: "fri-breakthrough", title: "BREAKTHROUGH問題", level: 4, minutes: 45, subject: "Challenge", detail: "少し難しい問題に挑戦し、解けない時の考え始め方を記録する。" }
+      ],
+      6: [
+        { id: "sat-elite-set", title: "ELITEセット演習", level: 5, minutes: 75, subject: "Challenge", detail: "複数科目を横断して、本番に近い集中力で解く。" },
+        { id: "sat-reflection", title: "LIMIT BREAKノート", level: 1, minutes: 20, subject: "Reflection", detail: "昨日の自分を超えた点を1つ書き、次の一歩を決める。" }
+      ]
+    };
+
+    let selectedDay = new Date().getDay();
+    let records = loadRecords();
+
+    const todayLabel = document.querySelector("#todayLabel");
+    const weekTabs = document.querySelector("#weekTabs");
+    const missionList = document.querySelector("#missionList");
+    const levelList = document.querySelector("#levelList");
+    const logList = document.querySelector("#logList");
+    const recordDialog = document.querySelector("#recordDialog");
+    const recordForm = document.querySelector("#recordForm");
+
+    function loadRecords() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        return raw ? JSON.parse(raw) : [];
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function saveRecords() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    }
+
+    function todayKey() {
+      return new Date().toISOString().slice(0, 10);
+    }
+
+    function render() {
+      const now = new Date();
+      todayLabel.textContent = `${now.getFullYear()}/${now.getMonth() + 1}/${now.getDate()} (${DAY_NAMES[now.getDay()]})`;
+      renderTabs();
+      renderMissions();
+      renderStats();
+      renderLevels();
+      renderLogs();
+    }
+
+    function renderTabs() {
+      weekTabs.innerHTML = "";
+      DAY_NAMES.forEach((day, index) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = day;
+        button.className = index === selectedDay ? "active" : "";
+        button.addEventListener("click", () => {
+          selectedDay = index;
+          render();
+        });
+        weekTabs.appendChild(button);
+      });
+    }
+
+    function findRecord(missionId) {
+      return records.find((record) => record.date === todayKey() && record.missionId === missionId);
+    }
+
+    function renderMissions() {
+      missionList.innerHTML = "";
+      MISSIONS[selectedDay].forEach((mission) => {
+        const record = findRecord(mission.id);
+        const item = document.createElement("article");
+        item.className = `mission${record ? " complete" : ""}`;
+        item.innerHTML = `
+          <div class="mission-head">
+            <div>
+              <div class="mission-title">${mission.title}</div>
+              <p>${mission.detail}</p>
+            </div>
+            <div class="level">${LEVELS[mission.level - 1]}</div>
+          </div>
+          <div class="mission-meta">
+            <span>${mission.subject}</span>
+            <span>${mission.minutes} min</span>
+            <span>${record ? "Mission Clear" : "Today&apos;s Mission"}</span>
+          </div>
+          <div class="mission-actions">
+            <button type="button">${record ? "記録を編集" : "Mission Clear"}</button>
+          </div>
+        `;
+        item.querySelector("button").addEventListener("click", () => openRecordDialog(mission, record));
+        missionList.appendChild(item);
+      });
+    }
+
+    function renderStats() {
+      const clearCount = records.length;
+      const scoreRecords = records.filter((record) => Number.isFinite(Number(record.score)));
+      const avg = scoreRecords.length
+        ? Math.round(scoreRecords.reduce((sum, record) => sum + Number(record.score), 0) / scoreRecords.length)
+        : "-";
+      document.querySelector("#clearCount").textContent = String(clearCount);
+      document.querySelector("#avgScore").textContent = String(avg);
+      document.querySelector("#streakCount").textContent = String(countStreak());
+    }
+
+    function countStreak() {
+      const days = new Set(records.map((record) => record.date));
+      let count = 0;
+      const cursor = new Date();
+      while (days.has(cursor.toISOString().slice(0, 10))) {
+        count += 1;
+        cursor.setDate(cursor.getDate() - 1);
+      }
+      return count;
+    }
+
+    function renderLevels() {
+      const currentLevel = Math.min(5, Math.max(1, Math.floor(records.length / 5) + 1));
+      levelList.innerHTML = "";
+      LEVELS.forEach((level, index) => {
+        const row = document.createElement("div");
+        row.className = `level-row${index + 1 === currentLevel ? " current" : ""}`;
+        row.innerHTML = `<strong>${level}</strong><span>${index + 1 === currentLevel ? "Current" : `${index * 5} clear`}</span>`;
+        levelList.appendChild(row);
+      });
+    }
+
+    function renderLogs() {
+      logList.innerHTML = "";
+      if (!records.length) {
+        logList.innerHTML = `<div class="empty">まだ記録がありません。</div>`;
+        return;
+      }
+      [...records].sort((a, b) => b.savedAt.localeCompare(a.savedAt)).slice(0, 12).forEach((record) => {
+        const log = document.createElement("div");
+        log.className = "log";
+        log.innerHTML = `
+          <strong>${record.date} / ${record.missionTitle}</strong>
+          <span>点数 ${record.score}・理解度 ${record.understanding}・疲労度 ${record.fatigue}</span>
+          <div>${record.mistakeReason || "間違い理由なし"}</div>
+        `;
+        logList.appendChild(log);
+      });
+    }
+
+    function openRecordDialog(mission, record) {
+      document.querySelector("#missionId").value = mission.id;
+      document.querySelector("#missionTitle").value = mission.title;
+      document.querySelector("#score").value = record ? record.score : "";
+      document.querySelector("#understanding").value = record ? record.understanding : "4";
+      document.querySelector("#fatigue").value = record ? record.fatigue : "2";
+      document.querySelector("#mistakeReason").value = record ? record.mistakeReason : "";
+      document.querySelector("#note").value = record ? record.note : "";
+      document.querySelector("#deleteRecordButton").style.display = record ? "inline-flex" : "none";
+      recordDialog.showModal();
+    }
+
+    recordForm.addEventListener("submit", () => {
+      const missionId = document.querySelector("#missionId").value;
+      const missionTitle = document.querySelector("#missionTitle").value;
+      records = records.filter((record) => !(record.date === todayKey() && record.missionId === missionId));
+      records.push({
+        date: todayKey(),
+        day: DAY_NAMES[new Date().getDay()],
+        missionId,
+        missionTitle,
+        score: document.querySelector("#score").value,
+        understanding: document.querySelector("#understanding").value,
+        fatigue: document.querySelector("#fatigue").value,
+        mistakeReason: document.querySelector("#mistakeReason").value.trim(),
+        note: document.querySelector("#note").value.trim(),
+        savedAt: new Date().toISOString()
+      });
+      saveRecords();
+      render();
+    });
+
+    document.querySelector("#closeDialogButton").addEventListener("click", () => recordDialog.close());
+    document.querySelector("#deleteRecordButton").addEventListener("click", () => {
+      const missionId = document.querySelector("#missionId").value;
+      records = records.filter((record) => !(record.date === todayKey() && record.missionId === missionId));
+      saveRecords();
+      recordDialog.close();
+      render();
+    });
+
+    document.querySelector("#resetButton").addEventListener("click", () => {
+      if (!confirm("検証データをリセットしますか？")) return;
+      records = [];
+      saveRecords();
+      render();
+    });
+
+    document.querySelector("#exportCsvButton").addEventListener("click", () => {
+      const headers = ["date", "day", "missionId", "missionTitle", "score", "understanding", "fatigue", "mistakeReason", "note", "savedAt"];
+      const rows = [headers, ...records.map((record) => headers.map((key) => record[key] || ""))];
+      const csv = rows.map((row) => row.map(escapeCsv).join(",")).join("\n");
+      const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `limit-break-records-${todayKey()}.csv`;
+      link.click();
+      URL.revokeObjectURL(url);
+    });
+
+    function escapeCsv(value) {
+      const text = String(value).replaceAll('"', '""');
+      return /[",\n]/.test(text) ? `"${text}"` : text;
+    }
+
+    render();
+  </script>
+</body>
+</html>

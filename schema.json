@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "LIMIT BREAK PROJECT Record",
+  "type": "object",
+  "required": [
+    "date",
+    "day",
+    "missionId",
+    "missionTitle",
+    "score",
+    "understanding",
+    "fatigue",
+    "savedAt"
+  ],
+  "properties": {
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "day": {
+      "type": "string"
+    },
+    "missionId": {
+      "type": "string"
+    },
+    "missionTitle": {
+      "type": "string"
+    },
+    "score": {
+      "type": "string",
+      "pattern": "^(100|[0-9]{1,2})$"
+    },
+    "understanding": {
+      "type": "string",
+      "enum": ["1", "2", "3", "4", "5"]
+    },
+    "fatigue": {
+      "type": "string",
+      "enum": ["1", "2", "3", "4", "5"]
+    },
+    "mistakeReason": {
+      "type": "string"
+    },
+    "note": {
+      "type": "string"
+    },
+    "savedAt": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "additionalProperties": false
+}
