@@ -1,0 +1,60 @@
+{
+  "day": 1,
+  "date": "2026-07-01",
+  "level": "LEVEL 1 FOUNDATION",
+  "missions": [
+    {
+      "id": "day001-math1-part1",
+      "time": "09:00 - 12:00",
+      "subject": "数学Ⅰ",
+      "course": "ベーシックレベル数学Ⅰ",
+      "lesson": "第1講",
+      "part": "PART1",
+      "title": "単項式と多項式",
+      "tasks": ["要点整理", "Point Pickup", "講義問題", "自力演習", "確認問題", "間違い分析"]
+    },
+    {
+      "id": "day001-english-chapter1",
+      "time": "14:00 - 17:00",
+      "subject": "英語",
+      "course": "ベーシックレベル英語",
+      "lesson": "第1講",
+      "part": "Chapter1",
+      "title": "肯定文・否定文",
+      "tasks": ["授業", "復習", "復習テスト", "例文暗唱", "音読"]
+    },
+    {
+      "id": "day001-physics-basic-part1",
+      "time": "20:00 - 22:00",
+      "subject": "物理基礎",
+      "course": "ベーシックレベル物理基礎",
+      "lesson": "第1講",
+      "part": "PART1",
+      "title": "速さ",
+      "tasks": ["講義", "演習問題", "確認テスト", "図解説明", "公式説明"]
+    }
+  ],
+  "review_missions": [
+    {
+      "label": "昨日の復習",
+      "subject": "数学Ⅰ",
+      "lesson": "第1講",
+      "part": "PART1",
+      "title": "単項式と多項式"
+    },
+    {
+      "label": "3日後復習",
+      "subject": "英語",
+      "lesson": "第1講",
+      "part": "Chapter1",
+      "title": "肯定文・否定文"
+    },
+    {
+      "label": "7日後復習",
+      "subject": "物理基礎",
+      "lesson": "第1講",
+      "part": "PART1",
+      "title": "速さ"
+    }
+  ]
+}

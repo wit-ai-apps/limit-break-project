@@ -1,12 +1,16 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "LIMIT BREAK PROJECT Record",
+  "title": "LIMIT BREAK PROJECT v1.1.0 Record",
   "type": "object",
   "required": [
     "date",
-    "day",
     "missionId",
     "missionTitle",
+    "subject",
+    "course",
+    "lesson",
+    "part",
+    "testType",
     "score",
     "understanding",
     "fatigue",
@@ -18,13 +22,29 @@
       "format": "date"
     },
     "day": {
-      "type": "string"
+      "type": ["integer", "string"]
     },
     "missionId": {
       "type": "string"
     },
     "missionTitle": {
       "type": "string"
+    },
+    "subject": {
+      "type": "string"
+    },
+    "course": {
+      "type": "string"
+    },
+    "lesson": {
+      "type": "string"
+    },
+    "part": {
+      "type": "string"
+    },
+    "testType": {
+      "type": "string",
+      "enum": ["初回確認テスト", "翌日確認テスト", "3日後確認テスト", "7日後確認テスト"]
     },
     "score": {
       "type": "string",
@@ -41,7 +61,7 @@
     "mistakeReason": {
       "type": "string"
     },
-    "note": {
+    "privateNote": {
       "type": "string"
     },
     "savedAt": {

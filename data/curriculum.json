@@ -1,0 +1,77 @@
+{
+  "curriculum_version": "1.1.0",
+  "courses": [
+    {
+      "subject": "数学Ⅰ",
+      "course_name": "ベーシックレベル数学Ⅰ",
+      "lesson": "第1講",
+      "part": "PART1",
+      "title": "単項式と多項式",
+      "flow": ["要点整理", "Point Pickup", "講義問題", "自力演習", "確認問題", "翌日復習", "3日後復習", "7日後復習"],
+      "review_schedule": ["翌日", "3日後", "7日後"]
+    },
+    {
+      "subject": "数学Ⅱ",
+      "course_name": "ベーシックレベル数学Ⅱ",
+      "lesson": "第1講",
+      "part": "PART1",
+      "title": "式と証明の基礎",
+      "flow": ["要点整理", "Point Pickup", "講義問題", "自力演習", "確認問題", "翌日復習", "3日後復習", "7日後復習"],
+      "review_schedule": ["翌日", "3日後", "7日後"]
+    },
+    {
+      "subject": "数学B",
+      "course_name": "ベーシックレベル数学B",
+      "lesson": "第1講",
+      "part": "PART1",
+      "title": "数列の導入",
+      "flow": ["要点整理", "Point Pickup", "講義問題", "自力演習", "確認問題", "翌日復習", "3日後復習", "7日後復習"],
+      "review_schedule": ["翌日", "3日後", "7日後"]
+    },
+    {
+      "subject": "英語",
+      "course_name": "ベーシックレベル英語",
+      "lesson": "第1講",
+      "part": "Chapter1",
+      "title": "肯定文・否定文",
+      "flow": ["授業", "復習", "復習テスト", "例文暗唱", "音読", "翌日復習"],
+      "review_schedule": ["翌日"]
+    },
+    {
+      "subject": "英語",
+      "course_name": "スタンダードレベル英語 文法・読解",
+      "lesson": "第1講",
+      "part": "Chapter1",
+      "title": "英文構造の確認",
+      "flow": ["授業", "復習", "復習テスト", "例文暗唱", "音読", "翌日復習"],
+      "review_schedule": ["翌日"]
+    },
+    {
+      "subject": "英語",
+      "course_name": "スタンダードレベル英語 長文",
+      "lesson": "第1講",
+      "part": "Chapter1",
+      "title": "長文読解の入口",
+      "flow": ["授業", "復習", "復習テスト", "例文暗唱", "音読", "翌日復習"],
+      "review_schedule": ["翌日"]
+    },
+    {
+      "subject": "物理基礎",
+      "course_name": "ベーシックレベル物理基礎",
+      "lesson": "第1講",
+      "part": "PART1",
+      "title": "速さ",
+      "flow": ["講義", "演習問題", "確認テスト", "図解説明", "公式説明", "翌日復習"],
+      "review_schedule": ["翌日"]
+    },
+    {
+      "subject": "物理",
+      "course_name": "ベーシックレベル物理",
+      "lesson": "第1講",
+      "part": "PART1",
+      "title": "運動の表し方",
+      "flow": ["講義", "演習問題", "確認テスト", "図解説明", "公式説明", "翌日復習"],
+      "review_schedule": ["翌日"]
+    }
+  ]
+}
