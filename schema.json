@@ -44,11 +44,17 @@
     },
     "testType": {
       "type": "string",
-      "enum": ["初回確認テスト", "翌日確認テスト", "3日後確認テスト", "7日後確認テスト"]
+      "enum": ["初回確認テスト", "翌日確認テスト", "3日後確認テスト", "7日後確認テスト", "AI Check Test"]
     },
     "score": {
       "type": "string",
       "pattern": "^(100|[0-9]{1,2})$"
+    },
+    "checkItem": {
+      "type": "string"
+    },
+    "levelTask": {
+      "type": "string"
     },
     "understanding": {
       "type": "string",

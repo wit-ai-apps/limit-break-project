@@ -338,7 +338,7 @@
       transition: width 420ms ease;
     }
 
-    .mission-list, .review-list, .log-list, .permission-list, .exam-list {
+    .mission-list, .review-list, .log-list, .permission-list, .exam-list, .level-list, .week-list {
       display: grid;
       gap: 12px;
     }
@@ -473,7 +473,7 @@
       gap: 10px;
     }
 
-    .metric, .review-card, .log-card, .permission-card, .exam-card {
+    .metric, .review-card, .log-card, .permission-card, .exam-card, .level-card, .week-card, .ai-check {
       padding: 13px;
       border: 1px solid rgba(125, 211, 252, 0.2);
       border-radius: 16px;
@@ -488,7 +488,7 @@
       text-shadow: 0 0 16px rgba(0, 191, 255, 0.48);
     }
 
-    .metric span, .review-card span, .log-card span, .permission-card span, .exam-card span {
+    .metric span, .review-card span, .log-card span, .permission-card span, .exam-card span, .level-card span, .week-card span, .ai-check span {
       display: block;
       margin-top: 6px;
       color: var(--muted);
@@ -496,9 +496,14 @@
       font-weight: 760;
     }
 
-    .review-card strong, .log-card strong, .permission-card strong, .exam-card strong {
+    .review-card strong, .log-card strong, .permission-card strong, .exam-card strong, .level-card strong, .week-card strong, .ai-check strong {
       display: block;
       color: var(--text);
+    }
+
+    .ai-check {
+      border-color: rgba(250, 204, 21, 0.36);
+      background: rgba(250, 204, 21, 0.07);
     }
 
     .limited {
@@ -643,11 +648,20 @@
           <div class="mission-list" id="missionList"></div>
         </section>
 
-        <section aria-labelledby="review-heading">
+      <section aria-labelledby="review-heading">
+        <div class="topline">
+          <h2 id="review-heading">Review Mission</h2>
+        </div>
+        <div class="review-list" id="reviewList"></div>
+      </section>
+
+        <section aria-labelledby="summer-heading">
           <div class="topline">
-            <h2 id="review-heading">Review Mission</h2>
+            <h2 id="summer-heading">8月末集中カリキュラム</h2>
+            <span class="badge" id="summerPeriodLabel"></span>
           </div>
-          <div class="review-list" id="reviewList"></div>
+          <p class="phase-copy" id="summerGoal"></p>
+          <div class="week-list" id="summerWeekList"></div>
         </section>
       </div>
 
@@ -670,6 +684,13 @@
             <h2 id="exam-heading">Exam Schedule DB</h2>
           </div>
           <div class="exam-list" id="examList"></div>
+        </section>
+
+        <section aria-labelledby="level-heading">
+          <div class="topline">
+            <h2 id="level-heading">Level Tasks</h2>
+          </div>
+          <div class="level-list" id="levelList"></div>
         </section>
 
         <section aria-labelledby="role-view-heading">
@@ -709,6 +730,7 @@
             <option value="翌日確認テスト">翌日確認テスト</option>
             <option value="3日後確認テスト">3日後確認テスト</option>
             <option value="7日後確認テスト">7日後確認テスト</option>
+            <option value="AI Check Test">AI Check Test</option>
           </select>
         </div>
         <div class="field">
@@ -806,7 +828,7 @@
     ];
 
     const FALLBACK_DAILY = {
-      plan_version: "1.2.0",
+      plan_version: "1.6.0",
       day: 1,
       date: "2026-07-01",
       level: "LEVEL 1 FOUNDATION",
@@ -883,7 +905,13 @@
           lesson: "第1講",
           part: "PART1",
           title: "単項式と多項式",
+          level_task: "Basic",
+          check_item: "確認問題",
           tasks: ["要点整理", "Point Pickup", "講義問題", "確認問題"],
+          ai_check_test: [
+            "単項式と多項式の違いを自分の言葉で説明する",
+            "同類項をまとめる手順を1問で示す"
+          ],
           reason: "共通テストまで200日。基礎計算の抜けを削れないため残す。"
         },
         {
@@ -895,7 +923,13 @@
           part: "Chapter1",
           title: "Today's Memory / Today's Grammar / Today's Structure",
           memory: "肯定文・否定文の基本構文を3つ暗唱",
+          level_task: "Basic",
+          check_item: "復習テスト / Today's Memory",
           tasks: ["授業", "復習", "復習テスト", "例文暗唱", "音読"],
+          ai_check_test: [
+            "肯定文を否定文に変えるルールを説明する",
+            "Today's Memory 3文を音読して日本語に戻す"
+          ],
           reason: "英語は構文を先に固定し、長文期の負荷を下げる。"
         },
         {
@@ -906,7 +940,13 @@
           lesson: "第1講",
           part: "PART1",
           title: "速さ",
+          level_task: "Basic",
+          check_item: "確認問題",
           tasks: ["講義", "演習問題", "確認テスト", "図解説明"],
+          ai_check_test: [
+            "速さ・時間・距離の関係を図で説明する",
+            "単位変換を含む基本問題を1問解く"
+          ],
           reason: "物理は公式暗記より図で説明できる状態を残す。"
         }
       ],
@@ -917,8 +957,36 @@
       ]
     };
 
+    const FALLBACK_SUMMER = {
+      period: "2026-07-01_to_2026-08-31",
+      date_start: "2026-07-01",
+      date_end: "2026-08-31",
+      goal: "基礎教材を8月末までに徹底。7月は数学Ⅰ・英語基礎・物理基礎、7月後半から化学基礎を導入する。",
+      weeks: [
+        { week: 1, range: "2026-07-01〜2026-07-05", focus: "数学Ⅰ・英語基礎・物理基礎", daily_missions: ["数学Ⅰ 第1講 PART1", "ベーシック英語 Chapter1", "物理基礎 第1講 PART1"] },
+        { week: 2, range: "2026-07-06〜2026-07-12", focus: "数学Ⅰ/A・英語復習テスト・物理基礎", daily_missions: ["確認問題", "復習テスト", "図解説明"] },
+        { week: 3, range: "2026-07-13〜2026-07-19", focus: "数学Ⅱ導入・英語構文・物理基礎", daily_missions: ["数学Ⅱ 第1講", "Today's Memory 3文", "確認問題"] },
+        { week: 4, range: "2026-07-20〜2026-07-26", focus: "数学B導入・化学基礎導入", daily_missions: ["数列導入", "化学基礎 第1講", "AI Check Test"] },
+        { week: 5, range: "2026-07-27〜2026-08-02", focus: "数学Ⅰ/Ⅱ/Bの基礎横断", daily_missions: ["確認問題の解き直し", "間違い理由分類"] },
+        { week: 6, range: "2026-08-03〜2026-08-09", focus: "英語 Standard文法・読解導入", daily_missions: ["文法・読解", "復習テスト", "Today's Memory"] },
+        { week: 7, range: "2026-08-10〜2026-08-16", focus: "物理 力学導入", daily_missions: ["物理 第1講", "演習問題", "図解説明"] },
+        { week: 8, range: "2026-08-17〜2026-08-23", focus: "8月末確認週 1", daily_missions: ["数学確認問題", "英語復習テスト", "物理確認問題"] },
+        { week: 9, range: "2026-08-24〜2026-08-31", focus: "8月末確認週 2", daily_missions: ["AI Check Test", "復習漏れ回収", "9月標準演習準備"] }
+      ]
+    };
+
+    const FALLBACK_LEVELS = {
+      levels: [
+        { level: "Basic", purpose: "講義内容を理解する", evidence: "要点整理・授業・講義を見て、確認項目に進める" },
+        { level: "Standard", purpose: "確認問題・復習テストを自力で解ける", evidence: "数学は確認問題、英語は復習テスト、物理は確認問題を記録する" },
+        { level: "Challenge", purpose: "AI Check Testで説明・類題対応できる", evidence: "映像授業後に固定の理解確認問題へ答える" }
+      ]
+    };
+
     let dailyPlan = FALLBACK_DAILY;
     let examSchedule = FALLBACK_EXAMS;
+    let summerPlan = FALLBACK_SUMMER;
+    let levelTasks = FALLBACK_LEVELS;
     let currentRole = localStorage.getItem(ROLE_KEY) || "student";
     let records = loadRecords();
 
@@ -930,6 +998,8 @@
     const permissionList = document.querySelector("#permissionList");
     const logList = document.querySelector("#logList");
     const examList = document.querySelector("#examList");
+    const levelList = document.querySelector("#levelList");
+    const summerWeekList = document.querySelector("#summerWeekList");
     const recordDialog = document.querySelector("#recordDialog");
     const recordForm = document.querySelector("#recordForm");
 
@@ -945,9 +1015,17 @@
           const payload = await examResponse.json();
           examSchedule = payload.exams || FALLBACK_EXAMS;
         }
+        const [summerResponse, levelsResponse] = await Promise.all([
+          fetch("data/summer_plan_2026.json", { cache: "no-store" }),
+          fetch("data/level_tasks.json", { cache: "no-store" })
+        ]);
+        if (summerResponse.ok) summerPlan = await summerResponse.json();
+        if (levelsResponse.ok) levelTasks = await levelsResponse.json();
       } catch (_) {
         dailyPlan = FALLBACK_DAILY;
         examSchedule = FALLBACK_EXAMS;
+        summerPlan = FALLBACK_SUMMER;
+        levelTasks = FALLBACK_LEVELS;
       }
       render();
     }
@@ -1012,6 +1090,8 @@
       renderProgress();
       renderReviews();
       renderExamList();
+      renderSummerPlan();
+      renderLevelTasks();
       renderPermissions();
       renderLogs();
     }
@@ -1082,6 +1162,11 @@
         card.className = `mission${record ? " complete" : ""}`;
         const tasks = role.showMissionDetail ? mission.tasks : ["Mission達成率", "努力量", "応援メッセージ"];
         const memory = mission.memory && role.showMissionDetail ? `<div class="memory-chip">Today's Memory: ${mission.memory}</div>` : "";
+        const checkItem = mission.check_item && role.showMissionDetail ? `<span class="badge">${mission.check_item}</span>` : "";
+        const levelTask = mission.level_task && role.showMissionDetail ? `<span class="badge">${mission.level_task}</span>` : "";
+        const aiCheck = mission.ai_check_test && role.showMissionDetail
+          ? `<div class="ai-check"><strong>AI Check Test</strong>${mission.ai_check_test.map((item) => `<span>${item}</span>`).join("")}</div>`
+          : "";
         card.innerHTML = `
           <div class="mission-head">
             <div>
@@ -1091,8 +1176,10 @@
             </div>
             <span class="badge">${record ? "Mission Complete" : "Mission Start"}</span>
           </div>
+          <div class="badge-row">${levelTask}${checkItem}</div>
           ${memory}
           <div class="flow">${tasks.map((task) => `<span>${task}</span>`).join("")}</div>
+          ${aiCheck}
           <p class="mission-note">${role.showMissionDetail ? mission.reason : "努力量と達成状況だけを表示しています。"}</p>
           <div class="mission-actions">
             <button type="button" class="record-button" ${role.canEditRecord ? "" : "disabled"}>${record ? "確認テストを編集" : "Mission Complete"}</button>
@@ -1147,6 +1234,28 @@
         card.className = "exam-card";
         card.innerHTML = `<strong>${exam.exam_name}</strong><span>${exam.date_start}${exam.date_end && exam.date_end !== exam.date_start ? " - " + exam.date_end : ""}</span><div>${exam.notes}</div>`;
         examList.appendChild(card);
+      });
+    }
+
+    function renderSummerPlan() {
+      document.querySelector("#summerPeriodLabel").textContent = `${summerPlan.date_start} - ${summerPlan.date_end}`;
+      document.querySelector("#summerGoal").textContent = summerPlan.goal;
+      summerWeekList.innerHTML = "";
+      summerPlan.weeks.slice(0, 9).forEach((week) => {
+        const card = document.createElement("div");
+        card.className = "week-card";
+        card.innerHTML = `<strong>Week ${week.week}: ${week.focus}</strong><span>${week.range}</span><div>${(week.daily_missions || []).join(" / ")}</div>`;
+        summerWeekList.appendChild(card);
+      });
+    }
+
+    function renderLevelTasks() {
+      levelList.innerHTML = "";
+      levelTasks.levels.forEach((level) => {
+        const card = document.createElement("div");
+        card.className = "level-card";
+        card.innerHTML = `<strong>${level.level}</strong><span>${level.purpose}</span><div>${level.evidence || ""}</div>`;
+        levelList.appendChild(card);
       });
     }
 
@@ -1232,6 +1341,8 @@
         lesson: mission ? mission.lesson : "",
         part: mission ? mission.part : "",
         testType: document.querySelector("#testType").value,
+        checkItem: mission ? mission.check_item || "" : "",
+        levelTask: mission ? mission.level_task || "" : "",
         score: document.querySelector("#score").value,
         understanding: document.querySelector("#understanding").value,
         fatigue: document.querySelector("#fatigue").value,
@@ -1260,7 +1371,7 @@
     });
 
     document.querySelector("#exportCsvButton").addEventListener("click", () => {
-      const headers = ["date", "day", "missionId", "missionTitle", "subject", "course", "lesson", "part", "testType", "score", "understanding", "fatigue", "mistakeReason", "privateNote", "savedAt"];
+      const headers = ["date", "day", "missionId", "missionTitle", "subject", "course", "lesson", "part", "testType", "checkItem", "levelTask", "score", "understanding", "fatigue", "mistakeReason", "privateNote", "savedAt"];
       const rows = [headers, ...records.map((record) => headers.map((key) => record[key] || ""))];
       const csv = rows.map((row) => row.map(escapeCsv).join(",")).join("\n");
       const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });

@@ -1,5 +1,5 @@
 {
-  "plan_version": "1.2.0",
+  "plan_version": "1.6.0",
   "day": 1,
   "date": "2026-07-01",
   "level": "LEVEL 1 FOUNDATION",
@@ -104,7 +104,13 @@
       "lesson": "第1講",
       "part": "PART1",
       "title": "単項式と多項式",
+      "level_task": "Basic",
+      "check_item": "確認問題",
       "tasks": ["要点整理", "Point Pickup", "講義問題", "確認問題"],
+      "ai_check_test": [
+        "単項式と多項式の違いを自分の言葉で説明する",
+        "同類項をまとめる手順を1問で示す"
+      ],
       "reason": "共通テストまで200日。基礎計算の抜けを削れないため残す。"
     },
     {
@@ -116,7 +122,13 @@
       "part": "Chapter1",
       "title": "Today's Memory / Today's Grammar / Today's Structure",
       "memory": "肯定文・否定文の基本構文を3つ暗唱",
+      "level_task": "Basic",
+      "check_item": "復習テスト / Today's Memory",
       "tasks": ["授業", "復習", "復習テスト", "例文暗唱", "音読"],
+      "ai_check_test": [
+        "肯定文を否定文に変えるルールを説明する",
+        "Today's Memory 3文を音読して日本語に戻す"
+      ],
       "reason": "英語は構文を先に固定し、長文期の負荷を下げる。"
     },
     {
@@ -127,7 +139,13 @@
       "lesson": "第1講",
       "part": "PART1",
       "title": "速さ",
+      "level_task": "Basic",
+      "check_item": "確認問題",
       "tasks": ["講義", "演習問題", "確認テスト", "図解説明"],
+      "ai_check_test": [
+        "速さ・時間・距離の関係を図で説明する",
+        "単位変換を含む基本問題を1問解く"
+      ],
       "reason": "物理は公式暗記より図で説明できる状態を残す。"
     }
   ],

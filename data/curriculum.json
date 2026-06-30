@@ -2,11 +2,29 @@
   "curriculum_version": "1.1.0",
   "courses": [
     {
+      "subject": "数学",
+      "course_name": "中学総復習数学",
+      "lesson": "総復習",
+      "part": "Foundation",
+      "title": "数学の土台確認",
+      "flow": ["要点整理", "例題確認", "確認問題", "翌日復習"],
+      "review_schedule": ["翌日", "3日後"]
+    },
+    {
       "subject": "数学Ⅰ",
       "course_name": "ベーシックレベル数学Ⅰ",
       "lesson": "第1講",
       "part": "PART1",
       "title": "単項式と多項式",
+      "flow": ["要点整理", "Point Pickup", "講義問題", "自力演習", "確認問題", "翌日復習", "3日後復習", "7日後復習"],
+      "review_schedule": ["翌日", "3日後", "7日後"]
+    },
+    {
+      "subject": "数学A",
+      "course_name": "ベーシックレベル数学A",
+      "lesson": "第1講",
+      "part": "PART1",
+      "title": "場合の数の導入",
       "flow": ["要点整理", "Point Pickup", "講義問題", "自力演習", "確認問題", "翌日復習", "3日後復習", "7日後復習"],
       "review_schedule": ["翌日", "3日後", "7日後"]
     },
@@ -27,6 +45,24 @@
       "title": "数列の導入",
       "flow": ["要点整理", "Point Pickup", "講義問題", "自力演習", "確認問題", "翌日復習", "3日後復習", "7日後復習"],
       "review_schedule": ["翌日", "3日後", "7日後"]
+    },
+    {
+      "subject": "英語",
+      "course_name": "中学総復習英語",
+      "lesson": "総復習",
+      "part": "Foundation",
+      "title": "英文法の土台確認",
+      "flow": ["授業", "復習", "復習テスト", "音読", "翌日復習"],
+      "review_schedule": ["翌日"]
+    },
+    {
+      "subject": "英語",
+      "course_name": "高1・高2・高3 英語超入門",
+      "lesson": "導入",
+      "part": "Foundation",
+      "title": "英語の入口確認",
+      "flow": ["授業", "復習", "復習テスト", "例文暗唱", "音読", "翌日復習"],
+      "review_schedule": ["翌日"]
     },
     {
       "subject": "英語",
@@ -63,6 +99,15 @@
       "title": "速さ",
       "flow": ["講義", "演習問題", "確認テスト", "図解説明", "公式説明", "翌日復習"],
       "review_schedule": ["翌日"]
+    },
+    {
+      "subject": "化学基礎",
+      "course_name": "ベーシックレベル化学基礎",
+      "lesson": "第1講",
+      "part": "PART1",
+      "title": "化学基礎導入",
+      "flow": ["講義", "確認問題", "用語整理", "翌日復習"],
+      "review_schedule": ["翌日", "3日後"]
     },
     {
       "subject": "物理",
