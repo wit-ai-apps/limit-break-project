@@ -1,0 +1,55 @@
+{
+  "version": "1.7.0",
+  "today_target": {
+    "words": 20,
+    "sentences": 5,
+    "structures": 3,
+    "checks": ["英語→日本語", "日本語→英語", "音読", "暗唱"]
+  },
+  "items": [
+    {
+      "id": "ENG_WORD_0001",
+      "type": "word",
+      "front": "maintain",
+      "back": "維持する",
+      "source": "単語帳",
+      "level": "basic",
+      "next_review": "2026-07-02",
+      "review_count": 0,
+      "accuracy": 0
+    },
+    {
+      "id": "ENG_WORD_0002",
+      "type": "word",
+      "front": "available",
+      "back": "利用できる",
+      "source": "単語帳",
+      "level": "basic",
+      "next_review": "2026-07-02",
+      "review_count": 0,
+      "accuracy": 0
+    },
+    {
+      "id": "ENG_SENT_0001",
+      "type": "sentence",
+      "front": "私は学生です。",
+      "back": "I am a student.",
+      "source": "英語基本文",
+      "level": "basic",
+      "next_review": "2026-07-02",
+      "review_count": 0,
+      "accuracy": 0
+    },
+    {
+      "id": "ENG_STR_0001",
+      "type": "structure",
+      "front": "It is ... for 人 to do",
+      "back": "人がdoすることは...だ",
+      "source": "重要構文",
+      "level": "basic",
+      "next_review": "2026-07-02",
+      "review_count": 0,
+      "accuracy": 0
+    }
+  ]
+}

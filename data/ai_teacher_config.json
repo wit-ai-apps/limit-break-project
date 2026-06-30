@@ -1,0 +1,16 @@
+{
+  "version": "1.8.1",
+  "phase": "Phase1 UI only",
+  "api_policy": {
+    "frontend_api_key": false,
+    "server_side_secret_required": true,
+    "future_backend": ["Firebase Authentication", "Firestore", "Cloud Functions or API Server", "OpenAI API"]
+  },
+  "roles": ["Yui Teacher", "Yui Coach", "Yui Analyzer"],
+  "input_context": ["currentMission", "subject", "lesson", "part", "latestScore", "weaknessReason", "fatigue", "reviewDue", "memoryItems"],
+  "fixed_responses": {
+    "teacher": "まず3分で、今日のMissionを自分の言葉で説明してみましょう。詰まった場所だけヒントを出します。",
+    "coach": "今日は全部を完璧にする日ではありません。昨日より一つ進めば、LIMIT BREAK +1です。",
+    "analyzer": "先生向け要約: 数学と英語は毎日実施。疲労度が高い日は復習Missionを短くして継続を優先します。"
+  }
+}

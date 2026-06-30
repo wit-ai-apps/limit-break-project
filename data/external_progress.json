@@ -1,0 +1,14 @@
+{
+  "version": "1.7.0",
+  "apps": [
+    {
+      "app_name": "英単語オレンジ",
+      "import_type": "manual_csv",
+      "last_imported_at": "2026-07-01",
+      "studied_count": 120,
+      "accuracy": 82,
+      "weak_items": ["abandon", "maintain", "available"],
+      "reflection": "明日のToday's Memoryに苦手単語を追加"
+    }
+  ]
+}

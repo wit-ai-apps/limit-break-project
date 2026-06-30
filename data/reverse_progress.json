@@ -1,0 +1,41 @@
+{
+  "version": "1.7.0",
+  "baseline_date": "2026-07-01",
+  "goal_date": "2026-08-31",
+  "goal_label": "8月末ゴール",
+  "days_remaining_inclusive": 62,
+  "subjects": [
+    {
+      "subject": "数学",
+      "target_unit": "PART",
+      "remaining_units": 48,
+      "required_per_day": 0.8,
+      "today_target": "数学Ⅰ 第3講 PART2まで",
+      "planned_video_minutes": 75,
+      "planned_practice_minutes": 90,
+      "planned_review_minutes": 30,
+      "status": "予定通り",
+      "status_note": "数学Ⅰを毎日進め、7月中旬から数学Ⅱ、7月後半から数学Bを重ねる。"
+    },
+    {
+      "subject": "英語",
+      "target_unit": "Chapter",
+      "remaining_units": 72,
+      "required_per_day": 1.2,
+      "today_target": "第5講 Chapter3まで",
+      "planned_video_minutes": 60,
+      "planned_practice_minutes": 0,
+      "planned_review_minutes": 60,
+      "planned_memory_minutes": 30,
+      "status": "予定通り",
+      "status_note": "ベーシック英語と構文暗記を毎日固定し、8月に文法・読解へ接続する。"
+    }
+  ],
+  "study_load": {
+    "video_minutes": 135,
+    "practice_minutes": 210,
+    "review_minutes": 75,
+    "memory_minutes": 30,
+    "total_minutes": 450
+  }
+}

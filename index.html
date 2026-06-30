@@ -338,7 +338,7 @@
       transition: width 420ms ease;
     }
 
-    .mission-list, .review-list, .log-list, .permission-list, .exam-list, .level-list, .week-list, .material-list {
+    .mission-list, .review-list, .log-list, .permission-list, .exam-list, .level-list, .week-list, .material-list, .pace-list, .memory-list, .retention-list, .external-list, .teacher-chat {
       display: grid;
       gap: 12px;
     }
@@ -473,7 +473,7 @@
       gap: 10px;
     }
 
-    .metric, .review-card, .log-card, .permission-card, .exam-card, .level-card, .week-card, .ai-check, .material-card {
+    .metric, .review-card, .log-card, .permission-card, .exam-card, .level-card, .week-card, .ai-check, .material-card, .pace-card, .load-card, .memory-card, .retention-card, .external-card, .teacher-card {
       padding: 13px;
       border: 1px solid rgba(125, 211, 252, 0.2);
       border-radius: 16px;
@@ -488,7 +488,7 @@
       text-shadow: 0 0 16px rgba(0, 191, 255, 0.48);
     }
 
-    .metric span, .review-card span, .log-card span, .permission-card span, .exam-card span, .level-card span, .week-card span, .ai-check span, .material-card span {
+    .metric span, .review-card span, .log-card span, .permission-card span, .exam-card span, .level-card span, .week-card span, .ai-check span, .material-card span, .pace-card span, .load-card span, .memory-card span, .retention-card span, .external-card span, .teacher-card span {
       display: block;
       margin-top: 6px;
       color: var(--muted);
@@ -496,9 +496,76 @@
       font-weight: 760;
     }
 
-    .review-card strong, .log-card strong, .permission-card strong, .exam-card strong, .level-card strong, .week-card strong, .ai-check strong, .material-card strong {
+    .review-card strong, .log-card strong, .permission-card strong, .exam-card strong, .level-card strong, .week-card strong, .ai-check strong, .material-card strong, .pace-card strong, .load-card strong, .memory-card strong, .retention-card strong, .external-card strong, .teacher-card strong {
       display: block;
       color: var(--text);
+    }
+
+    .pace-summary, .load-grid, .memory-summary {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .pace-card {
+      display: grid;
+      gap: 10px;
+      border-color: rgba(0, 191, 255, 0.36);
+      background: rgba(0, 191, 255, 0.055);
+    }
+
+    .pace-card strong {
+      color: var(--primary);
+      text-shadow: 0 0 16px rgba(0, 191, 255, 0.36);
+    }
+
+    .status-chip {
+      display: inline-flex;
+      width: fit-content;
+      min-height: 28px;
+      align-items: center;
+      padding: 0 9px;
+      border-radius: 999px;
+      border: 1px solid rgba(34, 197, 94, 0.55);
+      color: #86efac;
+      background: rgba(34, 197, 94, 0.09);
+      font-weight: 900;
+    }
+
+    .load-card strong {
+      color: var(--accent);
+      font-size: 1.35rem;
+    }
+
+    .memory-actions, .teacher-actions-row, .external-form {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .memory-actions button {
+      min-width: 44px;
+      padding: 0 10px;
+    }
+
+    .teacher-card {
+      border-color: rgba(0, 191, 255, 0.42);
+      background: linear-gradient(180deg, rgba(0, 191, 255, 0.08), rgba(255, 255, 255, 0.035));
+    }
+
+    .teacher-response {
+      margin: 0;
+      color: var(--text);
+      line-height: 1.65;
+      font-weight: 780;
+    }
+
+    .api-policy {
+      border-color: rgba(239, 68, 68, 0.5);
+      color: #fecaca;
+      background: rgba(239, 68, 68, 0.08);
     }
 
     .ai-check {
@@ -583,7 +650,7 @@
     @media (max-width: 980px) {
       .hero, main, .phase-panel { grid-template-columns: 1fr; }
       .countdown-grid { grid-template-columns: 1fr; }
-      .metric-grid, .form-grid { grid-template-columns: 1fr; }
+      .metric-grid, .form-grid, .pace-summary, .load-grid, .memory-summary { grid-template-columns: 1fr; }
       .mission-head { grid-template-columns: 1fr; }
     }
 
@@ -648,12 +715,45 @@
           <div class="mission-list" id="missionList"></div>
         </section>
 
-      <section aria-labelledby="review-heading">
-        <div class="topline">
-          <h2 id="review-heading">Review Mission</h2>
-        </div>
-        <div class="review-list" id="reviewList"></div>
-      </section>
+        <section aria-labelledby="pace-heading">
+          <div class="topline">
+            <h2 id="pace-heading">8月末ゴール逆算</h2>
+            <span class="badge" id="paceGoalBadge">あと62日</span>
+          </div>
+          <div class="pace-list" id="paceList"></div>
+        </section>
+
+        <section aria-labelledby="load-heading">
+          <div class="topline">
+            <h2 id="load-heading">Today&apos;s Study Load</h2>
+            <span class="badge" id="loadTotalBadge">合計 0分</span>
+          </div>
+          <div class="load-grid" id="studyLoadGrid"></div>
+        </section>
+
+        <section aria-labelledby="review-heading">
+          <div class="topline">
+            <h2 id="review-heading">Review Mission</h2>
+          </div>
+          <div class="review-list" id="reviewList"></div>
+        </section>
+
+        <section aria-labelledby="memory-heading">
+          <div class="topline">
+            <h2 id="memory-heading">Today&apos;s Memory</h2>
+            <span class="badge">暗記チェック</span>
+          </div>
+          <div class="memory-summary" id="memorySummary"></div>
+          <div class="memory-list" id="memoryList"></div>
+        </section>
+
+        <section aria-labelledby="retention-heading">
+          <div class="topline">
+            <h2 id="retention-heading">Retention Test / 定着テスト</h2>
+            <span class="badge">忘却曲線</span>
+          </div>
+          <div class="retention-list" id="retentionList"></div>
+        </section>
 
         <section aria-labelledby="summer-heading">
           <div class="topline">
@@ -679,6 +779,14 @@
           <div class="ratio-list" id="subjectBars" style="margin-top: 14px;"></div>
         </section>
 
+        <section aria-labelledby="ai-teacher-heading">
+          <div class="topline">
+            <h2 id="ai-teacher-heading">AI Teacher Chat</h2>
+            <span class="badge">Phase1 固定応答</span>
+          </div>
+          <div class="teacher-chat" id="teacherChat"></div>
+        </section>
+
         <section aria-labelledby="exam-heading">
           <div class="topline">
             <h2 id="exam-heading">Exam Schedule DB</h2>
@@ -698,6 +806,14 @@
             <h2 id="materials-heading">Materials First DB</h2>
           </div>
           <div class="material-list" id="materialList"></div>
+        </section>
+
+        <section aria-labelledby="external-heading">
+          <div class="topline">
+            <h2 id="external-heading">External App Progress</h2>
+            <span class="badge">手動入力</span>
+          </div>
+          <div class="external-list" id="externalList"></div>
         </section>
 
         <section aria-labelledby="role-view-heading">
@@ -783,6 +899,9 @@
   <script>
     const STORAGE_KEY = "limitBreakProjectRecordsV120";
     const ROLE_KEY = "limitBreakProjectRole";
+    const MEMORY_RESULT_KEY = "limitBreakProjectMemoryResultsV170";
+    const EXTERNAL_PROGRESS_KEY = "limitBreakProjectExternalProgressV170";
+    const AI_TEACHER_LOG_KEY = "limitBreakProjectAiTeacherLogV180";
     const BASELINE_DATE = "2026-06-30";
 
     const ROLES = {
@@ -1007,13 +1126,71 @@
       ]
     };
 
+    const FALLBACK_REVERSE_PROGRESS = {
+      version: "1.7.0",
+      baseline_date: "2026-07-01",
+      goal_date: "2026-08-31",
+      goal_label: "8月末ゴール",
+      days_remaining_inclusive: 62,
+      subjects: [
+        { subject: "数学", target_unit: "PART", remaining_units: 48, required_per_day: 0.8, today_target: "数学Ⅰ 第3講 PART2まで", planned_video_minutes: 75, planned_practice_minutes: 90, planned_review_minutes: 30, status: "予定通り", status_note: "数学Ⅰ・Ⅱ・Bを毎日進める。" },
+        { subject: "英語", target_unit: "Chapter", remaining_units: 72, required_per_day: 1.2, today_target: "第5講 Chapter3まで", planned_video_minutes: 60, planned_practice_minutes: 0, planned_review_minutes: 60, planned_memory_minutes: 30, status: "予定通り", status_note: "ベーシック英語と構文暗記を毎日固定する。" }
+      ],
+      study_load: { video_minutes: 135, practice_minutes: 210, review_minutes: 75, memory_minutes: 30, total_minutes: 450 }
+    };
+
+    const FALLBACK_REVIEW_SCHEDULE = {
+      version: "1.7.0",
+      review_intervals_days: [1, 3, 7, 14, 30],
+      retention_tests: [
+        { id: "ret-math1-lesson2-part1", subject: "数学Ⅰ", source: "確認問題の類題", lesson: "第2講", part: "PART1", format: ["数値変更", "条件変更", "解法説明"], prompt: "確認問題と同じ考え方で、条件を一つ変えた類題を解く。" },
+        { id: "ret-eng-lesson3-chapter2", subject: "英語", source: "復習テストの類題", lesson: "第3講", part: "Chapter2", format: ["並べ替え", "日本語→英語", "文法理由説明"], prompt: "日本語から英文を作り、語順の理由を説明する。" }
+      ]
+    };
+
+    const FALLBACK_MEMORY = {
+      version: "1.7.0",
+      today_target: { words: 20, sentences: 5, structures: 3, checks: ["英語→日本語", "日本語→英語", "音読", "暗唱"] },
+      items: [
+        { id: "ENG_WORD_0001", type: "word", front: "maintain", back: "維持する", source: "単語帳", level: "basic" },
+        { id: "ENG_SENT_0001", type: "sentence", front: "私は学生です。", back: "I am a student.", source: "英語基本文", level: "basic" },
+        { id: "ENG_STR_0001", type: "structure", front: "It is ... for 人 to do", back: "人がdoすることは...だ", source: "重要構文", level: "basic" }
+      ]
+    };
+
+    const FALLBACK_EXTERNAL = {
+      version: "1.7.0",
+      apps: [
+        { app_name: "英単語オレンジ", import_type: "manual_csv", last_imported_at: "2026-07-01", studied_count: 120, accuracy: 82, weak_items: ["abandon", "maintain", "available"], reflection: "明日のToday's Memoryに苦手単語を追加" }
+      ]
+    };
+
+    const FALLBACK_AI_TEACHER = {
+      version: "1.8.1",
+      phase: "Phase1 UI only",
+      api_policy: { frontend_api_key: false, server_side_secret_required: true },
+      roles: ["Yui Teacher", "Yui Coach", "Yui Analyzer"],
+      fixed_responses: {
+        teacher: "まず3分で、今日のMissionを自分の言葉で説明してみましょう。詰まった場所だけヒントを出します。",
+        coach: "今日は全部を完璧にする日ではありません。昨日より一つ進めば、LIMIT BREAK +1です。",
+        analyzer: "先生向け要約: 数学と英語は毎日実施。疲労度が高い日は復習Missionを短くして継続を優先します。"
+      }
+    };
+
     let dailyPlan = FALLBACK_DAILY;
     let examSchedule = FALLBACK_EXAMS;
     let summerPlan = FALLBACK_SUMMER;
     let levelTasks = FALLBACK_LEVELS;
     let materialsCatalog = FALLBACK_MATERIALS;
+    let reverseProgress = FALLBACK_REVERSE_PROGRESS;
+    let reviewSchedule = FALLBACK_REVIEW_SCHEDULE;
+    let memoryData = FALLBACK_MEMORY;
+    let externalProgress = loadExternalProgress();
+    let aiTeacherConfig = FALLBACK_AI_TEACHER;
     let currentRole = localStorage.getItem(ROLE_KEY) || "student";
     let records = loadRecords();
+    let memoryResults = loadMemoryResults();
+    let aiTeacherLog = loadAiTeacherLog();
 
     const roleOptions = document.querySelector("#roleOptions");
     const countdownGrid = document.querySelector("#countdownGrid");
@@ -1026,6 +1203,13 @@
     const levelList = document.querySelector("#levelList");
     const summerWeekList = document.querySelector("#summerWeekList");
     const materialList = document.querySelector("#materialList");
+    const paceList = document.querySelector("#paceList");
+    const studyLoadGrid = document.querySelector("#studyLoadGrid");
+    const memorySummary = document.querySelector("#memorySummary");
+    const memoryList = document.querySelector("#memoryList");
+    const retentionList = document.querySelector("#retentionList");
+    const externalList = document.querySelector("#externalList");
+    const teacherChat = document.querySelector("#teacherChat");
     const recordDialog = document.querySelector("#recordDialog");
     const recordForm = document.querySelector("#recordForm");
 
@@ -1049,12 +1233,29 @@
         if (summerResponse.ok) summerPlan = await summerResponse.json();
         if (levelsResponse.ok) levelTasks = await levelsResponse.json();
         if (materialsResponse.ok) materialsCatalog = await materialsResponse.json();
+        const [reverseResponse, reviewResponse, memoryResponse, externalResponse, aiTeacherResponse] = await Promise.all([
+          fetch("data/reverse_progress.json", { cache: "no-store" }),
+          fetch("data/review_schedule.json", { cache: "no-store" }),
+          fetch("data/memory_items.json", { cache: "no-store" }),
+          fetch("data/external_progress.json", { cache: "no-store" }),
+          fetch("data/ai_teacher_config.json", { cache: "no-store" })
+        ]);
+        if (reverseResponse.ok) reverseProgress = await reverseResponse.json();
+        if (reviewResponse.ok) reviewSchedule = await reviewResponse.json();
+        if (memoryResponse.ok) memoryData = await memoryResponse.json();
+        if (externalResponse.ok && !localStorage.getItem(EXTERNAL_PROGRESS_KEY)) externalProgress = await externalResponse.json();
+        if (aiTeacherResponse.ok) aiTeacherConfig = await aiTeacherResponse.json();
       } catch (_) {
         dailyPlan = FALLBACK_DAILY;
         examSchedule = FALLBACK_EXAMS;
         summerPlan = FALLBACK_SUMMER;
         levelTasks = FALLBACK_LEVELS;
         materialsCatalog = FALLBACK_MATERIALS;
+        reverseProgress = FALLBACK_REVERSE_PROGRESS;
+        reviewSchedule = FALLBACK_REVIEW_SCHEDULE;
+        memoryData = FALLBACK_MEMORY;
+        externalProgress = loadExternalProgress();
+        aiTeacherConfig = FALLBACK_AI_TEACHER;
       }
       render();
     }
@@ -1071,6 +1272,42 @@
 
     function saveRecords() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    }
+
+    function loadMemoryResults() {
+      try {
+        return JSON.parse(localStorage.getItem(MEMORY_RESULT_KEY) || "{}");
+      } catch (_) {
+        return {};
+      }
+    }
+
+    function saveMemoryResults() {
+      localStorage.setItem(MEMORY_RESULT_KEY, JSON.stringify(memoryResults));
+    }
+
+    function loadExternalProgress() {
+      try {
+        return JSON.parse(localStorage.getItem(EXTERNAL_PROGRESS_KEY) || JSON.stringify(FALLBACK_EXTERNAL));
+      } catch (_) {
+        return FALLBACK_EXTERNAL;
+      }
+    }
+
+    function saveExternalProgress() {
+      localStorage.setItem(EXTERNAL_PROGRESS_KEY, JSON.stringify(externalProgress));
+    }
+
+    function loadAiTeacherLog() {
+      try {
+        return JSON.parse(localStorage.getItem(AI_TEACHER_LOG_KEY) || "[]");
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function saveAiTeacherLog() {
+      localStorage.setItem(AI_TEACHER_LOG_KEY, JSON.stringify(aiTeacherLog));
     }
 
     function todayKey() {
@@ -1116,12 +1353,18 @@
       renderCountdowns();
       renderPhase();
       renderMissions();
+      renderReverseProgress();
+      renderStudyLoad();
       renderProgress();
       renderReviews();
+      renderMemory();
+      renderRetentionTests();
       renderExamList();
       renderSummerPlan();
       renderLevelTasks();
       renderMaterials();
+      renderExternalProgress();
+      renderAiTeacher();
       renderPermissions();
       renderLogs();
     }
@@ -1213,6 +1456,9 @@
           <p class="mission-note">${role.showMissionDetail ? mission.reason : "努力量と達成状況だけを表示しています。"}</p>
           <div class="mission-actions">
             <button type="button" class="record-button" ${role.canEditRecord ? "" : "disabled"}>${record ? "確認テストを編集" : "Mission Complete"}</button>
+            <button type="button" class="secondary ai-action" data-action="teacher">AIに聞く</button>
+            <button type="button" class="secondary ai-action" data-action="check">AI Check Test</button>
+            <button type="button" class="secondary ai-action" data-action="coach">励まし</button>
             <div class="teacher-actions">
               <button type="button" class="secondary">復習追加</button>
               <button type="button" class="secondary">次週方針</button>
@@ -1220,7 +1466,64 @@
           </div>
         `;
         card.querySelector(".record-button").addEventListener("click", () => openRecordDialog(mission, record));
+        card.querySelectorAll(".ai-action").forEach((button) => {
+          button.addEventListener("click", () => runAiTeacher(button.dataset.action, mission));
+        });
         missionList.appendChild(card);
+      });
+    }
+
+    function formatMinutes(minutes) {
+      const safeMinutes = Number(minutes || 0);
+      const hours = Math.floor(safeMinutes / 60);
+      const mins = safeMinutes % 60;
+      if (!hours) return `${mins}分`;
+      if (!mins) return `${hours}時間`;
+      return `${hours}時間${mins}分`;
+    }
+
+    function renderReverseProgress() {
+      const days = reverseProgress.days_remaining_inclusive || dateDaysUntil(reverseProgress.goal_date);
+      document.querySelector("#paceGoalBadge").textContent = `${reverseProgress.goal_label || "8月末ゴール"}まで あと${days}日`;
+      paceList.innerHTML = "";
+      reverseProgress.subjects.forEach((item) => {
+        const card = document.createElement("article");
+        card.className = "pace-card";
+        card.innerHTML = `
+          <div class="mission-head">
+            <div>
+              <strong>${item.subject}</strong>
+              <span>残り${item.target_unit}: ${item.remaining_units} / 必要ペース: 1日 ${item.required_per_day} ${item.target_unit}</span>
+            </div>
+            <span class="status-chip">${item.status}</span>
+          </div>
+          <div class="pace-summary">
+            <div class="load-card"><strong>${item.today_target}</strong><span>今日の目標</span></div>
+            <div class="load-card"><strong>${formatMinutes(item.planned_video_minutes)}</strong><span>視聴予定</span></div>
+            <div class="load-card"><strong>${formatMinutes(item.planned_practice_minutes)}</strong><span>演習・確認</span></div>
+            <div class="load-card"><strong>${formatMinutes((item.planned_review_minutes || 0) + (item.planned_memory_minutes || 0))}</strong><span>復習・暗記</span></div>
+          </div>
+          <span>${item.status_note}</span>
+        `;
+        paceList.appendChild(card);
+      });
+    }
+
+    function renderStudyLoad() {
+      const load = reverseProgress.study_load || {};
+      document.querySelector("#loadTotalBadge").textContent = `合計 ${formatMinutes(load.total_minutes)}`;
+      const rows = [
+        ["映像視聴", load.video_minutes],
+        ["演習・確認", load.practice_minutes],
+        ["復習", load.review_minutes],
+        ["暗記", load.memory_minutes]
+      ];
+      studyLoadGrid.innerHTML = "";
+      rows.forEach(([label, minutes]) => {
+        const card = document.createElement("div");
+        card.className = "load-card";
+        card.innerHTML = `<strong>${formatMinutes(minutes)}</strong><span>${label}</span>`;
+        studyLoadGrid.appendChild(card);
       });
     }
 
@@ -1249,12 +1552,150 @@
 
     function renderReviews() {
       reviewList.innerHTML = "";
+      const intervals = reviewSchedule.review_intervals_days || [1, 3, 7, 14, 30];
+      const intervalCard = document.createElement("div");
+      intervalCard.className = "review-card";
+      intervalCard.innerHTML = `<strong>復習タイミング</strong><span>${intervals.map((day) => `${day}日後`).join(" / ")}</span><div>確認テスト・復習テスト・AI Check Testの結果をもとにPhase2で自動生成します。</div>`;
+      reviewList.appendChild(intervalCard);
       dailyPlan.review_missions.forEach((review) => {
         const card = document.createElement("div");
         card.className = "review-card";
         card.innerHTML = `<strong>${review.label}</strong><span>${review.subject} ${review.lesson} ${review.part}</span><div>${review.title}</div>`;
         reviewList.appendChild(card);
       });
+    }
+
+    function renderMemory() {
+      const target = memoryData.today_target || {};
+      const summary = [
+        ["単語", `${target.words || 0}語`],
+        ["基本文", `${target.sentences || 0}文`],
+        ["構文", `${target.structures || 0}文`],
+        ["チェック", (target.checks || []).join(" / ")]
+      ];
+      memorySummary.innerHTML = "";
+      summary.forEach(([label, value]) => {
+        const card = document.createElement("div");
+        card.className = "load-card";
+        card.innerHTML = `<strong>${value}</strong><span>${label}</span>`;
+        memorySummary.appendChild(card);
+      });
+      memoryList.innerHTML = "";
+      memoryData.items.slice(0, 6).forEach((item) => {
+        const result = memoryResults[item.id] || "未チェック";
+        const card = document.createElement("article");
+        card.className = "memory-card";
+        card.innerHTML = `
+          <strong>${item.front}</strong>
+          <span>${item.type} / ${item.source} / ${item.level}</span>
+          <div class="mission-note">答え: ${item.back}</div>
+          <div class="memory-actions" aria-label="${item.front}の暗記判定">
+            <button type="button" data-result="○">○</button>
+            <button type="button" data-result="△" class="secondary">△</button>
+            <button type="button" data-result="×" class="warning">×</button>
+            <span class="badge">判定: ${result}</span>
+          </div>
+        `;
+        card.querySelectorAll("button").forEach((button) => {
+          button.addEventListener("click", () => {
+            memoryResults[item.id] = button.dataset.result;
+            saveMemoryResults();
+            renderMemory();
+          });
+        });
+        memoryList.appendChild(card);
+      });
+    }
+
+    function renderRetentionTests() {
+      retentionList.innerHTML = "";
+      reviewSchedule.retention_tests.forEach((test) => {
+        const card = document.createElement("article");
+        card.className = "retention-card";
+        card.innerHTML = `
+          <strong>${test.subject} ${test.lesson} ${test.part}</strong>
+          <span>${test.source} / ${(test.format || []).join(" / ")}</span>
+          <div>${test.prompt}</div>
+        `;
+        retentionList.appendChild(card);
+      });
+    }
+
+    function renderExternalProgress() {
+      externalList.innerHTML = "";
+      externalProgress.apps.forEach((app, index) => {
+        const weakItems = Array.isArray(app.weak_items) ? app.weak_items.join(", ") : app.weak_items || "";
+        const card = document.createElement("article");
+        card.className = "external-card";
+        card.innerHTML = `
+          <strong>${app.app_name}</strong>
+          <span>今日の学習: ${app.studied_count}語 / 正答率: ${app.accuracy}%</span>
+          <div>苦手単語: ${weakItems}</div>
+          <div class="mission-note">LIMIT BREAKへの反映: ${app.reflection || "明日のToday's Memoryに反映"}</div>
+          <div class="external-form">
+            <input aria-label="今日の学習語数" type="number" min="0" value="${app.studied_count}" data-field="studied_count">
+            <input aria-label="正答率" type="number" min="0" max="100" value="${app.accuracy}" data-field="accuracy">
+            <input aria-label="苦手単語" value="${weakItems}" data-field="weak_items">
+            <button type="button">保存</button>
+          </div>
+        `;
+        card.querySelector("button").addEventListener("click", () => {
+          const inputs = card.querySelectorAll("input");
+          inputs.forEach((input) => {
+            if (input.dataset.field === "studied_count") app.studied_count = Number(input.value || 0);
+            if (input.dataset.field === "accuracy") app.accuracy = Number(input.value || 0);
+            if (input.dataset.field === "weak_items") app.weak_items = input.value.split(",").map((item) => item.trim()).filter(Boolean);
+          });
+          app.last_imported_at = todayKey();
+          externalProgress.apps[index] = app;
+          saveExternalProgress();
+          renderExternalProgress();
+        });
+        externalList.appendChild(card);
+      });
+    }
+
+    function renderAiTeacher() {
+      const latest = aiTeacherLog[aiTeacherLog.length - 1];
+      const response = latest ? latest.response : aiTeacherConfig.fixed_responses.coach;
+      teacherChat.innerHTML = `
+        <div class="teacher-card">
+          <strong>Yui Teacher / Coach / Analyzer</strong>
+          <span>Mission情報・点数・疲労度・復習期限・暗記DBを使う想定です。</span>
+          <p class="teacher-response">${response}</p>
+          <div class="teacher-actions-row">
+            <button type="button" data-action="teacher">3分チェック問題</button>
+            <button type="button" data-action="coach" class="secondary">励まし</button>
+            <button type="button" data-action="analyzer" class="secondary">先生向け要約</button>
+          </div>
+        </div>
+        <div class="teacher-card api-policy">
+          <strong>APIキー保護</strong>
+          <span>Phase2ではOpenAI APIキーをブラウザに置かず、Firebase Cloud FunctionsまたはAPIサーバーの環境変数で保持します。</span>
+        </div>
+      `;
+      teacherChat.querySelectorAll("button").forEach((button) => {
+        button.addEventListener("click", () => runAiTeacher(button.dataset.action));
+      });
+    }
+
+    function runAiTeacher(action, mission) {
+      const fixed = aiTeacherConfig.fixed_responses || FALLBACK_AI_TEACHER.fixed_responses;
+      const missionLabel = mission ? `${mission.subject} ${mission.lesson} ${mission.part}` : "今日のMission";
+      const responses = {
+        teacher: `${missionLabel}: ${fixed.teacher}`,
+        check: `${missionLabel}: AI Check Testは、教材の確認問題と同じ狙いで作るオリジナル類題です。まず解き方を説明し、そのあと1問だけ自力で確認しましょう。`,
+        coach: fixed.coach,
+        analyzer: fixed.analyzer
+      };
+      aiTeacherLog.push({
+        action,
+        missionId: mission ? mission.id : "",
+        response: responses[action] || fixed.coach,
+        savedAt: new Date().toISOString()
+      });
+      saveAiTeacherLog();
+      renderAiTeacher();
     }
 
     function renderExamList() {
