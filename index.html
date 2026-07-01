@@ -382,6 +382,38 @@
       font-weight: 800;
     }
 
+    .subject-tabs {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .subject-tab {
+      min-height: 36px;
+      border-radius: 999px;
+      padding: 0 12px;
+      box-shadow: none;
+      background: rgba(255, 255, 255, 0.045);
+      border-color: rgba(125, 211, 252, 0.22);
+      color: var(--muted);
+    }
+
+    .subject-tab.active {
+      color: var(--text);
+      border-color: rgba(0, 191, 255, 0.72);
+      background: rgba(0, 191, 255, 0.16);
+      box-shadow: var(--glow);
+    }
+
+    .button-note {
+      display: inline-flex;
+      align-items: center;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 760;
+    }
+
     .mission {
       position: relative;
       overflow: hidden;
@@ -797,6 +829,7 @@
             <h2 id="mission-heading">Today&apos;s Mission</h2>
             <button class="secondary" id="exportCsvButton" type="button">CSV出力</button>
           </div>
+          <div class="subject-tabs" id="subjectTabs" aria-label="教科切替"></div>
           <div class="mission-list" id="missionList"></div>
         </section>
 
@@ -1005,6 +1038,7 @@
     const EXTERNAL_PROGRESS_KEY = "limitBreakProjectExternalProgressV170";
     const AI_TEACHER_LOG_KEY = "limitBreakProjectAiTeacherLogV180";
     const COUNSELOR_NOTES_KEY = "limitBreakProjectCounselorNotesV200";
+    const SUBJECT_FILTER_KEY = "limitBreakProjectSubjectFilter";
     const BASELINE_DATE = "2026-06-30";
 
     const ROLES = {
@@ -1329,12 +1363,14 @@
     let aiTeacherConfig = FALLBACK_AI_TEACHER;
     let counselorNotes = loadCounselorNotes();
     let currentRole = localStorage.getItem(ROLE_KEY) || "student";
+    let currentSubjectFilter = localStorage.getItem(SUBJECT_FILTER_KEY) || "";
     let records = loadRecords();
     let memoryResults = loadMemoryResults();
     let aiTeacherLog = loadAiTeacherLog();
 
     const roleOptions = document.querySelector("#roleOptions");
     const countdownGrid = document.querySelector("#countdownGrid");
+    const subjectTabs = document.querySelector("#subjectTabs");
     const missionList = document.querySelector("#missionList");
     const reviewList = document.querySelector("#reviewList");
     const subjectBars = document.querySelector("#subjectBars");
@@ -1593,7 +1629,13 @@
       const role = ROLES[currentRole];
       missionList.innerHTML = "";
       const subjects = [...new Set(dailyPlan.missions.map((mission) => mission.subject))];
-      subjects.forEach((subject) => {
+      if (!currentSubjectFilter || (!subjects.includes(currentSubjectFilter) && currentSubjectFilter !== "all")) {
+        currentSubjectFilter = subjects[0] || "all";
+        localStorage.setItem(SUBJECT_FILTER_KEY, currentSubjectFilter);
+      }
+      renderSubjectTabs(subjects);
+      const visibleSubjects = currentSubjectFilter === "all" ? subjects : subjects.filter((subject) => subject === currentSubjectFilter);
+      visibleSubjects.forEach((subject) => {
         const subjectMissions = dailyPlan.missions.filter((mission) => mission.subject === subject);
         const subjectDone = subjectMissions.filter((mission) => getMissionRecord(mission.id)).length;
         const subjectCard = document.createElement("article");
@@ -1641,9 +1683,10 @@
               <button type="button" class="record-button" ${role.canEditRecord ? "" : "disabled"}>${record ? "記録を編集" : "完了を記録"}</button>
               <button type="button" class="secondary ai-action" data-action="teacher">AIに聞く</button>
               <button type="button" class="secondary ai-action" data-action="coach">励まし</button>
+              <span class="button-note">AIはPhase1固定応答</span>
               <div class="teacher-actions">
-                <button type="button" class="secondary">復習追加</button>
-                <button type="button" class="secondary">次週方針</button>
+                <button type="button" class="secondary" disabled>復習追加 準備中</button>
+                <button type="button" class="secondary" disabled>次週方針 準備中</button>
               </div>
             </div>
           `;
@@ -1654,6 +1697,23 @@
           subjectList.appendChild(card);
         });
         missionList.appendChild(subjectCard);
+      });
+    }
+
+    function renderSubjectTabs(subjects) {
+      subjectTabs.innerHTML = "";
+      const options = subjects.length > 1 ? [...subjects, "all"] : subjects;
+      options.forEach((subject) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `subject-tab${subject === currentSubjectFilter ? " active" : ""}`;
+        button.textContent = subject === "all" ? "全教科" : subject;
+        button.addEventListener("click", () => {
+          currentSubjectFilter = subject;
+          localStorage.setItem(SUBJECT_FILTER_KEY, currentSubjectFilter);
+          renderMissions();
+        });
+        subjectTabs.appendChild(button);
       });
     }
 
