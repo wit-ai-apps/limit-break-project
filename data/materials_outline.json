@@ -1,0 +1,87 @@
+{
+  "version": "3.5.0",
+  "extraction_method": "PDF冒頭の目次・見出しから講座構造を抽出。本文・問題文は保存しない。",
+  "status_note": "国語と世界史は教材アップロード後に追加する。",
+  "materials": [
+    {
+      "subject": "物理",
+      "course_name": "ベーシックレベル物理",
+      "file_name": "ベーシックレベル物理_EKZB540000_260615.pdf",
+      "page_count": 747,
+      "observed_lessons": 16,
+      "sample_outline": ["第1講 平面内の運動", "第2講 剛体のつりあい", "第3講 運動量と保存則", "第4講 円運動", "第5講 単振動"]
+    },
+    {
+      "subject": "物理基礎",
+      "course_name": "ベーシックレベル物理基礎",
+      "file_name": "ベーシックレベル物理基礎_EKZB420000_250530.pdf",
+      "page_count": 351,
+      "observed_lessons": 10,
+      "sample_outline": ["第1講 運動の表し方", "第2講 様々な力とそのはたらき", "第3講 力学的エネルギー", "第4講 熱"]
+    },
+    {
+      "subject": "化学基礎",
+      "course_name": "ベーシックレベル化学基礎",
+      "file_name": "ベーシックレベル化学基礎_EKZB400000_260701.pdf",
+      "page_count": 403,
+      "observed_lessons": 24,
+      "sample_outline": ["第1講 物質の成分と構成元素", "第2講 混合物の分離", "第3講 物質の三態", "第4講 原子の構造", "第5講 原子の電子配置"]
+    },
+    {
+      "subject": "数学Ⅰ",
+      "course_name": "ベーシックレベル数学Ⅰ",
+      "file_name": "Eベーシックレベル数学Ⅰ_KZB450000_03.pdf",
+      "page_count": 446,
+      "observed_lessons": 16,
+      "sample_outline": ["第1講 式の計算と展開", "第2講 因数分解", "第3講 実数", "第4講 1次不等式", "第5講 集合、命題と条件"]
+    },
+    {
+      "subject": "数学A",
+      "course_name": "ベーシックレベル数学A",
+      "file_name": "ベーシックレベル数学Ａ_EKZB460000_01.pdf",
+      "page_count": 278,
+      "observed_lessons": 12,
+      "sample_outline": ["第1講 場合の数", "第2講 順列", "第3講 組合せ", "第4講 事象と確率", "第5講 独立な試行の確率"]
+    },
+    {
+      "subject": "数学Ⅱ",
+      "course_name": "ベーシックレベル数学Ⅱ",
+      "file_name": "ベーシックレベル数学Ⅱ_EKZC620000.pdf",
+      "page_count": 519,
+      "observed_lessons": 20,
+      "sample_outline": ["第1講 式と計算", "第2講 式と証明", "第3講 複素数と2次方程式", "第4講 剰余の定理と因数定理", "第5講 点と直線"]
+    },
+    {
+      "subject": "数学B",
+      "course_name": "ベーシックレベル数学B",
+      "file_name": "ベーシックレベル数学Ｂ_EKZC630000.pdf",
+      "page_count": 214,
+      "observed_lessons": 11,
+      "sample_outline": ["第1講 数列、等差数列", "第2講 等比数列", "第3講 和の記号、階差数列", "第4講 いろいろな数列の和", "第5講 漸化式と数学的帰納法"]
+    },
+    {
+      "subject": "英語",
+      "course_name": "ベーシックレベル英語",
+      "file_name": "ベーシックレベル英語_EKZB31000_04.pdf",
+      "page_count": 729,
+      "observed_lessons": 17,
+      "sample_outline": ["第0講 英語学習のコツ", "第1講 文の種類", "第2講 文型と文の要素1", "第3講 文型と文の要素2", "第4講 時制1"]
+    },
+    {
+      "subject": "英語",
+      "course_name": "スタンダードレベル英語 文法・読解",
+      "file_name": "高1・高2スタンダードレベル英語＜文法・読解編＞　前編_EKZB32000_251212.pdf",
+      "page_count": 398,
+      "observed_lessons": 15,
+      "sample_outline": ["第0講 英語学習のコツ", "第1講 文型と文の要素1", "第2講 文型と文の要素2", "第3講 文型と文の要素3", "第4講 時制1"]
+    },
+    {
+      "subject": "英語",
+      "course_name": "スタンダードレベル英語 長文",
+      "file_name": "⾼１・⾼２ スタンダードレベル英語＜⻑⽂編＞_MKZB49000_251208.pdf",
+      "page_count": 156,
+      "observed_lessons": 10,
+      "sample_outline": ["第1講 長文問題演習1", "第2講 長文問題演習2", "第3講 長文問題演習3", "第4講 長文問題演習4", "第5講 長文問題演習5"]
+    }
+  ]
+}
