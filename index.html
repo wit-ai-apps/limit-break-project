@@ -681,6 +681,37 @@
       font-weight: 760;
     }
 
+    .unit-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .unit-card {
+      display: grid;
+      gap: 11px;
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(125, 211, 252, 0.2);
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .unit-head {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: start;
+    }
+
+    .unit-head strong {
+      color: var(--text);
+      font-size: 1.02rem;
+    }
+
+    .unit-head span {
+      color: var(--muted);
+      font-weight: 760;
+    }
+
     .pacing-note {
       display: grid;
       gap: 6px;
@@ -1862,6 +1893,10 @@
       const role = ROLES[currentRole];
       missionList.innerHTML = "";
       missionList.className = "mission-list timetable-list";
+      if (coursePacing.home_blocks && coursePacing.home_blocks.length) {
+        renderDetailedTimetableBlocks(role);
+        return;
+      }
       dailyPlan.missions.forEach((mission, index) => {
         const record = getMissionRecord(mission.id);
         const connection = connectionForMission(mission);
@@ -1906,6 +1941,118 @@
         card.querySelector(".record-button").addEventListener("click", () => openRecordDialog(mission, record));
         missionList.appendChild(card);
       });
+    }
+
+    function renderDetailedTimetableBlocks(role) {
+      coursePacing.home_blocks.forEach((block, index) => {
+        const card = document.createElement("article");
+        card.className = "timetable-card";
+        card.innerHTML = `
+          <div>
+            <div class="timetable-time">${block.time}</div>
+            <h3 class="timetable-subject">${block.theme}</h3>
+            <div class="course-line">${block.goal}</div>
+          </div>
+          <div class="unit-list">
+            ${(block.units || []).map((unit) => renderTimetableUnit(unit, role)).join("")}
+          </div>
+          <div class="mission-actions">
+            <span class="badge">${block.label || timeBlockLabel(index)}</span>
+            <span class="button-note">合計 ${block.total_minutes || ""}分</span>
+          </div>
+        `;
+        missionList.appendChild(card);
+      });
+
+      dailyPlan.missions
+        .filter((mission) => !coursePacing.home_blocks.some((block) => (block.units || []).some((unit) => unit.subject === mission.subject)))
+        .forEach((mission, extraIndex) => {
+          const record = getMissionRecord(mission.id);
+          const connection = connectionForMission(mission);
+          const reviews = reviewPlanForMission(mission);
+          const tasks = role.showMissionDetail ? mission.tasks : ["Mission達成率", "努力量", "応援メッセージ"];
+          const card = document.createElement("article");
+          card.className = `timetable-card${record ? " complete" : ""}`;
+          card.innerHTML = `
+            <div>
+              <div class="timetable-time">${mission.time}</div>
+              <h3 class="timetable-subject">${mission.subject}</h3>
+            </div>
+            <div class="lesson-block">
+              <strong>${role.showMissionDetail ? mission.course : "今日の学習"}</strong>
+              <span>${role.showMissionDetail ? `${mission.lesson} ${mission.part}` : visibleMissionTitle(mission)}</span>
+              <span>${role.showMissionDetail ? mission.title : "詳細は本人・先生画面で確認"}</span>
+            </div>
+            <div>
+              <h3>今日やること</h3>
+              <ul class="check-list">${tasks.slice(0, 5).map((task) => `<li>${task}</li>`).join("")}</ul>
+            </div>
+            <div class="connection-grid">
+              <div>
+                <strong>つながり</strong>
+                <span>前回: ${connection.previous}</span>
+                <span>次回: ${connection.next}</span>
+              </div>
+              <div>
+                <strong>復習予定</strong>
+                <span>明日: ${reviews.tomorrow}</span>
+                <span>3日後: ${reviews.day3}</span>
+                <span>7日後: ${reviews.day7}</span>
+              </div>
+            </div>
+            <div class="mission-actions">
+              <button type="button" class="record-button" ${role.canEditRecord ? "" : "disabled"}>${record ? "記録を編集" : "完了を記録"}</button>
+              <span class="badge">${record ? "Mission Clear" : timeBlockLabel(extraIndex + 1)}</span>
+            </div>
+          `;
+          card.querySelector(".record-button").addEventListener("click", () => openRecordDialog(mission, record));
+          missionList.appendChild(card);
+        });
+    }
+
+    function renderTimetableUnit(unit, role) {
+      const segments = unit.segments || [];
+      return `
+        <div class="unit-card">
+          <div class="unit-head">
+            <div>
+              <strong>${unit.subject} / ${unit.course}</strong>
+              <span>${unit.lesson} ${unit.part} / ${unit.title}</span>
+            </div>
+            <span class="badge">${unit.minutes}分</span>
+          </div>
+          <div>
+            <h3>今日の細かい指示</h3>
+            <div class="micro-plan">
+              ${segments.map((segment) => `
+                <div class="micro-plan-row">
+                  <strong>${segment.minutes}分</strong>
+                  <span>${segment.label}: ${segment.instruction}</span>
+                </div>
+              `).join("")}
+            </div>
+          </div>
+          <div class="connection-grid">
+            <div>
+              <strong>つながり</strong>
+              <span>前回: ${unit.previous}</span>
+              <span>次回: ${unit.next}</span>
+            </div>
+            <div>
+              <strong>復習予定</strong>
+              <span>明日: ${unit.review?.tomorrow || "類題"}</span>
+              <span>3日後: ${unit.review?.day3 || "定着確認"}</span>
+              <span>7日後: ${unit.review?.day7 || "再確認"}</span>
+            </div>
+          </div>
+          <div class="pacing-note">
+            <strong>完了条件</strong>
+            <span>${unit.completion_rule}</span>
+            <strong>ペース判断</strong>
+            <span>${unit.pace_note}</span>
+          </div>
+        </div>
+      `;
     }
 
     function timeBlockLabel(index) {

@@ -6,6 +6,106 @@
     "label": "教材カタログ・学習順序ベース",
     "note": "PDF本文・映像授業の詳細解析は未完了。現時点では教材名、講、PART、学習フロー、確認項目に基づく仮設計。"
   },
+  "home_blocks": [
+    {
+      "block_id": "morning-math",
+      "time": "09:00 - 12:00",
+      "label": "午前",
+      "theme": "数学Ⅰ + 数学A",
+      "goal": "数学Ⅰ PART1を仕上げ、数学Aは導入PARTを映像・確認まで進める",
+      "total_minutes": 180,
+      "units": [
+        {
+          "subject": "数学Ⅰ",
+          "course": "ベーシックレベル数学Ⅰ",
+          "lesson": "第1講",
+          "part": "PART1",
+          "title": "単項式と多項式",
+          "minutes": 90,
+          "previous": "数学Ⅰ 第1講 導入",
+          "next": "数学Ⅰ 第1講 PART2 整式の整理",
+          "review": {
+            "tomorrow": "確認問題 類題",
+            "day3": "同類項・次数の定着テスト",
+            "day7": "再確認"
+          },
+          "segments": [
+            {
+              "minutes": 10,
+              "label": "接続",
+              "instruction": "単項式・多項式・同類項の違いを口頭で確認する。"
+            },
+            {
+              "minutes": 35,
+              "label": "映像授業",
+              "instruction": "要点整理とPoint Pickupを視聴。止めながら例を1つノートに写す。"
+            },
+            {
+              "minutes": 20,
+              "label": "確認テスト",
+              "instruction": "確認問題を時間を測って解く。解説を見る前に必ず自力答案を残す。"
+            },
+            {
+              "minutes": 15,
+              "label": "答え合わせ",
+              "instruction": "間違いを『用語・計算・手順・見落とし』に分類する。"
+            },
+            {
+              "minutes": 10,
+              "label": "まとめ",
+              "instruction": "今日のルールを3行でまとめ、明日の類題テーマを決める。"
+            }
+          ],
+          "completion_rule": "確認問題を解き、間違い理由を1つ以上分類できたら完了",
+          "pace_note": "数学Ⅰは1日0.5〜1 PART。数学Aと並走する日は90分で主要部分を終え、確認問題の残りは夜復習へ回す。"
+        },
+        {
+          "subject": "数学A",
+          "course": "ベーシックレベル数学A",
+          "lesson": "第1講",
+          "part": "PART1",
+          "title": "場合の数 導入",
+          "minutes": 90,
+          "previous": "中学数学の数え上げ",
+          "next": "順列・組合せの基本",
+          "review": {
+            "tomorrow": "基本例題の類題",
+            "day3": "数え上げ手順の説明",
+            "day7": "定着テスト"
+          },
+          "segments": [
+            {
+              "minutes": 10,
+              "label": "接続",
+              "instruction": "中学数学の樹形図・表で数える考え方を思い出す。"
+            },
+            {
+              "minutes": 35,
+              "label": "映像授業",
+              "instruction": "導入とPOINTを視聴。『数え漏れ・重複』を防ぐ視点をメモする。"
+            },
+            {
+              "minutes": 20,
+              "label": "確認テスト",
+              "instruction": "講義問題または確認問題を1セット解く。時間内に解き切ることを優先。"
+            },
+            {
+              "minutes": 15,
+              "label": "答え合わせ",
+              "instruction": "解法が樹形図・表・式のどれかを分類する。"
+            },
+            {
+              "minutes": 10,
+              "label": "まとめ",
+              "instruction": "『何を固定して数えたか』を1行で書く。"
+            }
+          ],
+          "completion_rule": "基本例題または確認問題を1セット解き、数え方を説明できたら完了",
+          "pace_note": "数学Aは1日0.5 PARTから開始。数学Ⅰの負荷が高い日は確認問題の残りを翌日に回す。"
+        }
+      ]
+    }
+  ],
   "courses": [
     {
       "subject": "数学Ⅰ",
@@ -60,6 +160,57 @@
             "label": "終了判定",
             "instruction": "今日の要点を3行でまとめ、明日の復習で解く類題テーマを1つ決める。",
             "completion_check": "明日の復習テーマが1つ決まっている"
+          }
+        ]
+      }
+    },
+    {
+      "subject": "数学A",
+      "course": "ベーシックレベル数学A",
+      "total_units_label": "24 PART",
+      "remaining_units": 24,
+      "daily_study_minutes": 90,
+      "target_units_per_day": 0.5,
+      "estimated_days_at_current_pace": 48,
+      "estimated_finish_date_from_2026_07_01": "2026-08-17",
+      "pace_judgement": "数学Ⅰと午前に並走する場合、1日0.5 PARTで8月中旬に基礎導入を終える見込み。",
+      "minimum_completion_rule": "基本例題または確認問題を1セット解き、数え方を説明できたら完了。",
+      "fallback_rule": "数学Ⅰが重い日は、数学Aは映像とPOINTだけを終え、確認問題は翌日の復習に回す。",
+      "today_unit_plan": {
+        "lesson": "第1講",
+        "part": "PART1",
+        "title": "場合の数 導入",
+        "target": "導入と基本例題を完了",
+        "segments": [
+          {
+            "minutes": 10,
+            "label": "前回接続",
+            "instruction": "中学数学の数え上げを思い出す。",
+            "completion_check": "樹形図・表・式の使い分けを言える"
+          },
+          {
+            "minutes": 35,
+            "label": "映像授業",
+            "instruction": "POINTを視聴し、数え漏れ・重複を防ぐ視点をメモする。",
+            "completion_check": "何を固定して数えるか説明できる"
+          },
+          {
+            "minutes": 20,
+            "label": "確認テスト",
+            "instruction": "基本例題または確認問題を1セット解く。",
+            "completion_check": "自力答案が残っている"
+          },
+          {
+            "minutes": 15,
+            "label": "答え合わせ",
+            "instruction": "解法を樹形図・表・式に分類する。",
+            "completion_check": "間違い理由が1つ書けている"
+          },
+          {
+            "minutes": 10,
+            "label": "まとめ",
+            "instruction": "今日の数え方を1行でまとめる。",
+            "completion_check": "明日の類題テーマが決まっている"
           }
         ]
       }
