@@ -1,0 +1,68 @@
+{
+  "version": "3.4.0",
+  "policy": "生徒に出す指示は、時間・教材単位・完了条件・不足時の削り方まで具体化する。教材本文や問題文は複製しない。",
+  "material_reflection_status": {
+    "level": "catalog_and_structure",
+    "label": "教材カタログ・学習順序ベース",
+    "note": "PDF本文・映像授業の詳細解析は未完了。現時点では教材名、講、PART、学習フロー、確認項目に基づく仮設計。"
+  },
+  "courses": [
+    {
+      "subject": "数学Ⅰ",
+      "course": "ベーシックレベル数学Ⅰ",
+      "total_units_label": "48 PART",
+      "remaining_units": 48,
+      "daily_study_minutes": 180,
+      "target_units_per_day": 1,
+      "estimated_days_at_current_pace": 48,
+      "estimated_finish_date_from_2026_07_01": "2026-08-17",
+      "pace_judgement": "1日1 PARTなら8月中旬に完了見込み。復習日と遅れ吸収を入れると8月末まで妥当。",
+      "minimum_completion_rule": "確認問題まで解き、間違い理由を1つ書けたらそのPARTは完了。",
+      "fallback_rule": "3時間で終わらない場合、Point Pickupと講義問題を優先し、確認問題は夜または翌朝に回す。要点整理は削らない。",
+      "today_unit_plan": {
+        "lesson": "第1講",
+        "part": "PART1",
+        "title": "単項式と多項式",
+        "target": "第1講 PART1を確認問題まで完了",
+        "segments": [
+          {
+            "minutes": 15,
+            "label": "前回接続",
+            "instruction": "数学Ⅰ 第1講の導入を見直し、単項式・多項式で何を区別するかをノートに1行で書く。",
+            "completion_check": "単項式と多項式の違いを口頭で説明できる"
+          },
+          {
+            "minutes": 35,
+            "label": "要点整理",
+            "instruction": "要点整理を読み、用語・次数・係数・同類項をチェックする。",
+            "completion_check": "用語を見ずに3つ説明できる"
+          },
+          {
+            "minutes": 25,
+            "label": "Point Pickup",
+            "instruction": "Point Pickupの考え方を写すだけでなく、なぜその手順になるかを横に一言書く。",
+            "completion_check": "手順を自分の言葉で言える"
+          },
+          {
+            "minutes": 45,
+            "label": "講義問題",
+            "instruction": "講義問題を止めながら解く。解説を見る前に必ず一度自力で式変形を書く。",
+            "completion_check": "同類項をまとめる流れを再現できる"
+          },
+          {
+            "minutes": 45,
+            "label": "確認問題",
+            "instruction": "確認問題を解き、間違えた問題は理由を『計算・用語・手順・見落とし』に分類する。",
+            "completion_check": "確認問題で7割以上、または間違い理由を分類済み"
+          },
+          {
+            "minutes": 15,
+            "label": "終了判定",
+            "instruction": "今日の要点を3行でまとめ、明日の復習で解く類題テーマを1つ決める。",
+            "completion_check": "明日の復習テーマが1つ決まっている"
+          }
+        ]
+      }
+    }
+  ]
+}

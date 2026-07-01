@@ -653,6 +653,45 @@
       gap: 12px;
     }
 
+    .micro-plan {
+      display: grid;
+      gap: 8px;
+      padding: 11px;
+      border-radius: 14px;
+      border: 1px solid rgba(125, 211, 252, 0.2);
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .micro-plan-row {
+      display: grid;
+      grid-template-columns: 54px minmax(0, 1fr);
+      gap: 8px;
+      align-items: start;
+    }
+
+    .micro-plan-row strong {
+      color: var(--accent);
+      font-size: 0.88rem;
+    }
+
+    .micro-plan-row span {
+      color: var(--text);
+      font-size: 0.9rem;
+      line-height: 1.45;
+      font-weight: 760;
+    }
+
+    .pacing-note {
+      display: grid;
+      gap: 6px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(125, 211, 252, 0.18);
+      color: var(--muted);
+      font-size: 0.9rem;
+      line-height: 1.5;
+      font-weight: 760;
+    }
+
     .metric-grid {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -1467,6 +1506,38 @@
       }
     };
 
+    const FALLBACK_COURSE_PACING = {
+      version: "3.4.0",
+      material_reflection_status: {
+        level: "catalog_and_structure",
+        label: "教材カタログ・学習順序ベース",
+        note: "PDF本文・映像授業の詳細解析は未完了。現時点では教材名、講、PART、学習フロー、確認項目に基づく仮設計。"
+      },
+      courses: [
+        {
+          subject: "数学Ⅰ",
+          course: "ベーシックレベル数学Ⅰ",
+          remaining_units: 48,
+          daily_study_minutes: 180,
+          target_units_per_day: 1,
+          estimated_days_at_current_pace: 48,
+          estimated_finish_date_from_2026_07_01: "2026-08-17",
+          pace_judgement: "1日1 PARTなら8月中旬に完了見込み。復習日と遅れ吸収を入れると8月末まで妥当。",
+          fallback_rule: "3時間で終わらない場合、Point Pickupと講義問題を優先し、確認問題は夜または翌朝に回す。要点整理は削らない。",
+          today_unit_plan: {
+            segments: [
+              { minutes: 15, label: "前回接続", instruction: "導入を見直し、単項式・多項式の違いを1行で書く。" },
+              { minutes: 35, label: "要点整理", instruction: "用語・次数・係数・同類項をチェックする。" },
+              { minutes: 25, label: "Point Pickup", instruction: "手順の理由を横に一言書く。" },
+              { minutes: 45, label: "講義問題", instruction: "解説前に一度自力で式変形を書く。" },
+              { minutes: 45, label: "確認問題", instruction: "間違い理由を分類する。" },
+              { minutes: 15, label: "終了判定", instruction: "要点3行と明日の復習テーマを決める。" }
+            ]
+          }
+        }
+      ]
+    };
+
     const FALLBACK_COUNSELOR_NOTES = {
       version: "2.0.0",
       policy: {
@@ -1498,6 +1569,7 @@
     let memoryData = FALLBACK_MEMORY;
     let externalProgress = loadExternalProgress();
     let aiTeacherConfig = FALLBACK_AI_TEACHER;
+    let coursePacing = FALLBACK_COURSE_PACING;
     let counselorNotes = loadCounselorNotes();
     let currentRole = localStorage.getItem(ROLE_KEY) || "student";
     let activeView = localStorage.getItem(VIEW_KEY) || "home";
@@ -1548,13 +1620,14 @@
         if (summerResponse.ok) summerPlan = await summerResponse.json();
         if (levelsResponse.ok) levelTasks = await levelsResponse.json();
         if (materialsResponse.ok) materialsCatalog = await materialsResponse.json();
-        const [reverseResponse, reviewResponse, memoryResponse, externalResponse, aiTeacherResponse, counselorResponse] = await Promise.all([
+        const [reverseResponse, reviewResponse, memoryResponse, externalResponse, aiTeacherResponse, counselorResponse, pacingResponse] = await Promise.all([
           fetch("data/reverse_progress.json", { cache: "no-store" }),
           fetch("data/review_schedule.json", { cache: "no-store" }),
           fetch("data/memory_items.json", { cache: "no-store" }),
           fetch("data/external_progress.json", { cache: "no-store" }),
           fetch("data/ai_teacher_config.json", { cache: "no-store" }),
-          fetch("data/counselor_notes.json", { cache: "no-store" })
+          fetch("data/counselor_notes.json", { cache: "no-store" }),
+          fetch("data/course_pacing.json", { cache: "no-store" })
         ]);
         if (reverseResponse.ok) reverseProgress = await reverseResponse.json();
         if (reviewResponse.ok) reviewSchedule = await reviewResponse.json();
@@ -1562,6 +1635,7 @@
         if (externalResponse.ok && !localStorage.getItem(EXTERNAL_PROGRESS_KEY)) externalProgress = await externalResponse.json();
         if (aiTeacherResponse.ok) aiTeacherConfig = await aiTeacherResponse.json();
         if (counselorResponse.ok && !localStorage.getItem(COUNSELOR_NOTES_KEY)) counselorNotes = await counselorResponse.json();
+        if (pacingResponse.ok) coursePacing = await pacingResponse.json();
       } catch (_) {
         dailyPlan = FALLBACK_DAILY;
         examSchedule = FALLBACK_EXAMS;
@@ -1573,6 +1647,7 @@
         memoryData = FALLBACK_MEMORY;
         externalProgress = loadExternalProgress();
         aiTeacherConfig = FALLBACK_AI_TEACHER;
+        coursePacing = FALLBACK_COURSE_PACING;
         counselorNotes = loadCounselorNotes();
       }
       render();
@@ -1791,6 +1866,7 @@
         const record = getMissionRecord(mission.id);
         const connection = connectionForMission(mission);
         const reviews = reviewPlanForMission(mission);
+        const pacing = pacingForMission(mission);
         const tasks = role.showMissionDetail ? mission.tasks : ["Mission達成率", "努力量", "応援メッセージ"];
         const card = document.createElement("article");
         card.className = `timetable-card${record ? " complete" : ""}`;
@@ -1808,6 +1884,7 @@
             <h3>今日やること</h3>
             <ul class="check-list">${tasks.slice(0, 5).map((task) => `<li>${task}</li>`).join("")}</ul>
           </div>
+          ${pacing ? renderPacingBlock(pacing) : ""}
           <div class="connection-grid">
             <div>
               <strong>つながり</strong>
@@ -1833,6 +1910,36 @@
 
     function timeBlockLabel(index) {
       return ["午前", "午後", "夜"][index] || "Today";
+    }
+
+    function pacingForMission(mission) {
+      return (coursePacing.courses || []).find((course) => {
+        return mission.subject === course.subject || mission.course === course.course;
+      });
+    }
+
+    function renderPacingBlock(pacing) {
+      const segments = (pacing.today_unit_plan?.segments || []).slice(0, 6);
+      return `
+        <div class="pacing-note">
+          <strong>3時間で足りるか</strong>
+          <span>${pacing.pace_judgement}</span>
+          <span>残り${pacing.remaining_units}単位 / 1日${pacing.target_units_per_day}単位なら約${pacing.estimated_days_at_current_pace}日 / 完了目安 ${pacing.estimated_finish_date_from_2026_07_01}</span>
+          <span>教材反映度: ${coursePacing.material_reflection_status?.label || "教材構造ベース"}。${coursePacing.material_reflection_status?.note || ""}</span>
+        </div>
+        <div class="micro-plan">
+          ${segments.map((segment) => `
+            <div class="micro-plan-row">
+              <strong>${segment.minutes}分</strong>
+              <span>${segment.label}: ${segment.instruction}</span>
+            </div>
+          `).join("")}
+          <div class="pacing-note">
+            <strong>終わらない時</strong>
+            <span>${pacing.fallback_rule}</span>
+          </div>
+        </div>
+      `;
     }
 
     function connectionForMission(mission) {
