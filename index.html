@@ -198,7 +198,7 @@
 
     .countdown-grid {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
+      grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 8px;
       margin-bottom: 14px;
     }
@@ -232,10 +232,43 @@
       font-weight: 850;
     }
 
+    .app-nav {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding: 4px 0 14px;
+      margin-bottom: 4px;
+    }
+
+    .nav-button {
+      flex: 0 0 auto;
+      min-height: 38px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.045);
+      border-color: rgba(125, 211, 252, 0.22);
+      box-shadow: none;
+      color: var(--muted);
+    }
+
+    .nav-button.active {
+      color: var(--text);
+      border-color: rgba(0, 191, 255, 0.72);
+      background: rgba(0, 191, 255, 0.16);
+      box-shadow: var(--glow);
+    }
+
     main {
       display: grid;
       grid-template-columns: minmax(0, 1.35fr) minmax(340px, 0.65fr);
       gap: 18px;
+    }
+
+    body[data-view="home"] main {
+      grid-template-columns: 1fr;
+    }
+
+    body[data-view="home"] main > aside {
+      display: none;
     }
 
     .stack { display: grid; gap: 18px; }
@@ -258,6 +291,17 @@
     }
 
     section, aside { padding: 18px; }
+
+    .view-section { display: none; }
+    body[data-view="home"] .view-home,
+    body[data-view="memory"] .view-memory,
+    body[data-view="review"] .view-review,
+    body[data-view="progress"] .view-progress,
+    body[data-view="ai"] .view-ai,
+    body[data-view="support"] .view-support,
+    body[data-view="admin"] .view-admin {
+      display: block;
+    }
 
     .topline {
       display: flex;
@@ -380,30 +424,6 @@
     .subject-head span {
       color: var(--muted);
       font-weight: 800;
-    }
-
-    .subject-tabs {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 12px;
-    }
-
-    .subject-tab {
-      min-height: 36px;
-      border-radius: 999px;
-      padding: 0 12px;
-      box-shadow: none;
-      background: rgba(255, 255, 255, 0.045);
-      border-color: rgba(125, 211, 252, 0.22);
-      color: var(--muted);
-    }
-
-    .subject-tab.active {
-      color: var(--text);
-      border-color: rgba(0, 191, 255, 0.72);
-      background: rgba(0, 191, 255, 0.16);
-      box-shadow: var(--glow);
     }
 
     .button-note {
@@ -547,6 +567,90 @@
       color: var(--accent);
       cursor: pointer;
       font-weight: 900;
+    }
+
+    .timetable-list {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .timetable-card {
+      display: grid;
+      gap: 14px;
+      padding: 18px;
+      border: 1px solid rgba(0, 191, 255, 0.3);
+      border-radius: 18px;
+      background: rgba(5, 16, 32, 0.74);
+      box-shadow: var(--glow);
+    }
+
+    .timetable-time {
+      color: var(--accent);
+      font-weight: 950;
+    }
+
+    .timetable-subject {
+      margin: 0;
+      color: var(--primary);
+      font-size: clamp(1.45rem, 2.4vw, 2.1rem);
+      line-height: 1.1;
+      text-shadow: 0 0 18px rgba(0, 191, 255, 0.4);
+    }
+
+    .lesson-block strong {
+      display: block;
+      color: var(--text);
+      font-size: 1.05rem;
+      line-height: 1.35;
+    }
+
+    .lesson-block span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-weight: 760;
+    }
+
+    .check-list {
+      display: grid;
+      gap: 7px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .check-list li {
+      display: grid;
+      grid-template-columns: 22px minmax(0, 1fr);
+      gap: 8px;
+      color: var(--text);
+      font-weight: 820;
+    }
+
+    .check-list li::before {
+      content: "□";
+      color: var(--accent);
+      font-weight: 950;
+    }
+
+    .connection-grid {
+      display: grid;
+      gap: 8px;
+      padding-top: 10px;
+      border-top: 1px solid rgba(125, 211, 252, 0.18);
+    }
+
+    .connection-grid span {
+      color: var(--muted);
+      font-weight: 780;
+      line-height: 1.45;
+    }
+
+    .home-brief-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
     }
 
     .metric-grid {
@@ -766,6 +870,7 @@
     @media (max-width: 980px) {
       .hero, main, .phase-panel { grid-template-columns: 1fr; }
       .countdown-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .timetable-list, .home-brief-grid { grid-template-columns: 1fr; }
       .metric-grid, .form-grid, .pace-summary, .load-grid, .memory-summary, .visibility-grid { grid-template-columns: 1fr; }
       .mission-head { grid-template-columns: 1fr; }
     }
@@ -807,9 +912,11 @@
 
     <section class="countdown-grid" aria-label="入試カウントダウン" id="countdownGrid"></section>
 
+    <nav class="app-nav" aria-label="画面切替" id="appNav"></nav>
+
     <main>
       <div class="stack">
-        <section aria-labelledby="phase-heading">
+        <section class="view-section view-admin" aria-labelledby="phase-heading">
           <div class="topline">
             <h2 id="phase-heading">Exam Strategy Phase</h2>
             <span class="badge" id="phaseDateLabel"></span>
@@ -824,16 +931,37 @@
           </div>
         </section>
 
-        <section aria-labelledby="mission-heading">
+        <section class="view-section view-home" aria-labelledby="mission-heading">
           <div class="topline">
-            <h2 id="mission-heading">Today&apos;s Mission</h2>
-            <button class="secondary" id="exportCsvButton" type="button">CSV出力</button>
+            <h2 id="mission-heading">今日の時間割</h2>
           </div>
-          <div class="subject-tabs" id="subjectTabs" aria-label="教科切替"></div>
           <div class="mission-list" id="missionList"></div>
         </section>
 
-        <section aria-labelledby="pace-heading">
+        <section class="view-section view-home" aria-labelledby="home-brief-heading">
+          <div class="topline">
+            <h2 id="home-brief-heading">今日の補助Mission</h2>
+          </div>
+          <div class="home-brief-grid">
+            <div class="load-card">
+              <strong>Memory Mission</strong>
+              <span id="homeMemorySummary">単語20語 / 基本文5文 / 構文3文</span>
+              <button class="secondary view-link" type="button" data-target-view="memory">Memory画面へ</button>
+            </div>
+            <div class="load-card">
+              <strong>Review Mission</strong>
+              <span id="homeReviewSummary">本日の復習: 3件</span>
+              <button class="secondary view-link" type="button" data-target-view="review">Review画面へ</button>
+            </div>
+            <div class="load-card">
+              <strong>Yui Coach</strong>
+              <span id="homeCoachSummary">今日は数学Ⅰと英語基礎を確実に終わらせましょう。</span>
+              <button class="secondary view-link" type="button" data-target-view="ai">AI Teacher画面へ</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="view-section view-progress" aria-labelledby="pace-heading">
           <div class="topline">
             <h2 id="pace-heading">8月末ゴール逆算</h2>
             <span class="badge" id="paceGoalBadge">あと62日</span>
@@ -841,7 +969,7 @@
           <div class="pace-list" id="paceList"></div>
         </section>
 
-        <section aria-labelledby="load-heading">
+        <section class="view-section view-progress" aria-labelledby="load-heading">
           <div class="topline">
             <h2 id="load-heading">Today&apos;s Study Load</h2>
             <span class="badge" id="loadTotalBadge">合計 0分</span>
@@ -849,14 +977,14 @@
           <div class="load-grid" id="studyLoadGrid"></div>
         </section>
 
-        <section aria-labelledby="review-heading">
+        <section class="view-section view-review" aria-labelledby="review-heading">
           <div class="topline">
             <h2 id="review-heading">Review Mission</h2>
           </div>
           <div class="review-list" id="reviewList"></div>
         </section>
 
-        <section aria-labelledby="memory-heading">
+        <section class="view-section view-memory" aria-labelledby="memory-heading">
           <div class="topline">
             <h2 id="memory-heading">Today&apos;s Memory</h2>
             <span class="badge">暗記チェック</span>
@@ -865,7 +993,7 @@
           <div class="memory-list" id="memoryList"></div>
         </section>
 
-        <section aria-labelledby="retention-heading">
+        <section class="view-section view-review" aria-labelledby="retention-heading">
           <div class="topline">
             <h2 id="retention-heading">Retention Test / 定着テスト</h2>
             <span class="badge">忘却曲線</span>
@@ -873,7 +1001,7 @@
           <div class="retention-list" id="retentionList"></div>
         </section>
 
-        <section aria-labelledby="summer-heading">
+        <section class="view-section view-admin" aria-labelledby="summer-heading">
           <div class="topline">
             <h2 id="summer-heading">8月末集中カリキュラム</h2>
             <span class="badge" id="summerPeriodLabel"></span>
@@ -884,10 +1012,10 @@
       </div>
 
       <aside class="stack" aria-label="進捗と分析">
-        <section aria-labelledby="progress-heading">
+        <section class="view-section view-progress" aria-labelledby="progress-heading">
           <div class="topline">
             <h2 id="progress-heading">Today&apos;s Progress</h2>
-            <span class="badge">LIMIT BREAK +1</span>
+            <button class="secondary" id="exportCsvButton" type="button">CSV出力</button>
           </div>
           <div class="metric-grid">
             <div class="metric"><strong id="todayRate">0%</strong><span>Mission達成率</span></div>
@@ -897,7 +1025,7 @@
           <div class="ratio-list" id="subjectBars" style="margin-top: 14px;"></div>
         </section>
 
-        <section aria-labelledby="ai-teacher-heading">
+        <section class="view-section view-ai" aria-labelledby="ai-teacher-heading">
           <div class="topline">
             <h2 id="ai-teacher-heading">AI Teacher Chat</h2>
             <span class="badge">Phase1 固定応答</span>
@@ -905,7 +1033,7 @@
           <div class="teacher-chat" id="teacherChat"></div>
         </section>
 
-        <section aria-labelledby="counselor-heading">
+        <section class="view-section view-support" aria-labelledby="counselor-heading">
           <div class="topline">
             <h2 id="counselor-heading">Mental Support</h2>
             <span class="badge">Counselor Support</span>
@@ -913,28 +1041,28 @@
           <div class="counselor-list" id="counselorList"></div>
         </section>
 
-        <section aria-labelledby="exam-heading">
+        <section class="view-section view-admin" aria-labelledby="exam-heading">
           <div class="topline">
             <h2 id="exam-heading">Exam Schedule DB</h2>
           </div>
           <div class="exam-list" id="examList"></div>
         </section>
 
-        <section aria-labelledby="level-heading">
+        <section class="view-section view-admin" aria-labelledby="level-heading">
           <div class="topline">
             <h2 id="level-heading">Level Tasks</h2>
           </div>
           <div class="level-list" id="levelList"></div>
         </section>
 
-        <section aria-labelledby="materials-heading">
+        <section class="view-section view-admin" aria-labelledby="materials-heading">
           <div class="topline">
             <h2 id="materials-heading">Materials First DB</h2>
           </div>
           <div class="material-list" id="materialList"></div>
         </section>
 
-        <section aria-labelledby="external-heading">
+        <section class="view-section view-admin view-memory" aria-labelledby="external-heading">
           <div class="topline">
             <h2 id="external-heading">External App Progress</h2>
             <span class="badge">手動入力</span>
@@ -942,14 +1070,14 @@
           <div class="external-list" id="externalList"></div>
         </section>
 
-        <section aria-labelledby="role-view-heading">
+        <section class="view-section view-support" aria-labelledby="role-view-heading">
           <div class="topline">
             <h2 id="role-view-heading">Role View</h2>
           </div>
           <div class="permission-list" id="permissionList"></div>
         </section>
 
-        <section aria-labelledby="records-heading">
+        <section class="view-section view-support view-progress" aria-labelledby="records-heading">
           <div class="topline">
             <h2 id="records-heading">Recent Records</h2>
           </div>
@@ -1038,8 +1166,17 @@
     const EXTERNAL_PROGRESS_KEY = "limitBreakProjectExternalProgressV170";
     const AI_TEACHER_LOG_KEY = "limitBreakProjectAiTeacherLogV180";
     const COUNSELOR_NOTES_KEY = "limitBreakProjectCounselorNotesV200";
-    const SUBJECT_FILTER_KEY = "limitBreakProjectSubjectFilter";
+    const VIEW_KEY = "limitBreakProjectActiveViewV330";
     const BASELINE_DATE = "2026-06-30";
+    const APP_VIEWS = [
+      { id: "home", label: "Home" },
+      { id: "memory", label: "Memory" },
+      { id: "review", label: "Review" },
+      { id: "progress", label: "Progress" },
+      { id: "ai", label: "AI Teacher" },
+      { id: "support", label: "Support" },
+      { id: "admin", label: "Admin" }
+    ];
 
     const ROLES = {
       student: {
@@ -1363,14 +1500,14 @@
     let aiTeacherConfig = FALLBACK_AI_TEACHER;
     let counselorNotes = loadCounselorNotes();
     let currentRole = localStorage.getItem(ROLE_KEY) || "student";
-    let currentSubjectFilter = localStorage.getItem(SUBJECT_FILTER_KEY) || "";
+    let activeView = localStorage.getItem(VIEW_KEY) || "home";
     let records = loadRecords();
     let memoryResults = loadMemoryResults();
     let aiTeacherLog = loadAiTeacherLog();
 
     const roleOptions = document.querySelector("#roleOptions");
+    const appNav = document.querySelector("#appNav");
     const countdownGrid = document.querySelector("#countdownGrid");
-    const subjectTabs = document.querySelector("#subjectTabs");
     const missionList = document.querySelector("#missionList");
     const reviewList = document.querySelector("#reviewList");
     const subjectBars = document.querySelector("#subjectBars");
@@ -1536,16 +1673,37 @@
       });
     }
 
+    function renderAppNav() {
+      appNav.innerHTML = "";
+      APP_VIEWS.forEach((view) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `nav-button${view.id === activeView ? " active" : ""}`;
+        button.textContent = view.label;
+        button.addEventListener("click", () => setActiveView(view.id));
+        appNav.appendChild(button);
+      });
+    }
+
+    function setActiveView(viewId) {
+      activeView = viewId;
+      localStorage.setItem(VIEW_KEY, activeView);
+      render();
+    }
+
     function render() {
       document.body.dataset.role = currentRole;
-      document.querySelector("#baselineLabel").textContent = `基準日 ${BASELINE_DATE}`;
+      document.body.dataset.view = activeView;
+      document.querySelector("#baselineLabel").textContent = `Today ${dailyPlan.date || BASELINE_DATE}`;
       document.querySelector("#dayBadge").textContent = `DAY ${String(dailyPlan.day).padStart(3, "0")}`;
       document.querySelector("#levelLabel").textContent = dailyPlan.level;
       document.querySelector("#phaseDateLabel").textContent = dailyPlan.date;
       document.querySelector("#coachMessage").textContent = dailyPlan.coach_message;
+      renderAppNav();
       renderCountdowns();
       renderPhase();
       renderMissions();
+      renderHomeBriefs();
       renderReverseProgress();
       renderStudyLoad();
       renderProgress();
@@ -1564,7 +1722,7 @@
     }
 
     function renderCountdowns() {
-      const sorted = [...examSchedule].sort((a, b) => a.priority - b.priority).slice(0, 3);
+      const sorted = [...examSchedule].sort((a, b) => a.priority - b.priority).slice(0, 2);
       countdownGrid.innerHTML = "";
       sorted.forEach((exam) => {
         const days = dateDaysUntil(exam.countdown_target);
@@ -1628,93 +1786,79 @@
     function renderMissions() {
       const role = ROLES[currentRole];
       missionList.innerHTML = "";
-      const subjects = [...new Set(dailyPlan.missions.map((mission) => mission.subject))];
-      if (!currentSubjectFilter || (!subjects.includes(currentSubjectFilter) && currentSubjectFilter !== "all")) {
-        currentSubjectFilter = subjects[0] || "all";
-        localStorage.setItem(SUBJECT_FILTER_KEY, currentSubjectFilter);
-      }
-      renderSubjectTabs(subjects);
-      const visibleSubjects = currentSubjectFilter === "all" ? subjects : subjects.filter((subject) => subject === currentSubjectFilter);
-      visibleSubjects.forEach((subject) => {
-        const subjectMissions = dailyPlan.missions.filter((mission) => mission.subject === subject);
-        const subjectDone = subjectMissions.filter((mission) => getMissionRecord(mission.id)).length;
-        const subjectCard = document.createElement("article");
-        subjectCard.className = "subject-card";
-        subjectCard.innerHTML = `
-          <div class="subject-head">
-            <div>
-              <strong>${subject}</strong>
-              <span>${subjectMissions.length} Mission / 完了 ${subjectDone}</span>
-            </div>
-            <span class="badge">${subjectDone === subjectMissions.length ? "Mission Clear" : "Today"}</span>
+      missionList.className = "mission-list timetable-list";
+      dailyPlan.missions.forEach((mission, index) => {
+        const record = getMissionRecord(mission.id);
+        const connection = connectionForMission(mission);
+        const reviews = reviewPlanForMission(mission);
+        const tasks = role.showMissionDetail ? mission.tasks : ["Mission達成率", "努力量", "応援メッセージ"];
+        const card = document.createElement("article");
+        card.className = `timetable-card${record ? " complete" : ""}`;
+        card.innerHTML = `
+          <div>
+            <div class="timetable-time">${mission.time}</div>
+            <h3 class="timetable-subject">${mission.subject}</h3>
           </div>
-          <div class="subject-mission-list"></div>
+          <div class="lesson-block">
+            <strong>${role.showMissionDetail ? mission.course : "今日の学習"}</strong>
+            <span>${role.showMissionDetail ? `${mission.lesson} ${mission.part}` : visibleMissionTitle(mission)}</span>
+            <span>${role.showMissionDetail ? mission.title : "詳細は本人・先生画面で確認"}</span>
+          </div>
+          <div>
+            <h3>今日やること</h3>
+            <ul class="check-list">${tasks.slice(0, 5).map((task) => `<li>${task}</li>`).join("")}</ul>
+          </div>
+          <div class="connection-grid">
+            <div>
+              <strong>つながり</strong>
+              <span>前回: ${connection.previous}</span>
+              <span>次回: ${connection.next}</span>
+            </div>
+            <div>
+              <strong>復習予定</strong>
+              <span>明日: ${reviews.tomorrow}</span>
+              <span>3日後: ${reviews.day3}</span>
+              <span>7日後: ${reviews.day7}</span>
+            </div>
+          </div>
+          <div class="mission-actions">
+            <button type="button" class="record-button" ${role.canEditRecord ? "" : "disabled"}>${record ? "記録を編集" : "完了を記録"}</button>
+            <span class="badge">${record ? "Mission Clear" : timeBlockLabel(index)}</span>
+          </div>
         `;
-        const subjectList = subjectCard.querySelector(".subject-mission-list");
-        subjectMissions.forEach((mission) => {
-          const record = getMissionRecord(mission.id);
-          const card = document.createElement("article");
-          card.className = `mission${record ? " complete" : ""}`;
-          const tasks = role.showMissionDetail ? mission.tasks : ["Mission達成率", "努力量", "応援メッセージ"];
-          const memory = mission.memory && role.showMissionDetail ? `<div class="memory-chip">Today's Memory: ${mission.memory}</div>` : "";
-          const checkItem = mission.check_item && role.showMissionDetail ? `<span class="badge">${mission.check_item}</span>` : "";
-          const levelTask = mission.level_task && role.showMissionDetail ? `<span class="badge">${levelTaskLabel(mission.level_task)}</span>` : "";
-          const aiCheck = mission.ai_check_test && role.showMissionDetail
-            ? `<div class="ai-check"><strong>AI Check Test</strong>${mission.ai_check_test.map((item) => `<span>${item}</span>`).join("")}</div>`
-            : "";
-          card.innerHTML = `
-            <div class="mission-head">
-              <div>
-                <span class="time">${mission.time}</span>
-                <div class="mission-title">${visibleMissionTitle(mission)}</div>
-                <div class="course-line">${role.showMissionDetail ? mission.course : "詳細な成績情報は非表示"}</div>
-              </div>
-              <span class="badge">${record ? "Complete" : "Start"}</span>
-            </div>
-            <div class="badge-row">${levelTask}${checkItem}</div>
-            ${memory}
-            <div class="flow">${tasks.slice(0, 5).map((task) => `<span>${task}</span>`).join("")}</div>
-            <details class="mission-detail">
-              <summary>詳細・AI Check</summary>
-              ${aiCheck}
-              <p class="mission-note">${role.showMissionDetail ? mission.reason : "努力量と達成状況だけを表示しています。"}</p>
-            </details>
-            <div class="mission-actions">
-              <button type="button" class="record-button" ${role.canEditRecord ? "" : "disabled"}>${record ? "記録を編集" : "完了を記録"}</button>
-              <button type="button" class="secondary ai-action" data-action="teacher">AIに聞く</button>
-              <button type="button" class="secondary ai-action" data-action="coach">励まし</button>
-              <span class="button-note">AIはPhase1固定応答</span>
-              <div class="teacher-actions">
-                <button type="button" class="secondary" disabled>復習追加 準備中</button>
-                <button type="button" class="secondary" disabled>次週方針 準備中</button>
-              </div>
-            </div>
-          `;
-          card.querySelector(".record-button").addEventListener("click", () => openRecordDialog(mission, record));
-          card.querySelectorAll(".ai-action").forEach((button) => {
-            button.addEventListener("click", () => runAiTeacher(button.dataset.action, mission));
-          });
-          subjectList.appendChild(card);
-        });
-        missionList.appendChild(subjectCard);
+        card.querySelector(".record-button").addEventListener("click", () => openRecordDialog(mission, record));
+        missionList.appendChild(card);
       });
     }
 
-    function renderSubjectTabs(subjects) {
-      subjectTabs.innerHTML = "";
-      const options = subjects.length > 1 ? [...subjects, "all"] : subjects;
-      options.forEach((subject) => {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = `subject-tab${subject === currentSubjectFilter ? " active" : ""}`;
-        button.textContent = subject === "all" ? "全教科" : subject;
-        button.addEventListener("click", () => {
-          currentSubjectFilter = subject;
-          localStorage.setItem(SUBJECT_FILTER_KEY, currentSubjectFilter);
-          renderMissions();
-        });
-        subjectTabs.appendChild(button);
-      });
+    function timeBlockLabel(index) {
+      return ["午前", "午後", "夜"][index] || "Today";
+    }
+
+    function connectionForMission(mission) {
+      const map = {
+        "数学Ⅰ": { previous: "数学Ⅰ 第1講 導入", next: "数学Ⅰ 第1講 PART2 整式の整理" },
+        "英語": { previous: "英文の基本", next: "命令文" },
+        "物理基礎": { previous: "なし", next: "速度" }
+      };
+      return map[mission.subject] || { previous: "前回の確認", next: "次のPART" };
+    }
+
+    function reviewPlanForMission(mission) {
+      if (mission.subject.includes("英語")) {
+        return { tomorrow: "復習テスト類題", day3: "基本文チェック", day7: "定着テスト" };
+      }
+      if (mission.subject.includes("物理")) {
+        return { tomorrow: "確認問題類題", day3: "単位確認", day7: "定着テスト" };
+      }
+      return { tomorrow: "確認問題 類題", day3: "定着テスト", day7: "再確認" };
+    }
+
+    function renderHomeBriefs() {
+      const target = memoryData.today_target || {};
+      document.querySelector("#homeMemorySummary").textContent = `単語:${target.words || 0}語 / 基本文:${target.sentences || 0}文 / 構文:${target.structures || 0}文`;
+      document.querySelector("#homeReviewSummary").textContent = `本日の復習: ${(reviewSchedule.retention_tests || []).length}件`;
+      document.querySelector("#homeCoachSummary").textContent = dailyPlan.coach_message || "今日は目の前の時間割を一つずつ終わらせましょう。";
     }
 
     function levelTaskLabel(level) {
@@ -2238,6 +2382,10 @@
       records = [];
       saveRecords();
       render();
+    });
+
+    document.querySelectorAll(".view-link").forEach((button) => {
+      button.addEventListener("click", () => setActiveView(button.dataset.targetView));
     });
 
     document.querySelector("#exportCsvButton").addEventListener("click", () => {
