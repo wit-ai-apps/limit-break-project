@@ -1,0 +1,102 @@
+{
+  "version": "3.5.0",
+  "name": "Knowledge Extraction Engine",
+  "purpose": "ユーザー本人がアップロードした教材画像やPDFから学習ポイントを抽出し、本人専用のLesson MemoryとしてAI Teacherと復習管理に利用する。",
+  "product_boundary": {
+    "cortex_edu": [
+      "教材撮影・PDF取り込み",
+      "OCR",
+      "レイアウト解析",
+      "知識抽出",
+      "本人専用JSON生成"
+    ],
+    "cortex_limit_break": [
+      "今日の学習ナビゲーション",
+      "AI Teacher",
+      "理解確認問題",
+      "定着テスト",
+      "忘却曲線管理",
+      "提出・通知・進捗管理"
+    ]
+  },
+  "personal_data_policy": {
+    "scope": "本人専用データ",
+    "shared_between_users": false,
+    "publish_original_material": false,
+    "store_public_verbatim_text": false,
+    "notes": "教材画像・OCR結果・抽出JSONは本人の学習支援に限定し、公開配布や他ユーザーへの流用をしない。"
+  },
+  "pipeline": [
+    "material_upload",
+    "ocr",
+    "layout_analysis",
+    "knowledge_extraction",
+    "lesson_memory_json",
+    "ai_teacher_context",
+    "original_check_test",
+    "retention_review"
+  ],
+  "extractable_knowledge": [
+    "important_structure",
+    "important_formula",
+    "important_word",
+    "important_diagram",
+    "solution_method",
+    "concept_tag",
+    "teaching_order",
+    "mistake_pattern"
+  ],
+  "lesson_memory_shape": {
+    "student_id": "STU_0001",
+    "source_type": "user_uploaded_material",
+    "material_name": "基本英文300選",
+    "unit": "No.128",
+    "learning_points": [
+      "It is ... for A to do",
+      "forの意味",
+      "不定詞"
+    ],
+    "allowed_ai_outputs": [
+      "理解確認",
+      "類題",
+      "英作文",
+      "穴埋め",
+      "並べ替え",
+      "音読",
+      "暗唱",
+      "復習Mission"
+    ]
+  },
+  "question_generation_levels": [
+    {
+      "level": 1,
+      "name": "理解確認",
+      "recommended": true,
+      "description": "教材の学習ポイントを理解しているか確認するためのオリジナル問題を作る。"
+    },
+    {
+      "level": 2,
+      "name": "類題生成",
+      "recommended": true,
+      "description": "教材と同じ学習ポイントを扱うが、文・数値・条件を変えた新しい問題を作る。"
+    },
+    {
+      "level": 3,
+      "name": "教材類似問題",
+      "recommended": false,
+      "description": "教材の問題文をそのまま複製したり、ほぼ同じ表現で再現することは避ける。"
+    }
+  ],
+  "copyright_guardrails": {
+    "copy_original_problem_text": false,
+    "copy_original_answer_text": false,
+    "copy_original_explanation_text": false,
+    "generate_from_abstracted_learning_points": true,
+    "require_user_material_access": true
+  },
+  "phase_plan": {
+    "phase1": "手動アップロード設計、本人専用Lesson Memoryのデータ形を確定する。",
+    "phase2": "OCRとレイアウト解析で学習ポイントを抽出する。",
+    "phase3": "AI Teacher、確認テスト、定着テスト、忘却曲線へ接続する。"
+  }
+}

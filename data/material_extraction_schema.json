@@ -1,6 +1,13 @@
 {
   "schema_version": "1.7.0",
   "purpose": "教材PDFを解析して、教材の順番を維持したMission / Today's Memory / AI Check Test生成のためのメタデータを保存する。教材本文・問題文の複製配布はしない。",
+  "personal_upload_extension": {
+    "enabled": true,
+    "scope": "本人専用Lesson Memory",
+    "shared_between_users": false,
+    "ocr_text_public_storage": false,
+    "description": "ユーザー本人が撮影・アップロードした教材はOCRと知識抽出に利用できるが、共通公開DBには本文・問題文・解答解説を保存しない。AI Teacherには抽象化した学習ポイントだけを渡す。"
+  },
   "unit_shape": {
     "subject": "数学Ⅰ",
     "course_name": "ベーシックレベル数学Ⅰ",
@@ -28,6 +35,15 @@
       "diagram_count": 0
     },
     "concept_tags": [],
+    "lesson_memory": {
+      "source_type": "catalog_or_user_upload",
+      "learning_points": [],
+      "important_words": [],
+      "important_formulas": [],
+      "important_structures": [],
+      "solution_methods": [],
+      "mistake_patterns": []
+    },
     "generated_outputs": {
       "mission_template": "",
       "todays_memory_template": "",

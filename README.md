@@ -133,6 +133,7 @@ Mission、Today's Memory、AI Check Testは、教材の講、PART、Chapter、PO
 
 - `data/materials_catalog.json`
 - `data/material_extraction_schema.json`
+- `data/knowledge_extraction_policy.json`
 - `docs/materials-policy.md`
 
 ### 重要な著作権方針
@@ -161,6 +162,47 @@ Mission、Today's Memory、AI Check Testは、教材の講、PART、Chapter、PO
 - 重要構文数
 - 教材内の説明順
 - AI Check Test用のオリジナル問題
+
+### Knowledge Extraction Engine v3.5.0
+
+ユーザー本人が教材ページ、単語帳、基本英文、確認テスト答案などをアップロードした場合、OCR、レイアウト解析、知識抽出を行い、本人専用のLesson MemoryとしてAI Teacherが利用できる設計にします。
+
+流れ:
+
+1. 教材撮影またはPDFアップロード
+2. OCR
+3. レイアウト解析
+4. 知識抽出
+5. 本人専用JSON化
+6. AI Teacherへ接続
+7. 理解確認問題、定着テスト、忘却曲線管理へ反映
+
+抽出するもの:
+
+- 重要構文
+- 重要公式
+- 重要単語
+- 重要図
+- 解法
+- 学習ポイント
+- ミスパターン
+
+問題生成は3段階に分けます。
+
+| レベル | 名称 | 方針 |
+|---|---|---|
+| 1 | 理解確認 | 教材の学習ポイントを理解しているか確認するオリジナル問題。推奨 |
+| 2 | 類題生成 | 同じ学習ポイントを扱うが、文・数値・条件を変えた新しい問題。推奨 |
+| 3 | 教材類似問題 | 教材の問題文をそのまま複製、またはほぼ同じ表現で再現するもの。避ける |
+
+本人専用OCRデータは本人の学習支援に限定し、公開アプリの共通データとして配布しません。教材をコピーするのではなく、学習ポイントを抽象化して利用します。
+
+### CORTEX Edu / CORTEX Limit Breakの役割
+
+| 領域 | 役割 |
+|---|---|
+| CORTEX Edu | 教材撮影、OCR、レイアウト解析、知識抽出、本人専用JSON生成 |
+| CORTEX Limit Break | 今日の学習ナビゲーション、AI Teacher、理解確認問題、定着テスト、復習管理 |
 
 ## 逆算進捗・忘却曲線・暗記DB v1.7.0
 
