@@ -177,15 +177,14 @@
     .role-options {
       display: grid;
       grid-template-columns: repeat(2, 1fr);
-      gap: 8px;
+      gap: 10px;
     }
 
     .role-options label {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      min-height: 38px;
-      padding: 0 10px;
+      display: grid;
+      gap: 3px;
+      min-height: 58px;
+      padding: 10px 12px;
       border-radius: 16px;
       border: 1px solid rgba(125, 211, 252, 0.18);
       background: rgba(255, 255, 255, 0.045);
@@ -194,11 +193,50 @@
       cursor: pointer;
     }
 
-    .role-options input { accent-color: var(--primary); }
+    .role-options label:has(input:checked) {
+      border-color: var(--line-strong);
+      background: rgba(0, 191, 255, 0.14);
+      box-shadow: var(--glow);
+    }
+
+    .role-options input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .role-label-main { font-size: 0.98rem; }
+    .role-label-sub { color: var(--muted); font-size: 0.76rem; font-weight: 700; }
+
+    .support-type-panel {
+      display: grid;
+      gap: 8px;
+      padding: 10px;
+      border-radius: 16px;
+      border: 1px solid rgba(125, 211, 252, 0.18);
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .support-type-panel label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 800;
+    }
+
+    .support-type-panel select {
+      min-height: 40px;
+      border-radius: 14px;
+      border: 1px solid rgba(125, 211, 252, 0.28);
+      background: rgba(3, 9, 20, 0.82);
+      color: var(--text);
+      padding: 0 10px;
+    }
 
     .countdown-grid {
       display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
+      grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 8px;
       margin-bottom: 14px;
     }
@@ -976,6 +1014,7 @@
         <div class="role-panel" aria-labelledby="role-heading">
           <h2 id="role-heading">ログイン種別を選択</h2>
           <div class="role-options" id="roleOptions"></div>
+          <div class="support-type-panel" id="supportTypePanel" hidden></div>
         </div>
       </aside>
     </header>
@@ -1105,8 +1144,8 @@
 
         <section class="view-section view-support" aria-labelledby="counselor-heading">
           <div class="topline">
-            <h2 id="counselor-heading">Mental Support</h2>
-            <span class="badge">Counselor Support</span>
+            <h2 id="counselor-heading">Support</h2>
+            <span class="badge">Specialist Support</span>
           </div>
           <div class="counselor-list" id="counselorList"></div>
         </section>
@@ -1245,6 +1284,7 @@
   <script>
     const STORAGE_KEY = "limitBreakProjectRecordsV120";
     const ROLE_KEY = "limitBreakProjectRole";
+    const SUPPORT_TYPE_KEY = "limitBreakProjectSupportTypeV380";
     const MEMORY_RESULT_KEY = "limitBreakProjectMemoryResultsV170";
     const EXTERNAL_PROGRESS_KEY = "limitBreakProjectExternalProgressV170";
     const AI_TEACHER_LOG_KEY = "limitBreakProjectAiTeacherLogV180";
@@ -1261,6 +1301,14 @@
       { id: "ai", label: "AI Teacher" },
       { id: "support", label: "Support" },
       { id: "admin", label: "Admin" }
+    ];
+
+    const PUBLIC_ROLE_KEYS = ["student", "parent", "supporter", "teacher"];
+    const SUPPORTER_TYPES = [
+      { value: "family", label: "家族・親戚", note: "応援コメントと努力量を中心に確認" },
+      { value: "mentor", label: "メンター", note: "継続状況と今週の努力を確認" },
+      { value: "school_teacher", label: "学校の先生", note: "学習状況と負荷の要約を確認" },
+      { value: "psychological_counselor", label: "心理カウンセラー", note: "疲労傾向と声かけ注意点を確認" }
     ];
 
     const ROLES = {
@@ -1647,12 +1695,15 @@
     let noticeContacts = loadNoticeContacts();
     let noticeQueue = loadNoticeQueue();
     let currentRole = localStorage.getItem(ROLE_KEY) || "student";
+    if (currentRole === "counselor") currentRole = "supporter";
+    let currentSupportType = localStorage.getItem(SUPPORT_TYPE_KEY) || "family";
     let activeView = localStorage.getItem(VIEW_KEY) || "home";
     let records = loadRecords();
     let memoryResults = loadMemoryResults();
     let aiTeacherLog = loadAiTeacherLog();
 
     const roleOptions = document.querySelector("#roleOptions");
+    const supportTypePanel = document.querySelector("#supportTypePanel");
     const appNav = document.querySelector("#appNav");
     const countdownGrid = document.querySelector("#countdownGrid");
     const missionList = document.querySelector("#missionList");
@@ -1825,8 +1876,19 @@
       return dailyPlan.date || BASELINE_DATE;
     }
 
+    function todayJapanKey() {
+      const parts = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Tokyo",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).formatToParts(new Date());
+      const map = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+      return `${map.year}-${map.month}-${map.day}`;
+    }
+
     function dateDaysUntil(targetDate) {
-      const start = new Date(`${BASELINE_DATE}T00:00:00+09:00`);
+      const start = new Date(`${todayJapanKey()}T00:00:00+09:00`);
       const end = new Date(`${targetDate}T00:00:00+09:00`);
       return Math.ceil((end - start) / 86400000);
     }
@@ -1842,9 +1904,20 @@
 
     function renderRoleOptions() {
       roleOptions.innerHTML = "";
-      Object.entries(ROLES).forEach(([key, role]) => {
+      PUBLIC_ROLE_KEYS.forEach((key) => {
+        const role = ROLES[key];
         const label = document.createElement("label");
-        label.innerHTML = `<input type="radio" name="role" value="${key}" ${key === currentRole ? "checked" : ""}> ${role.label}`;
+        const sub = {
+          student: "今日の学習を記録",
+          parent: "努力を見守る",
+          supporter: "属性を選んで支援",
+          teacher: "進捗と弱点を見る"
+        }[key];
+        label.innerHTML = `
+          <input type="radio" name="role" value="${key}" ${key === currentRole ? "checked" : ""}>
+          <span class="role-label-main">${role.label}</span>
+          <span class="role-label-sub">${sub}</span>
+        `;
         label.querySelector("input").addEventListener("change", () => {
           currentRole = key;
           localStorage.setItem(ROLE_KEY, currentRole);
@@ -1852,6 +1925,56 @@
         });
         roleOptions.appendChild(label);
       });
+      renderSupportTypePanel();
+    }
+
+    function renderSupportTypePanel() {
+      supportTypePanel.hidden = currentRole !== "supporter";
+      if (supportTypePanel.hidden) {
+        supportTypePanel.innerHTML = "";
+        return;
+      }
+      const current = SUPPORTER_TYPES.find((type) => type.value === currentSupportType) || SUPPORTER_TYPES[0];
+      supportTypePanel.innerHTML = `
+        <label>
+          サポーター属性
+          <select id="supportTypeSelect">
+            ${SUPPORTER_TYPES.map((type) => `<option value="${type.value}" ${type.value === current.value ? "selected" : ""}>${type.label}</option>`).join("")}
+          </select>
+        </label>
+        <span class="role-label-sub">${current.note}</span>
+      `;
+      supportTypePanel.querySelector("#supportTypeSelect").addEventListener("change", (event) => {
+        currentSupportType = event.target.value;
+        localStorage.setItem(SUPPORT_TYPE_KEY, currentSupportType);
+        render();
+      });
+    }
+
+    function activeRoleConfig() {
+      const base = ROLES[currentRole] || ROLES.student;
+      if (currentRole !== "supporter") return base;
+      const supportType = SUPPORTER_TYPES.find((type) => type.value === currentSupportType) || SUPPORTER_TYPES[0];
+      if (currentSupportType === "psychological_counselor") {
+        return {
+          ...base,
+          headline: "心理カウンセラー属性のサポーターです。疲労傾向と声かけ注意点を確認します。",
+          showFatigue: "summary",
+          showMentalState: "summary",
+          showMissionDetail: true,
+          canPostCounselorNote: true
+        };
+      }
+      if (currentSupportType === "school_teacher") {
+        return {
+          ...base,
+          headline: "学校の先生属性のサポーターです。学習状況と負荷の要約を確認します。",
+          showScore: "summary",
+          showFatigue: "summary",
+          showMissionDetail: true
+        };
+      }
+      return { ...base, headline: `${supportType.label}として、応援に必要な努力量を確認します。` };
     }
 
     function renderAppNav() {
@@ -1874,12 +1997,14 @@
 
     function render() {
       document.body.dataset.role = currentRole;
+      document.body.dataset.supportType = currentSupportType;
       document.body.dataset.view = activeView;
-      document.querySelector("#baselineLabel").textContent = `Today ${dailyPlan.date || BASELINE_DATE}`;
+      document.querySelector("#baselineLabel").textContent = `Today ${todayJapanKey()}`;
       document.querySelector("#dayBadge").textContent = `DAY ${String(dailyPlan.day).padStart(3, "0")}`;
       document.querySelector("#levelLabel").textContent = dailyPlan.level;
       document.querySelector("#phaseDateLabel").textContent = dailyPlan.date;
       document.querySelector("#coachMessage").textContent = dailyPlan.coach_message;
+      renderRoleOptions();
       renderAppNav();
       renderCountdowns();
       renderPhase();
@@ -1904,7 +2029,7 @@
     }
 
     function renderCountdowns() {
-      const sorted = [...examSchedule].sort((a, b) => a.priority - b.priority).slice(0, 2);
+      const sorted = [...examSchedule].sort((a, b) => a.priority - b.priority).slice(0, 3);
       countdownGrid.innerHTML = "";
       sorted.forEach((exam) => {
         const days = dateDaysUntil(exam.countdown_target);
@@ -2002,12 +2127,12 @@
     }
 
     function visibleMissionTitle(mission) {
-      if (ROLES[currentRole].showMissionDetail) return `${mission.lesson} ${mission.part} / ${mission.title}`;
+      if (activeRoleConfig().showMissionDetail) return `${mission.lesson} ${mission.part} / ${mission.title}`;
       return `${mission.subject} / ${mission.time}`;
     }
 
     function renderMissions() {
-      const role = ROLES[currentRole];
+      const role = activeRoleConfig();
       missionList.innerHTML = "";
       missionList.className = "mission-list timetable-list";
       if (coursePacing.home_blocks && coursePacing.home_blocks.length) {
@@ -2262,7 +2387,7 @@
     }
 
     function renderReverseProgress() {
-      const days = reverseProgress.days_remaining_inclusive || dateDaysUntil(reverseProgress.goal_date);
+      const days = dateDaysUntil(reverseProgress.goal_date);
       document.querySelector("#paceGoalBadge").textContent = `${reverseProgress.goal_label || "8月末ゴール"}まで あと${days}日`;
       paceList.innerHTML = "";
       reverseProgress.subjects.forEach((item) => {
@@ -2290,8 +2415,10 @@
 
     function renderStudyLoad() {
       const load = reverseProgress.study_load || {};
-      document.querySelector("#loadTotalBadge").textContent = `合計 ${formatMinutes(load.total_minutes)}`;
+      const schedule = todayScheduleLoad();
+      document.querySelector("#loadTotalBadge").textContent = `時間割 ${formatMinutes(schedule.totalMinutes)} / 終了 ${schedule.end || "--:--"}`;
       const rows = [
+        ["今日の時間割", schedule.totalMinutes],
         ["映像視聴", load.video_minutes],
         ["演習・確認", load.practice_minutes],
         ["復習", load.review_minutes],
@@ -2304,6 +2431,44 @@
         card.innerHTML = `<strong>${formatMinutes(minutes)}</strong><span>${label}</span>`;
         studyLoadGrid.appendChild(card);
       });
+    }
+
+    function todayScheduleLoad() {
+      const coveredSubjects = new Set();
+      let totalMinutes = 0;
+      let end = "";
+      (coursePacing.home_blocks || []).forEach((block) => {
+        totalMinutes += Number(block.total_minutes || 0);
+        const range = parseTimeRange(block.time);
+        if (range.end) end = laterTime(end, range.end);
+        (block.units || []).forEach((unit) => coveredSubjects.add(unit.subject));
+      });
+      (dailyPlan.missions || [])
+        .filter((mission) => !coveredSubjects.has(mission.subject))
+        .forEach((mission) => {
+          const range = parseTimeRange(mission.time);
+          totalMinutes += range.minutes;
+          if (range.end) end = laterTime(end, range.end);
+        });
+      return { totalMinutes, end };
+    }
+
+    function parseTimeRange(value) {
+      const match = String(value || "").match(/(\d{1,2}):(\d{2})\s*[-〜]\s*(\d{1,2}):(\d{2})/);
+      if (!match) return { minutes: 0, end: "" };
+      const start = Number(match[1]) * 60 + Number(match[2]);
+      const endMinutes = Number(match[3]) * 60 + Number(match[4]);
+      const minutes = Math.max(0, endMinutes - start);
+      return { minutes, end: `${match[3].padStart(2, "0")}:${match[4]}` };
+    }
+
+    function laterTime(a, b) {
+      if (!a) return b;
+      const toMinutes = (time) => {
+        const [h, m] = time.split(":").map(Number);
+        return h * 60 + m;
+      };
+      return toMinutes(b) > toMinutes(a) ? b : a;
     }
 
     function renderProgress() {
@@ -2478,9 +2643,9 @@
     }
 
     function renderCounselorSupport() {
-      const role = ROLES[currentRole];
+      const role = activeRoleConfig();
       const notes = (counselorNotes.counselor_notes || []).filter((note) => {
-        if (currentRole === "counselor") return true;
+        if (currentRole === "supporter" && currentSupportType === "psychological_counselor") return true;
         return (note.visibility || []).includes(currentRole);
       });
       const latestRecords = [...records].sort((a, b) => b.savedAt.localeCompare(a.savedAt)).slice(0, 3);
@@ -2490,7 +2655,7 @@
       const summary = document.createElement("article");
       summary.className = "counselor-card";
       summary.innerHTML = `
-        <strong>${currentRole === "counselor" ? "Counselor Dashboard" : "Counselor Support"}</strong>
+          <strong>Support Dashboard</strong>
         <span>医療行為・診断ではなく、学習継続、声かけ、心理的安全性の支援に限定します。</span>
         <div>${role.showFatigue ? `学習負荷: ${loadWarning ? "疲労度高め。休憩を優先" : "通常範囲"}` : "必要な声かけ情報だけを表示します。"}</div>
       `;
@@ -2499,7 +2664,7 @@
       if (currentRole === "parent") {
         const parentCard = document.createElement("article");
         parentCard.className = "counselor-card";
-        parentCard.innerHTML = `<strong>心理カウンセラーからの助言</strong><span>本人を追い詰めない声かけを優先してください。</span>`;
+        parentCard.innerHTML = `<strong>専門サポーターからの助言</strong><span>本人を追い詰めない声かけを優先してください。</span>`;
         counselorList.appendChild(parentCard);
       }
 
@@ -2524,7 +2689,7 @@
       if (!notes.length) {
         const empty = document.createElement("div");
         empty.className = "empty";
-        empty.textContent = "表示対象のカウンセラーコメントはありません。";
+        empty.textContent = "表示対象の専門サポートコメントはありません。";
         counselorList.appendChild(empty);
       }
 
@@ -2532,7 +2697,7 @@
         const formCard = document.createElement("article");
         formCard.className = "counselor-card";
         formCard.innerHTML = `
-          <strong>Counselor Comment</strong>
+          <strong>Support Comment</strong>
           <span>公開範囲を選び、学習継続と心理的安全性の支援に限定して投稿します。</span>
           <div class="field" style="margin-top: 10px;">
             <label for="counselorCategory">カテゴリ</label>
@@ -2675,9 +2840,10 @@
     }
 
     function renderPermissions() {
-      const role = ROLES[currentRole];
+      const role = activeRoleConfig();
+      const supportType = SUPPORTER_TYPES.find((type) => type.value === currentSupportType);
       permissionList.innerHTML = `
-        <div class="permission-card"><strong>${role.label}ログイン</strong><span>${role.headline}</span></div>
+        <div class="permission-card"><strong>${role.label}ログイン${currentRole === "supporter" && supportType ? ` / ${supportType.label}` : ""}</strong><span>${role.headline}</span></div>
         <div class="permission-card"><strong>表示</strong><span>${permissionText(role)}</span></div>
       `;
       if (currentRole === "parent") {
@@ -2686,8 +2852,8 @@
       if (currentRole === "supporter") {
         permissionList.innerHTML += `<div class="limited">詳細な成績、疲労度、個人メモは表示しません。応援に必要な情報だけを表示します。</div>`;
       }
-      if (currentRole === "counselor") {
-        permissionList.innerHTML += `<div class="limited">医療行為・診断ではありません。学習継続、声かけ、心理的安全性の支援に限定し、緊急性がある内容は専門機関への連絡を優先します。</div>`;
+      if (currentRole === "supporter" && currentSupportType === "psychological_counselor") {
+        permissionList.innerHTML += `<div class="limited">心理カウンセラー属性です。医療行為・診断ではありません。学習継続、声かけ、心理的安全性の支援に限定し、緊急性がある内容は専門機関への連絡を優先します。</div>`;
       }
     }
 
@@ -2821,7 +2987,7 @@
     }
 
     function renderLogs() {
-      const role = ROLES[currentRole];
+      const role = activeRoleConfig();
       logList.innerHTML = "";
       if (!records.length) {
         logList.innerHTML = `<div class="empty">まだ記録がありません。</div>`;
@@ -2853,7 +3019,7 @@
     }
 
     function openRecordDialog(mission, record) {
-      if (!ROLES[currentRole].canEditRecord) return;
+      if (!activeRoleConfig().canEditRecord) return;
       if (!mission) return;
       document.querySelector("#missionId").value = mission.id;
       document.querySelector("#missionTitle").value = `${mission.subject} ${mission.lesson} ${mission.part} ${mission.title}`;
