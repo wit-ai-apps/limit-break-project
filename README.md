@@ -385,6 +385,8 @@ Homeから外すもの:
 
 授業後の確認テスト画像をMission Clearの条件にします。
 
+- 確認系テストの所在一覧: `data/confirmation_tests_index.json`
+- 確認系テストの閲覧用一覧: `docs/confirmation_tests_index.md`
 - 確認テスト画像がない場合、その授業は未完了
 - 未提出の授業は「未提出: 後日へ」と表示
 - Phase1では画像をlocalStorageへ保存し、点数は手入力
