@@ -383,14 +383,16 @@ Homeから外すもの:
 
 ## 確認テスト提出ルール
 
-授業後の確認テスト画像をMission Clearの条件にします。
+授業後の自己採点済み確認テスト画像をMission Clearの条件にします。
 
 - 確認系テストの所在一覧: `data/confirmation_tests_index.json`
 - 確認系テストの閲覧用一覧: `docs/confirmation_tests_index.md`
-- 確認テスト画像がない場合、その授業は未完了
+- スマホで撮った自己採点済み答案画像がない場合、その授業は未完了
 - 未提出の授業は「未提出: 後日へ」と表示
 - Phase1では画像をlocalStorageへ保存し、点数は手入力
+- Phase1では提出後に保護者・サポーター・塾講師向けのメール作成リンクを表示
 - Phase2ではFirebase Storage + Firestoreへ保存
+- Phase2ではCloud Functionsなどサーバー側からメールを自動送信
 - Phase2以降でサーバー側OCR/画像解析により手書き答案の自動採点を行う
 - 自動採点は教材DBの確認問題メタデータと照合する
 - 類題は教材内容を参考にしたオリジナル問題として生成する

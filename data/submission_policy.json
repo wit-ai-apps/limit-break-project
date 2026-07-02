@@ -18,5 +18,10 @@
     "phase3": "教材DBの確認問題メタデータと照合し、類題生成・弱点判定・復習日程へ連動する。",
     "security": "APIキーや採点ロジックはフロントエンドに置かない。必ずサーバー側で処理する。"
   },
+  "notification_design": {
+    "phase1": "提出後に保護者・サポーター・塾講師向けのmailtoリンクを生成する。",
+    "phase2": "Firebase/Cloud Functionsなどのサーバー側処理で自動メール送信する。",
+    "recipients": ["parent", "supporter", "teacher"]
+  },
   "copyright_policy": "教材本文・問題文・解答解説はアプリに複製しない。照合は契約済み教材を参照する学習管理用途に限定し、公開データには講座構造と学習メタデータのみを置く。"
 }

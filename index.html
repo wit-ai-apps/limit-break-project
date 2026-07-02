@@ -1147,6 +1147,14 @@
           <div class="permission-list" id="permissionList"></div>
         </section>
 
+        <section class="view-section view-support view-admin" aria-labelledby="notification-heading">
+          <div class="topline">
+            <h2 id="notification-heading">Submission Notice</h2>
+            <span class="badge">Phase1 mailto</span>
+          </div>
+          <div class="notification-panel" id="notificationPanel"></div>
+        </section>
+
         <section class="view-section view-support view-progress" aria-labelledby="records-heading">
           <div class="topline">
             <h2 id="records-heading">Recent Records</h2>
@@ -1210,9 +1218,9 @@
         <textarea id="mistakeReason" placeholder="計算ミス、読み違い、暗記不足、条件整理不足など"></textarea>
       </div>
       <div class="field">
-        <label for="evidenceImage">確認テスト画像</label>
+        <label for="evidenceImage">自己採点済み確認テスト画像</label>
         <input id="evidenceImage" type="file" accept="image/png,image/jpeg,image/webp">
-        <span class="button-note" id="evidenceImageNote">確認テスト画像の提出がない授業は未完了として後日にずらします。</span>
+        <span class="button-note" id="evidenceImageNote">スマホで撮った自己採点済み答案をアップしてください。提出がない授業は未完了として後日にずらします。</span>
       </div>
       <div class="field student-only teacher-only">
         <label for="mentalState">今日のメンタル状態</label>
@@ -1242,6 +1250,8 @@
     const AI_TEACHER_LOG_KEY = "limitBreakProjectAiTeacherLogV180";
     const COUNSELOR_NOTES_KEY = "limitBreakProjectCounselorNotesV200";
     const VIEW_KEY = "limitBreakProjectActiveViewV330";
+    const NOTICE_CONTACTS_KEY = "limitBreakProjectNoticeContactsV370";
+    const NOTICE_QUEUE_KEY = "limitBreakProjectNoticeQueueV370";
     const BASELINE_DATE = "2026-06-30";
     const APP_VIEWS = [
       { id: "home", label: "Home" },
@@ -1611,6 +1621,15 @@
       ]
     };
 
+    const FALLBACK_NOTICE_CONTACTS = {
+      recipients: [
+        { role: "parent", label: "保護者", email: "" },
+        { role: "supporter", label: "サポーター", email: "" },
+        { role: "teacher", label: "塾講師", email: "" }
+      ],
+      phase: "Phase1 mailto"
+    };
+
     let dailyPlan = FALLBACK_DAILY;
     let examSchedule = FALLBACK_EXAMS;
     let summerPlan = FALLBACK_SUMMER;
@@ -1625,6 +1644,8 @@
     let aiTeacherConfig = FALLBACK_AI_TEACHER;
     let coursePacing = FALLBACK_COURSE_PACING;
     let counselorNotes = loadCounselorNotes();
+    let noticeContacts = loadNoticeContacts();
+    let noticeQueue = loadNoticeQueue();
     let currentRole = localStorage.getItem(ROLE_KEY) || "student";
     let activeView = localStorage.getItem(VIEW_KEY) || "home";
     let records = loadRecords();
@@ -1638,6 +1659,7 @@
     const reviewList = document.querySelector("#reviewList");
     const subjectBars = document.querySelector("#subjectBars");
     const permissionList = document.querySelector("#permissionList");
+    const notificationPanel = document.querySelector("#notificationPanel");
     const logList = document.querySelector("#logList");
     const examList = document.querySelector("#examList");
     const levelList = document.querySelector("#levelList");
@@ -1775,6 +1797,30 @@
       localStorage.setItem(COUNSELOR_NOTES_KEY, JSON.stringify(counselorNotes));
     }
 
+    function loadNoticeContacts() {
+      try {
+        return JSON.parse(localStorage.getItem(NOTICE_CONTACTS_KEY) || JSON.stringify(FALLBACK_NOTICE_CONTACTS));
+      } catch (_) {
+        return FALLBACK_NOTICE_CONTACTS;
+      }
+    }
+
+    function saveNoticeContacts() {
+      localStorage.setItem(NOTICE_CONTACTS_KEY, JSON.stringify(noticeContacts));
+    }
+
+    function loadNoticeQueue() {
+      try {
+        return JSON.parse(localStorage.getItem(NOTICE_QUEUE_KEY) || "[]");
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function saveNoticeQueue() {
+      localStorage.setItem(NOTICE_QUEUE_KEY, JSON.stringify(noticeQueue));
+    }
+
     function todayKey() {
       return dailyPlan.date || BASELINE_DATE;
     }
@@ -1853,6 +1899,7 @@
       renderAiTeacher();
       renderCounselorSupport();
       renderPermissions();
+      renderNotificationPanel();
       renderLogs();
     }
 
@@ -2658,6 +2705,121 @@
       return items.join(" / ");
     }
 
+    function renderNotificationPanel() {
+      const contacts = noticeContacts.recipients || [];
+      const latest = [...noticeQueue].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5);
+      notificationPanel.innerHTML = `
+        <div class="permission-card">
+          <strong>通知先設定</strong>
+          <span>確認テスト画像が提出されたら、保護者・サポーター・塾講師へ案内します。</span>
+          <div class="form-grid" style="margin-top: 10px;">
+            ${contacts.map((contact) => `
+              <div class="field">
+                <label>${contact.label}</label>
+                <input type="email" value="${escapeHtml(contact.email || "")}" data-notice-role="${contact.role}" placeholder="${contact.label}のメールアドレス">
+              </div>
+            `).join("")}
+          </div>
+          <button class="secondary" type="button" id="saveNoticeContactsButton">通知先を保存</button>
+        </div>
+        <div class="permission-card">
+          <strong>通知方式</strong>
+          <span>Phase1はメールアプリを開く方式です。Phase2でCloud Functionsから自動送信します。</span>
+          <div>画像本体はメール添付せず、提出があった事実と自己採点結果を通知します。</div>
+        </div>
+        ${latest.length ? latest.map((notice) => renderNoticeCard(notice)).join("") : `<div class="empty">まだ提出通知はありません。</div>`}
+      `;
+      const saveButton = document.querySelector("#saveNoticeContactsButton");
+      if (saveButton) {
+        saveButton.addEventListener("click", () => {
+          document.querySelectorAll("[data-notice-role]").forEach((input) => {
+            const target = contacts.find((contact) => contact.role === input.dataset.noticeRole);
+            if (target) target.email = input.value.trim();
+          });
+          saveNoticeContacts();
+          renderNotificationPanel();
+        });
+      }
+      notificationPanel.querySelectorAll("[data-notice-id]").forEach((button) => {
+        button.addEventListener("click", () => markNoticeSent(button.dataset.noticeId));
+      });
+    }
+
+    function renderNoticeCard(notice) {
+      const recipients = (notice.recipients || []).filter((recipient) => recipient.email);
+      const mailto = buildMailto(notice, recipients);
+      return `
+        <div class="permission-card">
+          <strong>${notice.missionTitle}</strong>
+          <span>${notice.date} / ${notice.subject} / ${notice.testType} / 点数 ${notice.score}</span>
+          <div>提出画像: ${notice.evidenceImageName} / 自動採点: ${notice.autoGradingStatusLabel}</div>
+          <div>通知先: ${recipients.length ? recipients.map((recipient) => recipient.label).join(" / ") : "未設定"}</div>
+          <div class="form-actions" style="margin-top: 10px;">
+            <a class="secondary" href="${mailto}">メール作成</a>
+            <button type="button" data-notice-id="${notice.noticeId}">${notice.sentAt ? "送信済み" : "送信済みにする"}</button>
+          </div>
+        </div>
+      `;
+    }
+
+    function createSubmissionNotice(record) {
+      const recipients = (noticeContacts.recipients || []).map((recipient) => ({
+        role: recipient.role,
+        label: recipient.label,
+        email: recipient.email || ""
+      }));
+      const notice = {
+        noticeId: `NOTICE_${Date.now()}`,
+        recordKey: `${record.date}_${record.missionId}`,
+        date: record.date,
+        missionTitle: record.missionTitle,
+        subject: record.subject,
+        course: record.course,
+        lesson: record.lesson,
+        part: record.part,
+        testType: record.testType,
+        score: record.score,
+        understanding: record.understanding,
+        fatigue: record.fatigue,
+        evidenceImageName: record.evidenceImageName,
+        autoGradingStatusLabel: "Phase1: 生徒の自己採点を受領。手書き自動採点はPhase2で実装",
+        recipients,
+        createdAt: new Date().toISOString(),
+        sentAt: ""
+      };
+      noticeQueue = [notice, ...noticeQueue.filter((item) => item.recordKey !== notice.recordKey)].slice(0, 30);
+      saveNoticeQueue();
+    }
+
+    function buildMailto(notice, recipients) {
+      const to = recipients.map((recipient) => recipient.email).join(",");
+      const subject = `LIMIT BREAK 提出通知: ${notice.subject} ${notice.testType}`;
+      const body = [
+        "確認テスト画像が提出されました。",
+        "",
+        `日付: ${notice.date}`,
+        `Mission: ${notice.missionTitle}`,
+        `科目: ${notice.subject}`,
+        `教材: ${notice.course}`,
+        `範囲: ${notice.lesson} ${notice.part}`,
+        `テスト種別: ${notice.testType}`,
+        `自己採点: ${notice.score}`,
+        `理解度: ${notice.understanding}`,
+        `疲労度: ${notice.fatigue}`,
+        `提出画像ファイル名: ${notice.evidenceImageName}`,
+        "",
+        "Phase1では画像本体は端末内保存です。画面のRecent Recordsで提出内容を確認してください。",
+        "手書き自動採点はPhase2でサーバー側OCR/画像解析として実装します。"
+      ].join("\n");
+      return `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    }
+
+    function markNoticeSent(noticeId) {
+      noticeQueue = noticeQueue.map((notice) => notice.noticeId === noticeId ? { ...notice, sentAt: new Date().toISOString() } : notice);
+      saveNoticeQueue();
+      renderNotificationPanel();
+    }
+
     function renderLogs() {
       const role = ROLES[currentRole];
       logList.innerHTML = "";
@@ -2703,7 +2865,7 @@
       document.querySelector("#evidenceImage").value = "";
       document.querySelector("#evidenceImageNote").textContent = record?.evidenceImageName
         ? `提出済み: ${record.evidenceImageName}。差し替える場合だけ新しい画像を選んでください。`
-        : "確認テスト画像の提出がない授業は未完了として後日にずらします。";
+        : "スマホで撮った自己採点済み答案をアップしてください。提出がない授業は未完了として後日にずらします。";
       document.querySelector("#mentalState").value = record ? record.mentalState || "落ち着いている" : "落ち着いている";
       document.querySelector("#privateNote").value = record ? record.privateNote : "";
       document.querySelector("#deleteRecordButton").style.display = record ? "inline-flex" : "none";
@@ -2717,12 +2879,12 @@
       const existingRecord = getMissionRecord(missionId);
       const evidenceFile = document.querySelector("#evidenceImage").files[0];
       if (!existingRecord?.evidenceImageName && !evidenceFile) {
-        alert("確認テスト画像をアップロードしてください。未提出の場合、この授業は後日にずらします。");
+        alert("自己採点済み確認テスト画像をアップロードしてください。未提出の場合、この授業は後日にずらします。");
         return;
       }
       const evidenceImageData = evidenceFile ? await fileToDataUrl(evidenceFile) : existingRecord.evidenceImageData;
       records = records.filter((record) => !(record.date === todayKey() && record.missionId === missionId));
-      records.push({
+      const submittedRecord = {
         date: todayKey(),
         day: dailyPlan.day,
         missionId,
@@ -2746,9 +2908,15 @@
         evidenceImageData,
         rescheduleStatus: "not_required",
         autoGradingStatus: "phase1_manual_score",
+        autoGradingSummary: "生徒の自己採点を受領。手書き自動採点はPhase2で実装。",
+        notificationStatus: "queued",
         savedAt: new Date().toISOString()
-      });
+      };
+      records.push(submittedRecord);
       saveRecords();
+      createSubmissionNotice(submittedRecord);
+      activeView = "support";
+      localStorage.setItem(VIEW_KEY, activeView);
       recordDialog.close();
       render();
     });
@@ -2766,7 +2934,9 @@
     document.querySelector("#deleteRecordButton").addEventListener("click", () => {
       const missionId = document.querySelector("#missionId").value;
       records = records.filter((record) => !(record.date === todayKey() && record.missionId === missionId));
+      noticeQueue = noticeQueue.filter((notice) => notice.recordKey !== `${todayKey()}_${missionId}`);
       saveRecords();
+      saveNoticeQueue();
       recordDialog.close();
       render();
     });
@@ -2774,7 +2944,9 @@
     document.querySelector("#resetButton").addEventListener("click", () => {
       if (!confirm("検証データをリセットしますか？")) return;
       records = [];
+      noticeQueue = [];
       saveRecords();
+      saveNoticeQueue();
       render();
     });
 
@@ -2783,7 +2955,7 @@
     });
 
     document.querySelector("#exportCsvButton").addEventListener("click", () => {
-      const headers = ["date", "day", "missionId", "missionTitle", "subject", "course", "lesson", "part", "testType", "checkItem", "levelTask", "score", "understanding", "fatigue", "mentalState", "mistakeReason", "privateNote", "evidenceStatus", "evidenceImageName", "rescheduleStatus", "autoGradingStatus", "savedAt"];
+      const headers = ["date", "day", "missionId", "missionTitle", "subject", "course", "lesson", "part", "testType", "checkItem", "levelTask", "score", "understanding", "fatigue", "mentalState", "mistakeReason", "privateNote", "evidenceStatus", "evidenceImageName", "rescheduleStatus", "autoGradingStatus", "autoGradingSummary", "notificationStatus", "savedAt"];
       const rows = [headers, ...records.map((record) => headers.map((key) => record[key] || ""))];
       const csv = rows.map((row) => row.map(escapeCsv).join(",")).join("\n");
       const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });

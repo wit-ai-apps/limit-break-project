@@ -1,0 +1,35 @@
+{
+  "version": "3.7.0",
+  "policy": "生徒が確認テスト画像を提出したら、保護者・サポーター・塾講師へ提出通知を送る。",
+  "phase1": {
+    "runtime": "GitHub Pages static app",
+    "mail_delivery": "mailto link",
+    "description": "ブラウザだけでは自動メール送信はできないため、提出後に通知キューとメール作成ボタンを表示する。"
+  },
+  "phase2": {
+    "runtime": "Firebase Authentication + Firestore + Cloud Functions",
+    "mail_delivery": "server side email provider",
+    "description": "確認テスト画像をFirebase Storageへ保存し、Cloud Functionsから保護者・サポーター・塾講師へ自動通知する。"
+  },
+  "recipients": ["parent", "supporter", "teacher"],
+  "notification_payload": [
+    "student_id",
+    "missionTitle",
+    "subject",
+    "course",
+    "lesson",
+    "part",
+    "testType",
+    "score",
+    "understanding",
+    "fatigue",
+    "evidenceImageName",
+    "savedAt"
+  ],
+  "auto_grading": {
+    "phase1": "生徒の自己採点点数を保存し、画像提出の証跡を残す。",
+    "phase2": "サーバー側OCR/画像解析で手書き答案を読み取り、採点候補を返す。",
+    "phase3": "確認テスト索引と教材メタデータを参照し、類題生成・復習繰り越し・弱点分類へ連動する。"
+  },
+  "privacy": "Phase1の画像はlocalStorage保存。正式運用ではFirebase Storageへ保存し、メール本文には画像本体を添付せず、提出があった事実と確認用リンクを送る。"
+}
