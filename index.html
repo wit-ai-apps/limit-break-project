@@ -747,6 +747,106 @@
       gap: 12px;
     }
 
+    .navigation-card {
+      min-height: 430px;
+      display: grid;
+      align-content: center;
+      justify-items: center;
+      gap: 18px;
+      padding: clamp(22px, 5vw, 42px);
+      text-align: center;
+      border-color: var(--line-strong);
+    }
+
+    .navigation-kicker {
+      color: var(--accent);
+      font-weight: 950;
+      text-transform: uppercase;
+      font-size: 0.82rem;
+    }
+
+    .navigation-message {
+      margin: 0;
+      max-width: 680px;
+      color: var(--text);
+      font-size: clamp(1.25rem, 3vw, 2.2rem);
+      line-height: 1.35;
+      font-weight: 900;
+    }
+
+    .navigation-current {
+      display: grid;
+      gap: 6px;
+      width: min(560px, 100%);
+      padding: 16px;
+      border-radius: 18px;
+      border: 1px solid rgba(125, 211, 252, 0.24);
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .navigation-current strong {
+      color: var(--primary);
+      font-size: clamp(1.35rem, 3vw, 2.05rem);
+      line-height: 1.1;
+      text-shadow: 0 0 20px rgba(0, 191, 255, 0.42);
+    }
+
+    .navigation-current span {
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .navigation-button {
+      min-width: min(100%, 320px);
+      min-height: 54px;
+      font-size: 1.05rem;
+    }
+
+    .journey-map {
+      display: grid;
+      gap: 12px;
+    }
+
+    .journey-card {
+      display: grid;
+      gap: 10px;
+      padding: 14px;
+      border-radius: 16px;
+      border: 1px solid rgba(125, 211, 252, 0.2);
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .journey-card strong { color: var(--accent); }
+
+    .journey-track {
+      display: grid;
+      grid-template-columns: repeat(12, 1fr);
+      gap: 4px;
+    }
+
+    .journey-dot {
+      height: 12px;
+      border-radius: 999px;
+      background: rgba(125, 211, 252, 0.18);
+      border: 1px solid rgba(125, 211, 252, 0.18);
+    }
+
+    .journey-dot.done {
+      background: rgba(34, 197, 94, 0.86);
+      box-shadow: 0 0 14px rgba(34, 197, 94, 0.38);
+    }
+
+    .journey-dot.current {
+      background: var(--primary);
+      box-shadow: 0 0 18px rgba(0, 191, 255, 0.62);
+    }
+
+    .journey-caption {
+      color: var(--muted);
+      font-weight: 780;
+      line-height: 1.45;
+    }
+
     .micro-plan {
       display: grid;
       gap: 8px;
@@ -1154,25 +1254,9 @@
 
         <section class="view-section view-home" aria-labelledby="home-brief-heading">
           <div class="topline">
-            <h2 id="home-brief-heading">今日の補助Mission</h2>
+            <h2 id="home-brief-heading">Journey Map</h2>
           </div>
-          <div class="home-brief-grid">
-            <div class="load-card">
-              <strong>Memory Mission</strong>
-              <span id="homeMemorySummary">単語20語 / 基本文5文 / 構文3文</span>
-              <button class="secondary view-link" type="button" data-target-view="memory">Memory画面へ</button>
-            </div>
-            <div class="load-card">
-              <strong>Review Mission</strong>
-              <span id="homeReviewSummary">本日の復習: 3件</span>
-              <button class="secondary view-link" type="button" data-target-view="review">Review画面へ</button>
-            </div>
-            <div class="load-card">
-              <strong>Yui Coach</strong>
-              <span id="homeCoachSummary">今日は数学Ⅰと英語基礎を確実に終わらせましょう。</span>
-              <button class="secondary view-link" type="button" data-target-view="ai">AI Teacher画面へ</button>
-            </div>
-          </div>
+          <div class="journey-map" id="journeyMap"></div>
         </section>
 
         <section class="view-section view-progress" aria-labelledby="pace-heading">
@@ -1391,6 +1475,7 @@
     const LOGIN_KEY = "limitBreakProjectLoggedInV390";
     const LOGIN_NAME_KEY = "limitBreakProjectLoginNameV390";
     const ROLE_KEY = "limitBreakProjectRole";
+    const NAV_STEP_KEY = "limitBreakProjectNavigationStepV340";
     const SUPPORT_TYPE_KEY = "limitBreakProjectSupportTypeV380";
     const MEMORY_RESULT_KEY = "limitBreakProjectMemoryResultsV170";
     const EXTERNAL_PROGRESS_KEY = "limitBreakProjectExternalProgressV170";
@@ -1807,6 +1892,7 @@
     if (currentRole === "counselor") currentRole = "supporter";
     let currentSupportType = localStorage.getItem(SUPPORT_TYPE_KEY) || "family";
     let activeView = localStorage.getItem(VIEW_KEY) || "home";
+    let navigationStepIndex = Number(localStorage.getItem(NAV_STEP_KEY) || 0);
     let records = loadRecords();
     let memoryResults = loadMemoryResults();
     let aiTeacherLog = loadAiTeacherLog();
@@ -1818,6 +1904,7 @@
     const appNav = document.querySelector("#appNav");
     const countdownGrid = document.querySelector("#countdownGrid");
     const missionList = document.querySelector("#missionList");
+    const journeyMap = document.querySelector("#journeyMap");
     const reviewList = document.querySelector("#reviewList");
     const subjectBars = document.querySelector("#subjectBars");
     const permissionList = document.querySelector("#permissionList");
@@ -2263,6 +2350,10 @@
     }
 
     function renderMissions() {
+      if (activeView === "home") {
+        renderLearningNavigation();
+        return;
+      }
       const role = activeRoleConfig();
       missionList.innerHTML = "";
       missionList.className = "mission-list timetable-list";
@@ -2315,6 +2406,261 @@
         `;
         card.querySelector(".record-button").addEventListener("click", () => openRecordDialog(mission, record));
         missionList.appendChild(card);
+      });
+    }
+
+    function renderLearningNavigation() {
+      const items = navigationItems();
+      const currentIndex = normalizeNavigationIndex(items);
+      const current = items[currentIndex];
+      missionList.innerHTML = "";
+      missionList.className = "mission-list";
+      if (!current) {
+        missionList.innerHTML = `
+          <article class="navigation-card glass">
+            <div class="navigation-kicker">Today's Mission</div>
+            <p class="navigation-message">今日のMission 100%。お疲れ様でした。</p>
+            <div class="navigation-current">
+              <strong>明日の予定</strong>
+              <span>9:00 数学Ⅰ 次のPARTから始めます。</span>
+            </div>
+            <button class="navigation-button" type="button" id="navigationResetButton">明日の準備を見る</button>
+          </article>
+        `;
+        missionList.querySelector("#navigationResetButton").addEventListener("click", () => {
+          navigationStepIndex = 0;
+          localStorage.setItem(NAV_STEP_KEY, String(navigationStepIndex));
+          render();
+        });
+        renderJourneyMap(items, currentIndex);
+        return;
+      }
+
+      const remaining = Math.max(0, items.slice(currentIndex).reduce((sum, item) => sum + (item.minutes || 0), 0));
+      const card = document.createElement("article");
+      card.className = "navigation-card glass";
+      card.innerHTML = `
+        <div class="navigation-kicker">Learning Navigation Mode</div>
+        <p class="navigation-message">${navigationGreeting(items, currentIndex, remaining)}</p>
+        <div class="navigation-current">
+          <strong>${current.subject}</strong>
+          <span>${current.course}</span>
+          <span>${current.lesson} ${current.part} / ${current.title}</span>
+          <span>現在: ${current.label}</span>
+        </div>
+        <button class="navigation-button" type="button" id="navigationActionButton">${current.button}</button>
+      `;
+      missionList.appendChild(card);
+      card.querySelector("#navigationActionButton").addEventListener("click", () => handleNavigationAction(current, currentIndex, items));
+      renderJourneyMap(items, currentIndex);
+    }
+
+    function navigationItems() {
+      const items = [];
+      (coursePacing.home_blocks || []).forEach((block) => {
+        (block.units || []).forEach((unit) => {
+          const mission = missionFromUnit(unit);
+          const record = getMissionRecord(mission.id);
+          const base = {
+            missionId: mission.id,
+            subject: unit.subject,
+            course: unit.course,
+            lesson: unit.lesson,
+            part: unit.part,
+            title: unit.title,
+            unitNext: unit.next,
+            time: block.time
+          };
+          if (record?.evidenceImageName) {
+            items.push({
+              ...base,
+              type: "complete",
+              label: "提出済み",
+              button: "次の講義へ",
+              minutes: 0
+            });
+            return;
+          }
+          (unit.segments || []).forEach((segment) => pushNavigationSegment(items, base, segment));
+          items.push({
+            ...base,
+            type: "submit",
+            label: "確認テスト提出",
+            instruction: "自己採点済みの確認テストをスマホで撮って提出します。",
+            button: "写真を提出する",
+            minutes: 5
+          });
+        });
+      });
+      (dailyPlan.missions || [])
+        .filter((mission) => !(coursePacing.home_blocks || []).some((block) => (block.units || []).some((unit) => unit.subject === mission.subject)))
+        .forEach((mission) => {
+          const record = getMissionRecord(mission.id);
+          if (record?.evidenceImageName) {
+            items.push({
+              missionId: mission.id,
+              subject: mission.subject,
+              course: mission.course,
+              lesson: mission.lesson,
+              part: mission.part,
+              title: mission.title,
+              type: "complete",
+              label: "提出済み",
+              button: "次の講義へ",
+              minutes: 0
+            });
+            return;
+          }
+          (mission.tasks || []).forEach((task) => {
+            pushNavigationSegment(items, {
+              missionId: mission.id,
+              subject: mission.subject,
+              course: mission.course,
+              lesson: mission.lesson,
+              part: mission.part,
+              title: mission.title
+            }, { label: task, instruction: task, minutes: 20 });
+          });
+          items.push({
+            missionId: mission.id,
+            subject: mission.subject,
+            course: mission.course,
+            lesson: mission.lesson,
+            part: mission.part,
+            title: mission.title,
+            type: "submit",
+            label: "確認テスト提出",
+            instruction: "自己採点済みの確認テストをスマホで撮って提出します。",
+            button: "写真を提出する",
+            minutes: 5
+          });
+        });
+      return items;
+    }
+
+    function pushNavigationSegment(items, base, segment) {
+      const type = navigationTypeForSegment(segment.label);
+      if (type === "check") {
+        items.push({
+          ...base,
+          type: "ai_check",
+          label: "AI 3分確認",
+          instruction: "確認問題の前に、理解した内容を3分で言語化します。",
+          button: "AI 3分確認へ",
+          minutes: 3
+        });
+        items.push({
+          ...base,
+          type: "confirmation",
+          label: segment.label,
+          instruction: segment.instruction,
+          button: String(segment.label).includes("復習テスト") ? "復習テストへ" : "確認問題へ",
+          minutes: Number(segment.minutes || 0)
+        });
+        return;
+      }
+      items.push({
+        ...base,
+        type,
+        label: segment.label,
+        instruction: segment.instruction,
+        button: navigationButtonForSegment(segment.label),
+        minutes: Number(segment.minutes || 0)
+      });
+    }
+
+    function normalizeNavigationIndex(items) {
+      let index = Math.max(0, Math.min(navigationStepIndex, items.length));
+      while (items[index]?.type === "complete") index += 1;
+      navigationStepIndex = index;
+      localStorage.setItem(NAV_STEP_KEY, String(navigationStepIndex));
+      return index;
+    }
+
+    function navigationTypeForSegment(label) {
+      if (String(label).includes("映像") || String(label).includes("授業")) return "video";
+      if (String(label).includes("Point") || String(label).includes("要点")) return "point";
+      if (String(label).includes("講義問題")) return "lecture_problem";
+      if (String(label).includes("確認") || String(label).includes("テスト")) return "check";
+      if (String(label).includes("答え合わせ")) return "review";
+      if (String(label).includes("暗唱") || String(label).includes("Memory") || String(label).includes("音読")) return "memory";
+      if (String(label).includes("まとめ")) return "summary";
+      return "step";
+    }
+
+    function navigationButtonForSegment(label) {
+      const type = navigationTypeForSegment(label);
+      const map = {
+        video: "映像授業を始める",
+        point: "Pointを確認する",
+        lecture_problem: "講義問題へ",
+        check: "AI 3分確認へ",
+        review: "答え合わせへ",
+        memory: "音読・暗唱へ",
+        summary: "まとめる",
+        step: `${label}へ`
+      };
+      return map[type] || "次へ";
+    }
+
+    function navigationGreeting(items, index, remaining) {
+      const current = items[index];
+      if (current.type === "submit") {
+        return "確認テストは終了しましたか？写真を提出しましょう。";
+      }
+      if (current.type === "ai_check") {
+        return "理解できたか確認します。まず3分だけ、自分の言葉で説明しましょう。";
+      }
+      if (current.type === "confirmation") {
+        return "では確認問題へ進みます。解いた後は自己採点して、写真を提出します。";
+      }
+      if (index === 0) {
+        return `おはようございます。今日のMissionは${navigationMissionCount(items)}つです。あと${formatMinutes(remaining)}で終了予定です。`;
+      }
+      return `${current.label}に進みます。考えなくて大丈夫です。次はこれだけやりましょう。`;
+    }
+
+    function navigationMissionCount(items) {
+      return new Set(items.map((item) => item.missionId)).size;
+    }
+
+    function handleNavigationAction(current, index, items) {
+      if (current.type === "submit") {
+        openRecordDialog(findMissionById(current.missionId), getMissionRecord(current.missionId));
+        return;
+      }
+      navigationStepIndex = Math.min(index + 1, items.length);
+      localStorage.setItem(NAV_STEP_KEY, String(navigationStepIndex));
+      render();
+    }
+
+    function renderJourneyMap(items, currentIndex) {
+      const grouped = new Map();
+      items.forEach((item, index) => {
+        if (!grouped.has(item.missionId)) {
+          grouped.set(item.missionId, { item, indexes: [] });
+        }
+        grouped.get(item.missionId).indexes.push(index);
+      });
+      journeyMap.innerHTML = "";
+      grouped.forEach(({ item, indexes }) => {
+        const done = indexes.every((index) => index < currentIndex || items[index].type === "complete");
+        const current = indexes.includes(currentIndex);
+        const card = document.createElement("article");
+        card.className = "journey-card";
+        const dots = Array.from({ length: 12 }, (_, dotIndex) => {
+          const ratio = dotIndex / 12;
+          const progress = indexes.filter((index) => index < currentIndex).length / Math.max(1, indexes.length);
+          const cls = done || ratio < progress ? "done" : current && Math.abs(ratio - progress) < 0.09 ? "current" : "";
+          return `<span class="journey-dot ${cls}"></span>`;
+        }).join("");
+        card.innerHTML = `
+          <strong>${item.subject}</strong>
+          <div class="journey-track">${dots}</div>
+          <div class="journey-caption">現在: ${current ? `${item.lesson} ${item.part} / ${items[currentIndex]?.label || item.title}` : done ? "終了" : `${item.lesson} ${item.part}`}</div>
+          <div class="journey-caption">次: ${item.unitNext || nextLabelForMission(item)}</div>
+        `;
+        journeyMap.appendChild(card);
       });
     }
 
@@ -2507,10 +2853,7 @@
     }
 
     function renderHomeBriefs() {
-      const target = memoryData.today_target || {};
-      document.querySelector("#homeMemorySummary").textContent = `単語:${target.words || 0}語 / 基本文:${target.sentences || 0}文 / 構文:${target.structures || 0}文`;
-      document.querySelector("#homeReviewSummary").textContent = `本日の復習: ${(reviewSchedule.retention_tests || []).length}件`;
-      document.querySelector("#homeCoachSummary").textContent = dailyPlan.coach_message || "今日は目の前の時間割を一つずつ終わらせましょう。";
+      if (activeView === "home") return;
     }
 
     function levelTaskLabel(level) {
@@ -3237,7 +3580,11 @@
       records.push(submittedRecord);
       saveRecords();
       createSubmissionNotice(submittedRecord);
-      activeView = "support";
+      const navItems = navigationItems();
+      const nextIndex = navItems.findIndex((item) => item.type !== "complete");
+      navigationStepIndex = nextIndex >= 0 ? nextIndex : navItems.length;
+      localStorage.setItem(NAV_STEP_KEY, String(navigationStepIndex));
+      activeView = "home";
       localStorage.setItem(VIEW_KEY, activeView);
       recordDialog.close();
       render();
