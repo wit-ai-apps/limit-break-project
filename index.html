@@ -81,6 +81,58 @@
       z-index: 1;
     }
 
+    .login-screen {
+      min-height: 100vh;
+      width: min(520px, calc(100% - 28px));
+      margin: 0 auto;
+      display: grid;
+      place-items: center;
+      padding: 28px 0;
+      position: relative;
+      z-index: 2;
+    }
+
+    body[data-auth="in"] .login-screen { display: none; }
+    body[data-auth="out"] .shell { display: none; }
+
+    .login-card {
+      width: 100%;
+      padding: clamp(18px, 4vw, 28px);
+      display: grid;
+      gap: 16px;
+    }
+
+    .login-title {
+      margin: 0;
+      font-size: clamp(1.8rem, 7vw, 3rem);
+      line-height: 0.95;
+      text-shadow: 0 0 28px rgba(0, 191, 255, 0.36);
+    }
+
+    .login-subtitle {
+      margin: 0;
+      color: var(--accent);
+      font-weight: 850;
+      line-height: 1.5;
+    }
+
+    .login-form {
+      display: grid;
+      gap: 12px;
+    }
+
+    .account-panel {
+      display: grid;
+      gap: 10px;
+      padding: 10px;
+      border-radius: 16px;
+      border: 1px solid rgba(125, 211, 252, 0.18);
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .account-panel strong { color: var(--accent); }
+    .account-panel span { color: var(--muted); font-weight: 760; }
+
     .hero {
       display: grid;
       grid-template-columns: minmax(0, 1fr) minmax(300px, 0.5fr);
@@ -216,6 +268,8 @@
       border: 1px solid rgba(125, 211, 252, 0.18);
       background: rgba(255, 255, 255, 0.035);
     }
+
+    .support-type-panel[hidden] { display: none; }
 
     .support-type-panel label {
       display: grid;
@@ -621,6 +675,8 @@
       border-radius: 18px;
       background: rgba(5, 16, 32, 0.74);
       box-shadow: var(--glow);
+      position: relative;
+      overflow: hidden;
     }
 
     .timetable-time {
@@ -731,6 +787,31 @@
       border-radius: 14px;
       border: 1px solid rgba(125, 211, 252, 0.2);
       background: rgba(255, 255, 255, 0.035);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .timetable-card.complete, .unit-card.complete {
+      border-color: rgba(34, 197, 94, 0.45);
+      background: rgba(34, 197, 94, 0.055);
+    }
+
+    .completion-ribbon {
+      position: absolute;
+      top: 16px;
+      left: -42px;
+      width: 156px;
+      transform: rotate(-38deg);
+      text-align: center;
+      padding: 5px 0;
+      background: linear-gradient(90deg, rgba(34, 197, 94, 0.95), rgba(0, 191, 255, 0.92));
+      color: #03121d;
+      font-size: 0.72rem;
+      font-weight: 950;
+      letter-spacing: 0;
+      box-shadow: 0 0 22px rgba(34, 197, 94, 0.42);
+      z-index: 2;
+      pointer-events: none;
     }
 
     .unit-head {
@@ -992,7 +1073,32 @@
     }
   </style>
 </head>
-<body data-role="student">
+<body data-role="student" data-auth="out">
+  <section class="login-screen" aria-labelledby="login-title">
+    <div class="login-card glass">
+      <div>
+        <div class="system-label">Blue Neon Learning OS</div>
+        <h1 class="login-title" id="login-title">LIMIT BREAK PROJECT</h1>
+        <p class="login-subtitle">Every Day, Beyond Yesterday.</p>
+      </div>
+      <form class="login-form" id="loginForm">
+        <div class="field">
+          <label for="loginName">ユーザー名</label>
+          <input id="loginName" autocomplete="username" placeholder="例: student">
+        </div>
+        <div class="field">
+          <label for="loginPasscode">パスコード</label>
+          <input id="loginPasscode" type="password" autocomplete="current-password" placeholder="検証版は空欄でもログイン可">
+        </div>
+        <div>
+          <label class="role-label-sub">ログイン種別</label>
+          <div class="role-options" id="loginRoleOptions"></div>
+        </div>
+        <div class="support-type-panel" id="loginSupportTypePanel" hidden></div>
+        <button type="submit">ログイン</button>
+      </form>
+    </div>
+  </section>
   <div class="shell">
     <header class="hero">
       <section class="brand glass" aria-labelledby="brand-title">
@@ -1012,9 +1118,8 @@
         <div class="coach-title">Yui AI Coach <span aria-hidden="true"></span></div>
         <p class="coach-message" id="coachMessage">今日は英語構文を3つ覚えましょう。</p>
         <div class="role-panel" aria-labelledby="role-heading">
-          <h2 id="role-heading">ログイン種別を選択</h2>
-          <div class="role-options" id="roleOptions"></div>
-          <div class="support-type-panel" id="supportTypePanel" hidden></div>
+          <h2 id="role-heading">アカウント</h2>
+          <div class="account-panel" id="accountPanel"></div>
         </div>
       </aside>
     </header>
@@ -1283,6 +1388,8 @@
 
   <script>
     const STORAGE_KEY = "limitBreakProjectRecordsV120";
+    const LOGIN_KEY = "limitBreakProjectLoggedInV390";
+    const LOGIN_NAME_KEY = "limitBreakProjectLoginNameV390";
     const ROLE_KEY = "limitBreakProjectRole";
     const SUPPORT_TYPE_KEY = "limitBreakProjectSupportTypeV380";
     const MEMORY_RESULT_KEY = "limitBreakProjectMemoryResultsV170";
@@ -1694,6 +1801,8 @@
     let counselorNotes = loadCounselorNotes();
     let noticeContacts = loadNoticeContacts();
     let noticeQueue = loadNoticeQueue();
+    let isLoggedIn = localStorage.getItem(LOGIN_KEY) === "true";
+    let loginName = localStorage.getItem(LOGIN_NAME_KEY) || "";
     let currentRole = localStorage.getItem(ROLE_KEY) || "student";
     if (currentRole === "counselor") currentRole = "supporter";
     let currentSupportType = localStorage.getItem(SUPPORT_TYPE_KEY) || "family";
@@ -1702,8 +1811,10 @@
     let memoryResults = loadMemoryResults();
     let aiTeacherLog = loadAiTeacherLog();
 
-    const roleOptions = document.querySelector("#roleOptions");
-    const supportTypePanel = document.querySelector("#supportTypePanel");
+    const loginForm = document.querySelector("#loginForm");
+    const loginRoleOptions = document.querySelector("#loginRoleOptions");
+    const loginSupportTypePanel = document.querySelector("#loginSupportTypePanel");
+    const accountPanel = document.querySelector("#accountPanel");
     const appNav = document.querySelector("#appNav");
     const countdownGrid = document.querySelector("#countdownGrid");
     const missionList = document.querySelector("#missionList");
@@ -1903,7 +2014,7 @@
     }
 
     function renderRoleOptions() {
-      roleOptions.innerHTML = "";
+      loginRoleOptions.innerHTML = "";
       PUBLIC_ROLE_KEYS.forEach((key) => {
         const role = ROLES[key];
         const label = document.createElement("label");
@@ -1921,21 +2032,21 @@
         label.querySelector("input").addEventListener("change", () => {
           currentRole = key;
           localStorage.setItem(ROLE_KEY, currentRole);
-          render();
+          renderLoginSupportTypePanel();
         });
-        roleOptions.appendChild(label);
+        loginRoleOptions.appendChild(label);
       });
-      renderSupportTypePanel();
+      renderLoginSupportTypePanel();
     }
 
-    function renderSupportTypePanel() {
-      supportTypePanel.hidden = currentRole !== "supporter";
-      if (supportTypePanel.hidden) {
-        supportTypePanel.innerHTML = "";
+    function renderLoginSupportTypePanel() {
+      loginSupportTypePanel.hidden = currentRole !== "supporter";
+      if (loginSupportTypePanel.hidden) {
+        loginSupportTypePanel.innerHTML = "";
         return;
       }
       const current = SUPPORTER_TYPES.find((type) => type.value === currentSupportType) || SUPPORTER_TYPES[0];
-      supportTypePanel.innerHTML = `
+      loginSupportTypePanel.innerHTML = `
         <label>
           サポーター属性
           <select id="supportTypeSelect">
@@ -1944,9 +2055,26 @@
         </label>
         <span class="role-label-sub">${current.note}</span>
       `;
-      supportTypePanel.querySelector("#supportTypeSelect").addEventListener("change", (event) => {
+      loginSupportTypePanel.querySelector("#supportTypeSelect").addEventListener("change", (event) => {
         currentSupportType = event.target.value;
         localStorage.setItem(SUPPORT_TYPE_KEY, currentSupportType);
+        renderLoginSupportTypePanel();
+      });
+    }
+
+    function renderAccountPanel() {
+      const role = activeRoleConfig();
+      const supportType = SUPPORTER_TYPES.find((type) => type.value === currentSupportType);
+      accountPanel.innerHTML = `
+        <strong>${escapeHtml(loginName || "ゲスト")} / ${role.label}${currentRole === "supporter" && supportType ? ` / ${supportType.label}` : ""}</strong>
+        <span>${role.headline}</span>
+        <button class="secondary" type="button" id="logoutButton">ログアウト</button>
+      `;
+      accountPanel.querySelector("#logoutButton").addEventListener("click", () => {
+        isLoggedIn = false;
+        localStorage.setItem(LOGIN_KEY, "false");
+        activeView = "home";
+        localStorage.setItem(VIEW_KEY, activeView);
         render();
       });
     }
@@ -1996,6 +2124,7 @@
     }
 
     function render() {
+      document.body.dataset.auth = isLoggedIn ? "in" : "out";
       document.body.dataset.role = currentRole;
       document.body.dataset.supportType = currentSupportType;
       document.body.dataset.view = activeView;
@@ -2004,7 +2133,9 @@
       document.querySelector("#levelLabel").textContent = dailyPlan.level;
       document.querySelector("#phaseDateLabel").textContent = dailyPlan.date;
       document.querySelector("#coachMessage").textContent = dailyPlan.coach_message;
+      document.querySelector("#loginName").value = loginName;
       renderRoleOptions();
+      if (isLoggedIn) renderAccountPanel();
       renderAppNav();
       renderCountdowns();
       renderPhase();
@@ -2149,14 +2280,15 @@
         const isComplete = hasEvidence(record);
         card.className = `timetable-card${isComplete ? " complete" : ""}`;
         card.innerHTML = `
+          ${isComplete ? `<div class="completion-ribbon">SUBMITTED</div>` : ""}
           <div>
             <div class="timetable-time">${mission.time}</div>
             <h3 class="timetable-subject">${mission.subject}</h3>
           </div>
           <div class="lesson-block">
-            <strong>${role.showMissionDetail ? mission.course : "今日の学習"}</strong>
-            <span>${role.showMissionDetail ? `${mission.lesson} ${mission.part}` : visibleMissionTitle(mission)}</span>
-            <span>${role.showMissionDetail ? mission.title : "詳細は本人・先生画面で確認"}</span>
+            <strong>${isComplete ? "次の講義" : role.showMissionDetail ? mission.course : "今日の学習"}</strong>
+            <span>${isComplete ? nextLabelForMission(mission) : role.showMissionDetail ? `${mission.lesson} ${mission.part}` : visibleMissionTitle(mission)}</span>
+            <span>${isComplete ? "提出済み。次の学習へ進めます。" : role.showMissionDetail ? mission.title : "詳細は本人・先生画面で確認"}</span>
           </div>
           <div>
             <h3>今日やること</h3>
@@ -2177,8 +2309,8 @@
             </div>
           </div>
           <div class="mission-actions">
-            <button type="button" class="record-button" ${role.canEditRecord ? "" : "disabled"}>${record ? "提出を編集" : "確認テストを提出"}</button>
-            <span class="badge">${isComplete ? "Mission Clear" : "未提出: 後日へ"}</span>
+            <button type="button" class="record-button" ${role.canEditRecord ? "" : "disabled"}>${isComplete ? "提出を確認" : record ? "提出を編集" : "確認テストを提出"}</button>
+            <span class="badge">${isComplete ? "次の講義へ" : "未提出: 後日へ"}</span>
           </div>
         `;
         card.querySelector(".record-button").addEventListener("click", () => openRecordDialog(mission, record));
@@ -2222,14 +2354,15 @@
           const isComplete = hasEvidence(record);
           card.className = `timetable-card${isComplete ? " complete" : ""}`;
           card.innerHTML = `
+            ${isComplete ? `<div class="completion-ribbon">SUBMITTED</div>` : ""}
             <div>
               <div class="timetable-time">${mission.time}</div>
               <h3 class="timetable-subject">${mission.subject}</h3>
             </div>
             <div class="lesson-block">
-              <strong>${role.showMissionDetail ? mission.course : "今日の学習"}</strong>
-              <span>${role.showMissionDetail ? `${mission.lesson} ${mission.part}` : visibleMissionTitle(mission)}</span>
-              <span>${role.showMissionDetail ? mission.title : "詳細は本人・先生画面で確認"}</span>
+              <strong>${isComplete ? "次の講義" : role.showMissionDetail ? mission.course : "今日の学習"}</strong>
+              <span>${isComplete ? nextLabelForMission(mission) : role.showMissionDetail ? `${mission.lesson} ${mission.part}` : visibleMissionTitle(mission)}</span>
+              <span>${isComplete ? "提出済み。次の学習へ進めます。" : role.showMissionDetail ? mission.title : "詳細は本人・先生画面で確認"}</span>
             </div>
             <div>
               <h3>今日やること</h3>
@@ -2249,8 +2382,8 @@
               </div>
             </div>
             <div class="mission-actions">
-              <button type="button" class="record-button" ${role.canEditRecord ? "" : "disabled"}>${record ? "提出を編集" : "確認テストを提出"}</button>
-              <span class="badge">${isComplete ? "Mission Clear" : "未提出: 後日へ"}</span>
+              <button type="button" class="record-button" ${role.canEditRecord ? "" : "disabled"}>${isComplete ? "提出を確認" : record ? "提出を編集" : "確認テストを提出"}</button>
+              <span class="badge">${isComplete ? "次の講義へ" : "未提出: 後日へ"}</span>
             </div>
           `;
           card.querySelector(".record-button").addEventListener("click", () => openRecordDialog(mission, record));
@@ -2265,10 +2398,11 @@
       const isComplete = hasEvidence(record);
       return `
         <div class="unit-card${isComplete ? " complete" : ""}">
+          ${isComplete ? `<div class="completion-ribbon">SUBMITTED</div>` : ""}
           <div class="unit-head">
             <div>
-              <strong>${unit.subject} / ${unit.course}</strong>
-              <span>${unit.lesson} ${unit.part} / ${unit.title}</span>
+              <strong>${isComplete ? "次の講義" : `${unit.subject} / ${unit.course}`}</strong>
+              <span>${isComplete ? nextLabelForUnit(unit) : `${unit.lesson} ${unit.part} / ${unit.title}`}</span>
             </div>
             <span class="badge">${unit.minutes}分</span>
           </div>
@@ -2303,8 +2437,8 @@
             <span>${unit.pace_note}</span>
           </div>
           <div class="mission-actions">
-            <button type="button" class="record-button unit-record-button" data-mission-id="${mission.id}" ${role.canEditRecord ? "" : "disabled"}>${record ? "提出を編集" : "確認テストを提出"}</button>
-            <span class="badge">${isComplete ? "Mission Clear" : "未提出: 後日へ"}</span>
+            <button type="button" class="record-button unit-record-button" data-mission-id="${mission.id}" ${role.canEditRecord ? "" : "disabled"}>${isComplete ? "提出を確認" : record ? "提出を編集" : "確認テストを提出"}</button>
+            <span class="badge">${isComplete ? "次の講義へ" : "未提出: 後日へ"}</span>
           </div>
         </div>
       `;
@@ -2361,6 +2495,15 @@
         return { tomorrow: "確認問題類題", day3: "単位確認", day7: "定着テスト" };
       }
       return { tomorrow: "確認問題 類題", day3: "定着テスト", day7: "再確認" };
+    }
+
+    function nextLabelForMission(mission) {
+      const connection = connectionForMission(mission);
+      return connection.next || `${mission.subject} 次の講義`;
+    }
+
+    function nextLabelForUnit(unit) {
+      return unit.next || `${unit.subject} 次の講義`;
     }
 
     function renderHomeBriefs() {
@@ -3037,6 +3180,19 @@
       document.querySelector("#deleteRecordButton").style.display = record ? "inline-flex" : "none";
       recordDialog.showModal();
     }
+
+    loginForm.addEventListener("submit", (event) => {
+      event.preventDefault();
+      loginName = document.querySelector("#loginName").value.trim() || ROLES[currentRole].label;
+      localStorage.setItem(LOGIN_NAME_KEY, loginName);
+      localStorage.setItem(ROLE_KEY, currentRole);
+      localStorage.setItem(SUPPORT_TYPE_KEY, currentSupportType);
+      localStorage.setItem(LOGIN_KEY, "true");
+      isLoggedIn = true;
+      activeView = "home";
+      localStorage.setItem(VIEW_KEY, activeView);
+      render();
+    });
 
     recordForm.addEventListener("submit", async (event) => {
       event.preventDefault();
