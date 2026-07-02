@@ -1,21 +1,22 @@
 {
   "version": "3.5.0",
-  "policy": "授業後の確認テスト画像提出をMission Clearの条件にする。",
+  "policy": "授業後のスタディサプリ確認テスト結果画面スクショ提出をMission Clearの条件にする。",
   "required_evidence": {
     "types": ["image/jpeg", "image/png", "image/webp"],
     "required_for": ["確認問題", "復習テスト", "基本文テスト", "AI Check Test"],
+    "required_visible_fields": ["回答数", "正答率"],
     "phase1_storage": "localStorage",
     "phase2_storage": "Firebase Storage + Firestore"
   },
   "reschedule_rule": {
-    "when": "確認テスト画像が未提出の場合",
+    "when": "スタサプ結果スクショが未提出の場合",
     "action": "該当授業を未完了として扱い、翌日以降のReview Missionへ繰り越す",
     "home_label": "未提出: 後日へ"
   },
   "auto_grading_design": {
-    "phase1": "画像アップロードと提出証跡の保存のみ。採点結果は手入力。",
-    "phase2": "サーバー側でOCR/画像解析を行い、手書き答案を採点候補として返す。",
-    "phase3": "教材DBの確認問題メタデータと照合し、類題生成・弱点判定・復習日程へ連動する。",
+    "phase1": "スタサプ結果スクショを保存し、回答数と正答率は生徒が手入力する。",
+    "phase2": "サーバー側でOCR/画像解析を行い、スタサプ結果画面から回答数と正答率を自動読取する。",
+    "phase3": "確認テスト索引・教材メタデータ・正答率推移を参照し、類題生成・弱点判定・復習日程へ連動する。",
     "security": "APIキーや採点ロジックはフロントエンドに置かない。必ずサーバー側で処理する。"
   },
   "notification_design": {

@@ -1,6 +1,6 @@
 {
   "version": "3.7.0",
-  "policy": "生徒が確認テスト画像を提出したら、保護者・サポーター・塾講師へ提出通知を送る。",
+  "policy": "生徒がスタサプ確認テスト結果スクショを提出したら、保護者・サポーター・塾講師へ提出通知を送る。",
   "phase1": {
     "runtime": "GitHub Pages static app",
     "mail_delivery": "mailto link",
@@ -9,7 +9,7 @@
   "phase2": {
     "runtime": "Firebase Authentication + Firestore + Cloud Functions",
     "mail_delivery": "server side email provider",
-    "description": "確認テスト画像をFirebase Storageへ保存し、Cloud Functionsから保護者・サポーター・塾講師へ自動通知する。"
+    "description": "スタサプ結果スクショをFirebase Storageへ保存し、Cloud Functionsから保護者・サポーター・塾講師へ自動通知する。"
   },
   "recipients": ["parent", "supporter", "teacher"],
   "notification_payload": [
@@ -20,6 +20,7 @@
     "lesson",
     "part",
     "testType",
+    "answeredCount",
     "score",
     "understanding",
     "fatigue",
@@ -27,9 +28,9 @@
     "savedAt"
   ],
   "auto_grading": {
-    "phase1": "生徒の自己採点点数を保存し、画像提出の証跡を残す。",
-    "phase2": "サーバー側OCR/画像解析で手書き答案を読み取り、採点候補を返す。",
-    "phase3": "確認テスト索引と教材メタデータを参照し、類題生成・復習繰り越し・弱点分類へ連動する。"
+    "phase1": "スタサプ結果スクショと手入力の回答数・正答率を保存する。",
+    "phase2": "サーバー側OCR/画像解析で結果画面から回答数・正答率を自動読取する。",
+    "phase3": "確認テスト索引、教材メタデータ、正答率推移を参照し、類題生成・復習繰り越し・弱点分類へ連動する。"
   },
-  "privacy": "Phase1の画像はlocalStorage保存。正式運用ではFirebase Storageへ保存し、メール本文には画像本体を添付せず、提出があった事実と確認用リンクを送る。"
+  "privacy": "Phase1のスクショはlocalStorage保存。正式運用ではFirebase Storageへ保存し、メール本文には画像本体を添付せず、提出があった事実、回答数、正答率、確認用リンクを送る。"
 }

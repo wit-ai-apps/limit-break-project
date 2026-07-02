@@ -1417,7 +1417,11 @@
           </select>
         </div>
         <div class="field">
-          <label for="score">点数</label>
+          <label for="answeredCount">回答数</label>
+          <input id="answeredCount" type="number" min="0" step="1" required>
+        </div>
+        <div class="field">
+          <label for="score">正答率 (%)</label>
           <input id="score" type="number" min="0" max="100" step="1" required>
         </div>
         <div class="field">
@@ -1446,9 +1450,9 @@
         <textarea id="mistakeReason" placeholder="計算ミス、読み違い、暗記不足、条件整理不足など"></textarea>
       </div>
       <div class="field">
-        <label for="evidenceImage">自己採点済み確認テスト画像</label>
+        <label for="evidenceImage">スタサプ確認テスト結果スクショ</label>
         <input id="evidenceImage" type="file" accept="image/png,image/jpeg,image/webp">
-        <span class="button-note" id="evidenceImageNote">スマホで撮った自己採点済み答案をアップしてください。提出がない授業は未完了として後日にずらします。</span>
+        <span class="button-note" id="evidenceImageNote">スタサプの確認テスト結果画面をアップしてください。回答数と正答率が見えるスクショをMission Clearの証跡にします。</span>
       </div>
       <div class="field student-only teacher-only">
         <label for="mentalState">今日のメンタル状態</label>
@@ -2486,8 +2490,8 @@
             ...base,
             type: "submit",
             label: "確認テスト提出",
-            instruction: "自己採点済みの確認テストをスマホで撮って提出します。",
-            button: "写真を提出する",
+            instruction: "スタサプの結果画面をスクショし、回答数と正答率が見える状態で提出します。",
+            button: "結果スクショを提出する",
             minutes: 5
           });
         });
@@ -2530,8 +2534,8 @@
             title: mission.title,
             type: "submit",
             label: "確認テスト提出",
-            instruction: "自己採点済みの確認テストをスマホで撮って提出します。",
-            button: "写真を提出する",
+            instruction: "スタサプの結果画面をスクショし、回答数と正答率が見える状態で提出します。",
+            button: "結果スクショを提出する",
             minutes: 5
           });
         });
@@ -2606,13 +2610,13 @@
     function navigationGreeting(items, index, remaining) {
       const current = items[index];
       if (current.type === "submit") {
-        return "確認テストは終了しましたか？写真を提出しましょう。";
+        return "確認テストは終了しましたか？スタサプの結果画面をスクショして提出しましょう。";
       }
       if (current.type === "ai_check") {
         return "理解できたか確認します。まず3分だけ、自分の言葉で説明しましょう。";
       }
       if (current.type === "confirmation") {
-        return "では確認問題へ進みます。解いた後は自己採点して、写真を提出します。";
+        return "では確認問題へ進みます。終わったらスタサプの回答数と正答率を提出します。";
       }
       if (index === 0) {
         return `おはようございます。今日のMissionは${navigationMissionCount(items)}つです。あと${formatMinutes(remaining)}で終了予定です。`;
@@ -3091,7 +3095,7 @@
       teacherChat.innerHTML = `
         <div class="teacher-card">
           <strong>Yui Teacher / Coach / Analyzer</strong>
-          <span>Mission情報・点数・疲労度・復習期限・暗記DBを使う想定です。</span>
+          <span>Mission情報・回答数・正答率・疲労度・復習期限・暗記DBを使う想定です。</span>
           <p class="teacher-response">${response}</p>
           <div class="teacher-actions-row">
             <button type="button" data-action="teacher">3分チェック問題</button>
@@ -3346,8 +3350,8 @@
     function permissionText(role) {
       const items = [];
       items.push(role.showMissionDetail ? "今日のMission詳細" : "Mission達成率");
-      if (role.showScore === true) items.push("点数");
-      if (role.showScore === "summary") items.push("点数推移の要約");
+      if (role.showScore === true) items.push("回答数・正答率");
+      if (role.showScore === "summary") items.push("正答率推移の要約");
       if (role.showFatigue === true) items.push("疲労度");
       if (role.showFatigue === "summary") items.push("疲労傾向");
       if (role.showMentalState === true) items.push("自己申告メンタル状態");
@@ -3363,7 +3367,7 @@
       notificationPanel.innerHTML = `
         <div class="permission-card">
           <strong>通知先設定</strong>
-          <span>確認テスト画像が提出されたら、保護者・サポーター・塾講師へ案内します。</span>
+          <span>スタサプ確認テスト結果スクショが提出されたら、保護者・サポーター・塾講師へ案内します。</span>
           <div class="form-grid" style="margin-top: 10px;">
             ${contacts.map((contact) => `
               <div class="field">
@@ -3377,7 +3381,7 @@
         <div class="permission-card">
           <strong>通知方式</strong>
           <span>Phase1はメールアプリを開く方式です。Phase2でCloud Functionsから自動送信します。</span>
-          <div>画像本体はメール添付せず、提出があった事実と自己採点結果を通知します。</div>
+          <div>画像本体はメール添付せず、提出があった事実、回答数、正答率を通知します。</div>
         </div>
         ${latest.length ? latest.map((notice) => renderNoticeCard(notice)).join("") : `<div class="empty">まだ提出通知はありません。</div>`}
       `;
@@ -3403,8 +3407,8 @@
       return `
         <div class="permission-card">
           <strong>${notice.missionTitle}</strong>
-          <span>${notice.date} / ${notice.subject} / ${notice.testType} / 点数 ${notice.score}</span>
-          <div>提出画像: ${notice.evidenceImageName} / 自動採点: ${notice.autoGradingStatusLabel}</div>
+          <span>${notice.date} / ${notice.subject} / ${notice.testType} / 回答数 ${notice.answeredCount || "-"} / 正答率 ${notice.score}%</span>
+          <div>結果スクショ: ${notice.evidenceImageName} / 判定: ${notice.autoGradingStatusLabel}</div>
           <div>通知先: ${recipients.length ? recipients.map((recipient) => recipient.label).join(" / ") : "未設定"}</div>
           <div class="form-actions" style="margin-top: 10px;">
             <a class="secondary" href="${mailto}">メール作成</a>
@@ -3430,11 +3434,12 @@
         lesson: record.lesson,
         part: record.part,
         testType: record.testType,
+        answeredCount: record.answeredCount,
         score: record.score,
         understanding: record.understanding,
         fatigue: record.fatigue,
         evidenceImageName: record.evidenceImageName,
-        autoGradingStatusLabel: "Phase1: 生徒の自己採点を受領。手書き自動採点はPhase2で実装",
+        autoGradingStatusLabel: "Phase1: スタサプ結果スクショを受領。OCR自動読取はPhase2で実装",
         recipients,
         createdAt: new Date().toISOString(),
         sentAt: ""
@@ -3447,7 +3452,7 @@
       const to = recipients.map((recipient) => recipient.email).join(",");
       const subject = `LIMIT BREAK 提出通知: ${notice.subject} ${notice.testType}`;
       const body = [
-        "確認テスト画像が提出されました。",
+        "スタサプ確認テスト結果スクショが提出されました。",
         "",
         `日付: ${notice.date}`,
         `Mission: ${notice.missionTitle}`,
@@ -3455,13 +3460,14 @@
         `教材: ${notice.course}`,
         `範囲: ${notice.lesson} ${notice.part}`,
         `テスト種別: ${notice.testType}`,
-        `自己採点: ${notice.score}`,
+        `回答数: ${notice.answeredCount || "-"}`,
+        `正答率: ${notice.score}%`,
         `理解度: ${notice.understanding}`,
         `疲労度: ${notice.fatigue}`,
-        `提出画像ファイル名: ${notice.evidenceImageName}`,
+        `結果スクショファイル名: ${notice.evidenceImageName}`,
         "",
         "Phase1では画像本体は端末内保存です。画面のRecent Recordsで提出内容を確認してください。",
-        "手書き自動採点はPhase2でサーバー側OCR/画像解析として実装します。"
+        "Phase2ではサーバー側OCR/画像解析で回答数と正答率を自動読取します。"
       ].join("\n");
       return `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     }
@@ -3483,7 +3489,7 @@
         const card = document.createElement("div");
         card.className = "log-card";
         const scoreLine = role.showScore === true
-          ? `点数 ${record.score} / 理解度 ${record.understanding}`
+          ? `回答数 ${record.answeredCount || "-"} / 正答率 ${record.score}% / 理解度 ${record.understanding}`
           : role.showScore === "summary"
             ? `確認テスト: 記録あり`
             : `努力記録: 完了`;
@@ -3491,7 +3497,7 @@
         const mentalLine = role.showMentalState === true && record.mentalState ? `<div>メンタル状態: ${record.mentalState}</div>` : "";
         const mistakeLine = role.showMistake && record.mistakeReason ? `<div>間違い理由: ${record.mistakeReason}</div>` : "";
         const privateLine = role.showPrivateNote && record.privateNote ? `<div>内省メモ: ${record.privateNote}</div>` : "";
-        const evidenceLine = record.evidenceImageName ? `<div>提出画像: ${record.evidenceImageName} / 自動採点: Phase2で実装</div>` : `<div>提出画像: 未提出 / 後日へ繰り越し</div>`;
+        const evidenceLine = record.evidenceImageName ? `<div>結果スクショ: ${record.evidenceImageName} / OCR読取: Phase2で実装</div>` : `<div>結果スクショ: 未提出 / 後日へ繰り越し</div>`;
         card.innerHTML = `
           <strong>${record.date} / ${record.missionTitle}</strong>
           <span>${record.testType} / ${scoreLine}${fatigueLine ? " / " + fatigueLine : ""}</span>
@@ -3510,6 +3516,7 @@
       document.querySelector("#missionId").value = mission.id;
       document.querySelector("#missionTitle").value = `${mission.subject} ${mission.lesson} ${mission.part} ${mission.title}`;
       document.querySelector("#testType").value = record ? record.testType : "初回確認テスト";
+      document.querySelector("#answeredCount").value = record ? record.answeredCount || "" : "";
       document.querySelector("#score").value = record ? record.score : "";
       document.querySelector("#understanding").value = record ? record.understanding : "4";
       document.querySelector("#fatigue").value = record ? record.fatigue : "2";
@@ -3517,7 +3524,7 @@
       document.querySelector("#evidenceImage").value = "";
       document.querySelector("#evidenceImageNote").textContent = record?.evidenceImageName
         ? `提出済み: ${record.evidenceImageName}。差し替える場合だけ新しい画像を選んでください。`
-        : "スマホで撮った自己採点済み答案をアップしてください。提出がない授業は未完了として後日にずらします。";
+        : "スタサプの確認テスト結果画面をアップしてください。回答数と正答率が見えるスクショをMission Clearの証跡にします。";
       document.querySelector("#mentalState").value = record ? record.mentalState || "落ち着いている" : "落ち着いている";
       document.querySelector("#privateNote").value = record ? record.privateNote : "";
       document.querySelector("#deleteRecordButton").style.display = record ? "inline-flex" : "none";
@@ -3544,7 +3551,7 @@
       const existingRecord = getMissionRecord(missionId);
       const evidenceFile = document.querySelector("#evidenceImage").files[0];
       if (!existingRecord?.evidenceImageName && !evidenceFile) {
-        alert("自己採点済み確認テスト画像をアップロードしてください。未提出の場合、この授業は後日にずらします。");
+        alert("スタサプ確認テスト結果スクショをアップロードしてください。未提出の場合、この授業は後日にずらします。");
         return;
       }
       const evidenceImageData = evidenceFile ? await fileToDataUrl(evidenceFile) : existingRecord.evidenceImageData;
@@ -3561,6 +3568,7 @@
         testType: document.querySelector("#testType").value,
         checkItem: mission ? mission.check_item || "" : "",
         levelTask: mission ? mission.level_task || "" : "",
+        answeredCount: document.querySelector("#answeredCount").value,
         score: document.querySelector("#score").value,
         understanding: document.querySelector("#understanding").value,
         fatigue: document.querySelector("#fatigue").value,
@@ -3572,8 +3580,8 @@
         evidenceImageType: evidenceFile ? evidenceFile.type : existingRecord.evidenceImageType,
         evidenceImageData,
         rescheduleStatus: "not_required",
-        autoGradingStatus: "phase1_manual_score",
-        autoGradingSummary: "生徒の自己採点を受領。手書き自動採点はPhase2で実装。",
+        autoGradingStatus: "phase1_sutasapu_result_screenshot",
+        autoGradingSummary: "スタサプ結果スクショと手入力の回答数・正答率を受領。OCR自動読取はPhase2で実装。",
         notificationStatus: "queued",
         savedAt: new Date().toISOString()
       };
@@ -3624,7 +3632,7 @@
     });
 
     document.querySelector("#exportCsvButton").addEventListener("click", () => {
-      const headers = ["date", "day", "missionId", "missionTitle", "subject", "course", "lesson", "part", "testType", "checkItem", "levelTask", "score", "understanding", "fatigue", "mentalState", "mistakeReason", "privateNote", "evidenceStatus", "evidenceImageName", "rescheduleStatus", "autoGradingStatus", "autoGradingSummary", "notificationStatus", "savedAt"];
+      const headers = ["date", "day", "missionId", "missionTitle", "subject", "course", "lesson", "part", "testType", "checkItem", "levelTask", "answeredCount", "score", "understanding", "fatigue", "mentalState", "mistakeReason", "privateNote", "evidenceStatus", "evidenceImageName", "rescheduleStatus", "autoGradingStatus", "autoGradingSummary", "notificationStatus", "savedAt"];
       const rows = [headers, ...records.map((record) => headers.map((key) => record[key] || ""))];
       const csv = rows.map((row) => row.map(escapeCsv).join(",")).join("\n");
       const blob = new Blob(["\ufeff" + csv], { type: "text/csv;charset=utf-8" });
