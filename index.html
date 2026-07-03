@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Cortex LimitBraek</title>
+  <title>CORTEX Limit Break</title>
   <style>
     :root {
       color-scheme: dark;
@@ -353,6 +353,11 @@
       display: grid;
       grid-template-columns: minmax(0, 1.35fr) minmax(340px, 0.65fr);
       gap: 18px;
+    }
+
+    body[data-view="home"] .countdown-grid,
+    body[data-view="today"] .countdown-grid {
+      display: none;
     }
 
     body[data-view="home"] main,
@@ -1752,6 +1757,32 @@
       color: #fff;
     }
 
+    .settings-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .settings-card {
+      display: grid;
+      gap: 8px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #f9fbfd;
+    }
+
+    .settings-card strong {
+      color: #2f3748;
+      font-weight: 900;
+    }
+
+    .settings-card span,
+    .settings-card div {
+      color: var(--text);
+      line-height: 1.55;
+      font-weight: 700;
+    }
+
     .bar {
       background: #edf3f7;
       border: 0;
@@ -1867,7 +1898,7 @@
     <div class="login-card glass">
       <div>
         <div class="system-label">学習ナビゲーション</div>
-      <h1 class="login-title" id="login-title">Cortex LimitBraek</h1>
+      <h1 class="login-title" id="login-title">CORTEX Limit Break</h1>
         <p class="login-subtitle">Every Day, Beyond Yesterday.</p>
       </div>
       <form class="login-form" id="loginForm">
@@ -1893,7 +1924,7 @@
       <section class="brand glass" aria-labelledby="brand-title">
         <div>
           <div class="system-label">AI学習ナビ</div>
-          <h1 id="brand-title">Cortex LimitBraek</h1>
+          <h1 id="brand-title">CORTEX Limit Break</h1>
           <p class="subtitle">Every Day,<br>Beyond Yesterday.</p>
         </div>
         <div class="badge-row">
@@ -2073,9 +2104,17 @@
           <div class="material-list" id="materialList"></div>
         </section>
 
-        <section class="view-section view-admin view-memory" aria-labelledby="external-heading">
+        <section class="view-section view-admin" aria-labelledby="settings-heading">
           <div class="topline">
-            <h2 id="external-heading">外部アプリ連携</h2>
+            <h2 id="settings-heading">設定</h2>
+            <span class="badge">管理</span>
+          </div>
+          <div class="settings-list" id="settingsList"></div>
+        </section>
+
+        <section class="view-section view-admin" aria-labelledby="external-heading">
+          <div class="topline">
+            <h2 id="external-heading">外部アプリ連携設定</h2>
             <span class="badge">手動入力</span>
           </div>
           <div class="external-list" id="externalList"></div>
@@ -2088,9 +2127,9 @@
           <div class="permission-list" id="permissionList"></div>
         </section>
 
-        <section class="view-section view-support view-admin" aria-labelledby="notification-heading">
+        <section class="view-section view-admin" aria-labelledby="notification-heading">
           <div class="topline">
-            <h2 id="notification-heading">提出通知</h2>
+            <h2 id="notification-heading">メール通知設定</h2>
             <span class="badge">メール作成</span>
           </div>
           <div class="notification-panel" id="notificationPanel"></div>
@@ -2593,7 +2632,7 @@
     const FALLBACK_COURSE_ROUTE = {
       version: "4.2.0",
       student_id: "STU_0001",
-      app_title: "Cortex LimitBraek",
+      app_title: "CORTEX Limit Break",
       today: {
         date_label: "7月3日（金）",
         blocks: [
@@ -2664,6 +2703,7 @@
     const levelList = document.querySelector("#levelList");
     const summerWeekList = document.querySelector("#summerWeekList");
     const materialList = document.querySelector("#materialList");
+    const settingsList = document.querySelector("#settingsList");
     const paceList = document.querySelector("#paceList");
     const studyLoadGrid = document.querySelector("#studyLoadGrid");
     const memorySummary = document.querySelector("#memorySummary");
@@ -2994,6 +3034,7 @@
       renderSummerPlan();
       renderLevelTasks();
       renderMaterials();
+      renderSettings();
       renderExternalProgress();
       renderAiTeacher();
       renderCounselorSupport();
@@ -3924,6 +3965,47 @@
           <div>${test.prompt}</div>
         `;
         retentionList.appendChild(card);
+      });
+    }
+
+    function renderSettings() {
+      if (!settingsList) return;
+      const settings = [
+        {
+          title: "メール通知設定",
+          body: "保護者、サポーター、塾講師への提出通知先を管理します。Phase1はmailto作成、Phase2はサーバー送信へ移行します。"
+        },
+        {
+          title: "Firebase Authentication",
+          body: "uid、email、displayName、role、linked_student_id、created_at、last_login_at、login_count、statusをユーザー単位で管理します。"
+        },
+        {
+          title: "Firestore users / login_logs",
+          body: "users/{uid} にユーザー情報、login_logs/{log_id} にログイン履歴を保存する設計です。counselorは表面上サポーター属性でもDB上は独立ロールとして保持できます。"
+        },
+        {
+          title: "外部アプリ連携設定",
+          body: "英単語アプリなどのCSV、スクリーンショット、手動入力を管理します。Homeには表示しません。"
+        },
+        {
+          title: "OCR設定",
+          body: "確認テスト結果スクショから回答数と正答率を読み取る準備項目です。Phase1では手入力を維持します。"
+        },
+        {
+          title: "AI Teacher API設定",
+          body: "OpenAI APIキーはブラウザに置かず、Cloud FunctionsまたはAPIサーバーの環境変数で保持します。"
+        },
+        {
+          title: "管理者用設定",
+          body: "教材DB、Exam DB、権限、通知、AI接続、外部連携を管理者画面に集約します。"
+        }
+      ];
+      settingsList.innerHTML = "";
+      settings.forEach((item) => {
+        const card = document.createElement("article");
+        card.className = "settings-card";
+        card.innerHTML = `<strong>${item.title}</strong><span>${item.body}</span>`;
+        settingsList.appendChild(card);
       });
     }
 

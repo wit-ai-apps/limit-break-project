@@ -1,7 +1,7 @@
 {
   "version": "4.2.0",
   "student_id": "STU_0001",
-  "app_title": "Cortex LimitBraek",
+  "app_title": "CORTEX Limit Break",
   "policy": "講座一覧ではなく、映像授業・テキスト確認・講義問題・確認問題・提出・復習を1本の学習ルートとして管理する。",
   "completion_conditions": [
     "映像授業を見た",

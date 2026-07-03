@@ -1,4 +1,4 @@
-# Cortex LimitBraek
+# CORTEX Limit Break
 
 Every Day, Beyond Yesterday.
 
@@ -64,6 +64,83 @@ Mission完了条件:
 - `data/course_route.json`
 
 `course_route.json` は、生徒ごとに学習ルートを変えるためのテンプレートです。Phase1では固定JSONで運用し、Phase2以降でFirebase / Firestoreへ移行します。
+
+### v4.3 設定分離・Firebaseログイン管理
+
+Home画面は「今日の学習ルート」専用にします。メール通知、外部アプリ連携、OCR、AI Teacher API、Firebase、管理者用DB表示はHomeに置かず、設定画面へ移動します。
+
+Homeに表示してよいもの:
+
+- 今日の学習ルート
+- 次にやること
+- 今日のゴール
+- 復習予定
+- Yui Coach一言
+
+Homeに表示しないもの:
+
+- メール設定
+- Firebase設定
+- APIキー
+- 外部アプリ設定
+- DB表示
+- 管理者設定
+
+#### Firebase Authentication前提のユーザー管理
+
+Phase2ではFirebase Authenticationで本人確認を行い、Firestoreにユーザー情報とログイン履歴を保存します。Phase1の仮ログインUIは、この構造へ移行する前提の検証版です。
+
+ロール:
+
+- `student`
+- `parent`
+- `supporter`
+- `counselor`
+- `teacher`
+- `admin`
+
+表面ログインでは心理カウンセラーをサポーター属性として扱えますが、Firestore上では `counselor` ロールを保持できるようにします。
+
+`users/{uid}`:
+
+```json
+{
+  "uid": "firebase_uid",
+  "email": "user@example.com",
+  "displayName": "表示名",
+  "role": "student",
+  "linked_student_id": "STU_0001",
+  "status": "active",
+  "created_at": "serverTimestamp",
+  "last_login_at": "serverTimestamp",
+  "login_count": 1
+}
+```
+
+`login_logs/{log_id}`:
+
+```json
+{
+  "uid": "firebase_uid",
+  "role": "student",
+  "linked_student_id": "STU_0001",
+  "login_at": "serverTimestamp",
+  "user_agent": "browser info",
+  "source": "web"
+}
+```
+
+ログイン管理に必要な項目:
+
+- `uid`
+- `email`
+- `displayName`
+- `role`
+- `linked_student_id`
+- `created_at`
+- `last_login_at`
+- `login_count`
+- `status`
 
 ## 検証版の範囲
 
