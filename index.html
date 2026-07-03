@@ -1213,6 +1213,492 @@
       box-shadow: none;
     }
 
+    /* v4.1: Study Sapuri-inspired readable UI. Light, card-based, parent-friendly. */
+    :root {
+      color-scheme: light;
+      --bg: #f5f8fb;
+      --bg-2: #ffffff;
+      --panel: #ffffff;
+      --panel-strong: #ffffff;
+      --line: #dbe5ec;
+      --line-strong: #16a9dc;
+      --text: #4b5567;
+      --muted: #6b7280;
+      --primary: #16a9dc;
+      --secondary: #4fc3df;
+      --accent: #0b4da2;
+      --success: #36bfd6;
+      --warning: #f59e0b;
+      --danger: #dc2626;
+      --glow: 0 8px 24px rgba(15, 23, 42, 0.08);
+      --glow-strong: 0 12px 32px rgba(15, 23, 42, 0.13);
+    }
+
+    body {
+      color: var(--text);
+      background: var(--bg);
+    }
+
+    body::before {
+      inset: 0 0 auto 0;
+      height: 56px;
+      background: #18a8d8;
+      opacity: 1;
+      z-index: 0;
+    }
+
+    .shell {
+      width: min(980px, calc(100% - 24px));
+      padding-top: 86px;
+    }
+
+    .glass,
+    section,
+    aside,
+    dialog {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      box-shadow: var(--glow);
+      backdrop-filter: none;
+    }
+
+    .hero {
+      grid-template-columns: 1fr;
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .brand {
+      min-height: auto;
+      padding: 24px;
+      border-radius: 14px;
+    }
+
+    .brand::after { display: none; }
+
+    .system-label {
+      color: var(--primary);
+      font-size: 0.92rem;
+      text-transform: none;
+    }
+
+    h1 {
+      color: #2f3748;
+      font-size: clamp(1.9rem, 5.6vw, 3.2rem);
+      line-height: 1.08;
+      text-shadow: none;
+    }
+
+    h2 {
+      color: #2f3748;
+      font-size: clamp(1.35rem, 4vw, 2rem);
+      text-shadow: none;
+    }
+
+    h3,
+    .lesson-block strong,
+    .unit-head strong,
+    .review-card strong,
+    .log-card strong,
+    .permission-card strong,
+    .exam-card strong,
+    .level-card strong,
+    .week-card strong,
+    .ai-check strong,
+    .material-card strong,
+    .pace-card strong,
+    .load-card strong,
+    .memory-card strong,
+    .retention-card strong,
+    .external-card strong,
+    .teacher-card strong,
+    .counselor-card strong {
+      color: #374151;
+      text-shadow: none;
+    }
+
+    .subtitle,
+    .login-subtitle {
+      color: var(--muted);
+      text-shadow: none;
+    }
+
+    .badge-row {
+      margin: 18px 0 0;
+    }
+
+    .badge {
+      min-height: 34px;
+      color: #234155;
+      background: #f2f7fb;
+      border-color: #d7e5ef;
+      font-weight: 850;
+    }
+
+    .coach {
+      padding: 20px;
+      border-left: 5px solid var(--primary);
+    }
+
+    .coach-title {
+      color: #2f3748;
+      font-size: 1.05rem;
+    }
+
+    .coach-title span {
+      background: var(--primary);
+      box-shadow: none;
+    }
+
+    .coach-message {
+      color: #374151;
+      font-size: 1rem;
+    }
+
+    .account-panel {
+      border-color: var(--line);
+      background: #f8fbfd;
+    }
+
+    .account-panel strong,
+    .account-panel span,
+    .role-label-sub,
+    .support-type-panel label,
+    .phase-copy,
+    .bar-label,
+    .course-line,
+    .mission-note,
+    .lesson-block span,
+    .connection-grid span,
+    .navigation-current span,
+    .journey-caption,
+    .button-note,
+    .metric span,
+    .review-card span,
+    .log-card span,
+    .permission-card span,
+    .exam-card span,
+    .level-card span,
+    .week-card span,
+    .ai-check span,
+    .material-card span,
+    .pace-card span,
+    .load-card span,
+    .memory-card span,
+    .retention-card span,
+    .external-card span,
+    .teacher-card span,
+    .counselor-card span,
+    .empty {
+      color: var(--text);
+    }
+
+    .countdown-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .countdown-card {
+      min-height: 92px;
+      padding: 16px;
+      border-color: var(--line);
+      background: #ffffff;
+    }
+
+    .countdown-card h2 {
+      color: #4b5567;
+      font-size: 1rem;
+      font-weight: 900;
+    }
+
+    .countdown-card strong {
+      color: var(--primary);
+      font-size: clamp(1.7rem, 5vw, 2.35rem);
+      text-shadow: none;
+    }
+
+    .countdown-card span {
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .app-nav {
+      gap: 0;
+      padding: 0;
+      margin: 4px 0 18px;
+      border: 1px solid var(--line-strong);
+      border-radius: 12px;
+      background: #fff;
+      overflow: hidden;
+    }
+
+    .nav-button {
+      flex: 1 0 auto;
+      min-width: 92px;
+      border: 0;
+      border-radius: 0;
+      background: #ffffff;
+      color: var(--primary);
+      font-weight: 900;
+    }
+
+    .nav-button + .nav-button {
+      border-left: 1px solid #d8eef7;
+    }
+
+    .nav-button.active {
+      color: #ffffff;
+      background: var(--primary);
+    }
+
+    .navigation-card {
+      min-height: 390px;
+      padding: clamp(24px, 6vw, 46px);
+      border-radius: 16px;
+      border-color: var(--line);
+      background: #ffffff;
+    }
+
+    .navigation-kicker {
+      color: var(--primary);
+      text-transform: none;
+      font-size: 1rem;
+    }
+
+    .navigation-message {
+      color: #2f3748;
+      font-size: clamp(1.55rem, 5vw, 2.65rem);
+      line-height: 1.25;
+    }
+
+    .navigation-current {
+      border: 1px solid var(--line);
+      background: #f7fbfe;
+      border-radius: 14px;
+      padding: 18px;
+    }
+
+    .navigation-current strong {
+      color: #2f3748;
+      font-size: clamp(1.7rem, 6vw, 2.5rem);
+      text-shadow: none;
+    }
+
+    .navigation-current span {
+      color: #4b5567;
+      font-size: 1rem;
+    }
+
+    button,
+    .navigation-button {
+      min-height: 48px;
+      border-radius: 12px;
+      border-color: var(--primary);
+      color: #ffffff;
+      background: var(--primary);
+      box-shadow: none;
+    }
+
+    button.secondary {
+      color: var(--primary);
+      background: #ffffff;
+      border-color: var(--primary);
+    }
+
+    button:hover {
+      border-color: #0b8fc0;
+      box-shadow: var(--glow-strong);
+    }
+
+    .journey-card,
+    .metric,
+    .review-card,
+    .log-card,
+    .permission-card,
+    .exam-card,
+    .level-card,
+    .week-card,
+    .ai-check,
+    .material-card,
+    .pace-card,
+    .load-card,
+    .memory-card,
+    .retention-card,
+    .external-card,
+    .teacher-card,
+    .counselor-card,
+    .unit-card,
+    .micro-plan {
+      border-color: var(--line);
+      background: #f9fbfd;
+      border-radius: 14px;
+    }
+
+    .journey-card strong {
+      color: #374151;
+      font-size: 1.05rem;
+    }
+
+    .journey-track {
+      gap: 5px;
+    }
+
+    .journey-dot {
+      height: 10px;
+      background: #e6eef5;
+      border: 0;
+    }
+
+    .journey-dot.done {
+      background: var(--success);
+      box-shadow: none;
+    }
+
+    .journey-dot.current {
+      background: var(--primary);
+      box-shadow: none;
+    }
+
+    .metric-grid {
+      gap: 12px;
+    }
+
+    .metric {
+      min-height: 92px;
+      align-content: center;
+      text-align: center;
+    }
+
+    .metric strong {
+      color: var(--primary);
+      font-size: 2.05rem;
+      text-shadow: none;
+    }
+
+    .metric span {
+      font-size: 0.95rem;
+      font-weight: 850;
+    }
+
+    .timetable-card,
+    .mission {
+      border-color: var(--line);
+      background: #ffffff;
+      box-shadow: var(--glow);
+    }
+
+    .mission::before { display: none; }
+
+    .timetable-subject,
+    .subject-head strong {
+      color: #2f3748;
+      text-shadow: none;
+    }
+
+    .timetable-time,
+    .time {
+      color: var(--primary);
+      background: #eef9fd;
+      border-color: #cfeef8;
+    }
+
+    .check-list li::before {
+      color: var(--primary);
+    }
+
+    .flow span {
+      color: #374151;
+      background: #f2f7fb;
+      border-color: #dbe5ec;
+    }
+
+    .bar {
+      background: #edf3f7;
+      border: 0;
+    }
+
+    .bar i {
+      background: var(--primary);
+      box-shadow: none;
+    }
+
+    .status-chip {
+      color: #047857;
+      background: #ecfdf5;
+      border-color: #a7f3d0;
+    }
+
+    label {
+      color: #374151;
+    }
+
+    input,
+    select,
+    textarea {
+      color: #374151;
+      background: #ffffff;
+      border-color: #d7e2ea;
+    }
+
+    .login-screen {
+      background: var(--bg);
+    }
+
+    .login-card {
+      border-radius: 18px;
+      background: #ffffff;
+    }
+
+    .login-title {
+      color: #2f3748;
+      text-shadow: none;
+    }
+
+    .role-options label {
+      color: #374151;
+      background: #f8fbfd;
+      border-color: var(--line);
+    }
+
+    .role-options label:has(input:checked) {
+      color: #ffffff;
+      background: var(--primary);
+      border-color: var(--primary);
+      box-shadow: none;
+    }
+
+    .role-options label:has(input:checked) .role-label-sub {
+      color: #ffffff;
+    }
+
+    dialog::backdrop {
+      background: rgba(15, 23, 42, 0.35);
+    }
+
+    @media (max-width: 560px) {
+      .shell {
+        width: min(100% - 18px, 980px);
+        padding-top: 78px;
+      }
+
+      .brand,
+      .coach,
+      section,
+      aside,
+      .countdown-card {
+        border-radius: 14px;
+      }
+
+      .countdown-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .navigation-card {
+        min-height: 360px;
+      }
+    }
+
     @media (max-width: 980px) {
       .hero, main, .phase-panel { grid-template-columns: 1fr; }
       .countdown-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
