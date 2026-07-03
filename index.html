@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>LIMIT BREAK PROJECT</title>
+  <title>Cortex LimitBraek</title>
   <style>
     :root {
       color-scheme: dark;
@@ -355,11 +355,17 @@
       gap: 18px;
     }
 
-    body[data-view="home"] main {
+    body[data-view="home"] main,
+    body[data-view="long"] main,
+    body[data-view="week"] main,
+    body[data-view="today"] main {
       grid-template-columns: 1fr;
     }
 
-    body[data-view="home"] main > aside {
+    body[data-view="home"] main > aside,
+    body[data-view="long"] main > aside,
+    body[data-view="week"] main > aside,
+    body[data-view="today"] main > aside {
       display: none;
     }
 
@@ -386,6 +392,9 @@
 
     .view-section { display: none; }
     body[data-view="home"] .view-home,
+    body[data-view="long"] .view-long,
+    body[data-view="week"] .view-week,
+    body[data-view="today"] .view-today,
     body[data-view="memory"] .view-memory,
     body[data-view="review"] .view-review,
     body[data-view="progress"] .view-progress,
@@ -1284,9 +1293,10 @@
 
     h1 {
       color: #2f3748;
-      font-size: clamp(1.9rem, 5.6vw, 3.2rem);
+      font-size: clamp(1.45rem, 4.2vw, 2.2rem);
       line-height: 1.08;
       text-shadow: none;
+      letter-spacing: 0;
     }
 
     h2 {
@@ -1453,7 +1463,7 @@
     }
 
     .navigation-card {
-      min-height: 390px;
+      min-height: auto;
       padding: clamp(24px, 6vw, 46px);
       border-radius: 16px;
       border-color: var(--line);
@@ -1468,7 +1478,7 @@
 
     .navigation-message {
       color: #2f3748;
-      font-size: clamp(1.55rem, 5vw, 2.65rem);
+      font-size: clamp(1.25rem, 4vw, 1.95rem);
       line-height: 1.25;
     }
 
@@ -1481,7 +1491,7 @@
 
     .navigation-current strong {
       color: #2f3748;
-      font-size: clamp(1.7rem, 6vw, 2.5rem);
+      font-size: clamp(1.35rem, 5vw, 2rem);
       text-shadow: none;
     }
 
@@ -1613,6 +1623,135 @@
       border-color: #dbe5ec;
     }
 
+    .route-summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .route-summary-card,
+    .plan-card {
+      display: grid;
+      gap: 8px;
+      min-height: 104px;
+      padding: 16px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #f9fbfd;
+    }
+
+    .route-summary-card strong,
+    .plan-card strong {
+      color: #2f3748;
+      font-size: 1.06rem;
+      font-weight: 900;
+    }
+
+    .route-summary-card span,
+    .plan-card span,
+    .plan-card div {
+      color: var(--text);
+      font-weight: 700;
+      line-height: 1.55;
+    }
+
+    .route-flow {
+      display: grid;
+      gap: 8px;
+      margin: 16px 0;
+    }
+
+    .route-step {
+      display: grid;
+      grid-template-columns: 34px minmax(0, 1fr);
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid #dbeaf2;
+      border-radius: 12px;
+      background: #fbfdff;
+      color: #3d4758;
+      font-weight: 850;
+    }
+
+    .route-step strong {
+      display: grid;
+      place-items: center;
+      width: 28px;
+      height: 28px;
+      border-radius: 999px;
+      background: #e9f8fd;
+      color: var(--primary);
+      font-size: 0.92rem;
+    }
+
+    .route-context {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin: 14px 0 18px;
+    }
+
+    .route-context div {
+      display: grid;
+      gap: 5px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #f7fbfe;
+    }
+
+    .route-context strong {
+      color: #2f3748;
+      font-size: 0.92rem;
+      font-weight: 900;
+    }
+
+    .route-context span {
+      color: var(--text);
+      line-height: 1.5;
+      font-weight: 700;
+    }
+
+    .long-plan-list,
+    .week-route-list {
+      display: grid;
+      gap: 12px;
+    }
+
+    .route-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .route-pills span {
+      display: inline-flex;
+      align-items: center;
+      min-height: 30px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #eef9fd;
+      color: #25536a;
+      font-size: 0.9rem;
+      font-weight: 900;
+    }
+
+    .week-route-card {
+      grid-template-columns: 48px minmax(0, 1fr);
+      align-items: center;
+    }
+
+    .week-route-card strong {
+      display: grid;
+      place-items: center;
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      background: var(--primary);
+      color: #fff;
+    }
+
     .bar {
       background: #edf3f7;
       border: 0;
@@ -1694,14 +1833,20 @@
         grid-template-columns: 1fr;
       }
 
+      .route-summary,
+      .route-context {
+        grid-template-columns: 1fr;
+      }
+
       .navigation-card {
-        min-height: 360px;
+        min-height: auto;
       }
     }
 
     @media (max-width: 980px) {
       .hero, main, .phase-panel { grid-template-columns: 1fr; }
       .countdown-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .route-summary, .route-context { grid-template-columns: 1fr; }
       .timetable-list, .home-brief-grid { grid-template-columns: 1fr; }
       .metric-grid, .form-grid, .pace-summary, .load-grid, .memory-summary, .visibility-grid { grid-template-columns: 1fr; }
       .mission-head { grid-template-columns: 1fr; }
@@ -1711,6 +1856,7 @@
       .shell { width: min(100% - 18px, 1320px); padding-top: 10px; }
       section, aside, .brand, .coach, .countdown-card { border-radius: 16px; }
       .countdown-grid { grid-template-columns: 1fr; }
+      .route-summary, .route-context { grid-template-columns: 1fr; }
       .role-options { grid-template-columns: 1fr; }
       .topline { align-items: flex-start; flex-direction: column; }
     }
@@ -1721,7 +1867,7 @@
     <div class="login-card glass">
       <div>
         <div class="system-label">学習ナビゲーション</div>
-        <h1 class="login-title" id="login-title">LIMIT BREAK PROJECT</h1>
+      <h1 class="login-title" id="login-title">Cortex LimitBraek</h1>
         <p class="login-subtitle">Every Day, Beyond Yesterday.</p>
       </div>
       <form class="login-form" id="loginForm">
@@ -1746,8 +1892,8 @@
     <header class="hero">
       <section class="brand glass" aria-labelledby="brand-title">
         <div>
-          <div class="system-label">学習ナビゲーション</div>
-          <h1 id="brand-title">LIMIT BREAK PROJECT</h1>
+          <div class="system-label">AI学習ナビ</div>
+          <h1 id="brand-title">Cortex LimitBraek</h1>
           <p class="subtitle">Every Day,<br>Beyond Yesterday.</p>
         </div>
         <div class="badge-row">
@@ -1788,18 +1934,42 @@
           </div>
         </section>
 
-        <section class="view-section view-home" aria-labelledby="mission-heading">
+        <section class="view-section view-home" aria-labelledby="route-summary-heading">
           <div class="topline">
-            <h2 id="mission-heading">今日の時間割</h2>
+            <h2 id="route-summary-heading">今日の学習</h2>
+            <span class="badge" id="todayDateLabel">7月3日（金）</span>
+          </div>
+          <div class="route-summary" id="routeSummary"></div>
+        </section>
+
+        <section class="view-section view-home view-today" aria-labelledby="mission-heading">
+          <div class="topline">
+            <h2 id="mission-heading">今日の学習ルート</h2>
           </div>
           <div class="mission-list" id="missionList"></div>
         </section>
 
-        <section class="view-section view-home" aria-labelledby="home-brief-heading">
+        <section class="view-section view-home view-today" aria-labelledby="home-brief-heading">
           <div class="topline">
             <h2 id="home-brief-heading">学習の現在地</h2>
           </div>
           <div class="journey-map" id="journeyMap"></div>
+        </section>
+
+        <section class="view-section view-long" aria-labelledby="long-plan-heading">
+          <div class="topline">
+            <h2 id="long-plan-heading">8月末までの長期計画</h2>
+            <span class="badge">Long Plan</span>
+          </div>
+          <div class="long-plan-list" id="longPlanList"></div>
+        </section>
+
+        <section class="view-section view-week" aria-labelledby="week-plan-heading">
+          <div class="topline">
+            <h2 id="week-plan-heading">今週の到達点</h2>
+            <span class="badge">Week Plan</span>
+          </div>
+          <div class="week-route-list" id="weekPlanList"></div>
         </section>
 
         <section class="view-section view-progress" aria-labelledby="pace-heading">
@@ -2033,7 +2203,10 @@
     const NOTICE_QUEUE_KEY = "limitBreakProjectNoticeQueueV370";
     const BASELINE_DATE = "2026-06-30";
     const APP_VIEWS = [
-      { id: "home", label: "今日やること" },
+      { id: "home", label: "ホーム" },
+      { id: "long", label: "長期計画" },
+      { id: "week", label: "今週" },
+      { id: "today", label: "今日の手順" },
       { id: "memory", label: "暗記" },
       { id: "review", label: "復習" },
       { id: "progress", label: "進み具合" },
@@ -2417,6 +2590,32 @@
       phase: "Phase1 mailto"
     };
 
+    const FALLBACK_COURSE_ROUTE = {
+      version: "4.2.0",
+      student_id: "STU_0001",
+      app_title: "Cortex LimitBraek",
+      today: {
+        date_label: "7月3日（金）",
+        blocks: [
+          { label: "午前", subject: "数学", goal: "数学Ⅰ 第1講 PART1と数学A 第1講 PART1を完了" },
+          { label: "午後", subject: "英語", goal: "英語 Chapter1と文法・基本文を完了" },
+          { label: "夜", subject: "物理", goal: "物理基礎 第1講 PART1を確認問題まで完了" }
+        ]
+      },
+      long_plan: [
+        { subject: "数学", goal: "数学Ⅰ完了、数学A基礎完了、数学Ⅱ前半、数学B基礎", route: ["数学Ⅰ", "数学A", "数学Ⅱ", "数学B"] },
+        { subject: "英語", goal: "ベーシック英語完了、基本文300文、構文100文", route: ["ベーシック英語", "文法・読解", "長文導入"] },
+        { subject: "物理・化学", goal: "物理基礎完了、力学導入、化学基礎導入", route: ["物理基礎", "物理", "化学基礎"] }
+      ],
+      week_plan: [
+        { day: "月", target: "数学Ⅰ PART1 / 英語 Chapter1", check: "確認問題・復習テスト提出" },
+        { day: "火", target: "数学A PART1 / 物理基礎 PART1", check: "確認問題提出" },
+        { day: "水", target: "数学Ⅰ PART2 / 英語 Chapter2", check: "類題・基本文チェック" },
+        { day: "木", target: "数学A PART2 / 英文法 Chapter1", check: "確認問題・基本文暗唱" },
+        { day: "金", target: "数学Ⅰ PART3 / 物理基礎 PART2", check: "スタサプ結果スクショ提出" }
+      ]
+    };
+
     let dailyPlan = FALLBACK_DAILY;
     let examSchedule = FALLBACK_EXAMS;
     let summerPlan = FALLBACK_SUMMER;
@@ -2430,6 +2629,7 @@
     let externalProgress = loadExternalProgress();
     let aiTeacherConfig = FALLBACK_AI_TEACHER;
     let coursePacing = FALLBACK_COURSE_PACING;
+    let courseRoute = FALLBACK_COURSE_ROUTE;
     let counselorNotes = loadCounselorNotes();
     let noticeContacts = loadNoticeContacts();
     let noticeQueue = loadNoticeQueue();
@@ -2452,6 +2652,9 @@
     const countdownGrid = document.querySelector("#countdownGrid");
     const missionList = document.querySelector("#missionList");
     const journeyMap = document.querySelector("#journeyMap");
+    const routeSummary = document.querySelector("#routeSummary");
+    const longPlanList = document.querySelector("#longPlanList");
+    const weekPlanList = document.querySelector("#weekPlanList");
     const reviewList = document.querySelector("#reviewList");
     const subjectBars = document.querySelector("#subjectBars");
     const permissionList = document.querySelector("#permissionList");
@@ -2492,7 +2695,7 @@
         if (summerResponse.ok) summerPlan = await summerResponse.json();
         if (levelsResponse.ok) levelTasks = await levelsResponse.json();
         if (materialsResponse.ok) materialsCatalog = await materialsResponse.json();
-        const [reverseResponse, reviewResponse, memoryResponse, externalResponse, aiTeacherResponse, counselorResponse, pacingResponse, outlineResponse, balanceResponse] = await Promise.all([
+        const [reverseResponse, reviewResponse, memoryResponse, externalResponse, aiTeacherResponse, counselorResponse, pacingResponse, outlineResponse, balanceResponse, routeResponse] = await Promise.all([
           fetch("data/reverse_progress.json", { cache: "no-store" }),
           fetch("data/review_schedule.json", { cache: "no-store" }),
           fetch("data/memory_items.json", { cache: "no-store" }),
@@ -2501,7 +2704,8 @@
           fetch("data/counselor_notes.json", { cache: "no-store" }),
           fetch("data/course_pacing.json", { cache: "no-store" }),
           fetch("data/materials_outline.json", { cache: "no-store" }),
-          fetch("data/subject_balance.json", { cache: "no-store" })
+          fetch("data/subject_balance.json", { cache: "no-store" }),
+          fetch("data/course_route.json", { cache: "no-store" })
         ]);
         if (reverseResponse.ok) reverseProgress = await reverseResponse.json();
         if (reviewResponse.ok) reviewSchedule = await reviewResponse.json();
@@ -2512,6 +2716,7 @@
         if (pacingResponse.ok) coursePacing = await pacingResponse.json();
         if (outlineResponse.ok) materialsOutline = await outlineResponse.json();
         if (balanceResponse.ok) subjectBalance = await balanceResponse.json();
+        if (routeResponse.ok) courseRoute = await routeResponse.json();
       } catch (_) {
         dailyPlan = FALLBACK_DAILY;
         examSchedule = FALLBACK_EXAMS;
@@ -2524,6 +2729,7 @@
         externalProgress = loadExternalProgress();
         aiTeacherConfig = FALLBACK_AI_TEACHER;
         coursePacing = FALLBACK_COURSE_PACING;
+        courseRoute = FALLBACK_COURSE_ROUTE;
         materialsOutline = FALLBACK_MATERIALS_OUTLINE;
         subjectBalance = FALLBACK_SUBJECT_BALANCE;
         counselorNotes = loadCounselorNotes();
@@ -2772,9 +2978,12 @@
       if (isLoggedIn) renderAccountPanel();
       renderAppNav();
       renderCountdowns();
+      renderRouteSummary();
       renderPhase();
       renderMissions();
       renderHomeBriefs();
+      renderLongPlan();
+      renderWeekPlan();
       renderReverseProgress();
       renderStudyLoad();
       renderProgress();
@@ -2910,7 +3119,7 @@
     }
 
     function renderMissions() {
-      if (activeView === "home") {
+      if (activeView === "home" || activeView === "today") {
         renderLearningNavigation();
         return;
       }
@@ -2999,8 +3208,11 @@
       const remaining = Math.max(0, items.slice(currentIndex).reduce((sum, item) => sum + (item.minutes || 0), 0));
       const card = document.createElement("article");
       card.className = "navigation-card glass";
+      const mission = findMissionById(current.missionId);
+      const unit = findUnitByMissionId(current.missionId);
+      const flow = learningRouteFlow(unit, mission);
       card.innerHTML = `
-        <div class="navigation-kicker">学習ナビゲーション</div>
+        <div class="navigation-kicker">次にやること</div>
         <p class="navigation-message">${navigationGreeting(items, currentIndex, remaining)}</p>
         <div class="navigation-current">
           <strong>${current.subject}</strong>
@@ -3008,6 +3220,8 @@
           <span>${current.lesson} ${current.part} / ${current.title}</span>
           <span>現在: ${current.label}</span>
         </div>
+        <div class="route-flow" aria-label="今日の流れ">${flow}</div>
+        ${renderUnitConnection(unit, mission)}
         <button class="navigation-button" type="button" id="navigationActionButton">${current.button}</button>
       `;
       missionList.appendChild(card);
@@ -3098,8 +3312,66 @@
       return items;
     }
 
+    function findUnitByMissionId(missionId) {
+      for (const block of coursePacing.home_blocks || []) {
+        const unit = (block.units || []).find((item) => unitMissionId(item) === missionId);
+        if (unit) return unit;
+      }
+      return null;
+    }
+
+    function learningRouteFlow(unit, mission) {
+      const steps = unit?.route_steps || routeStepsFromSegments(unit?.segments || mission?.tasks || []);
+      return steps.map((step, index) => `<div class="route-step"><strong>${index + 1}</strong><span>${step}</span></div>`).join("");
+    }
+
+    function routeStepsFromSegments(segments) {
+      const labels = (segments || []).map((segment) => typeof segment === "string" ? segment : segment.label);
+      const hasText = labels.some((label) => String(label).includes("テキスト"));
+      const base = labels.length ? labels : ["映像授業", "確認問題", "結果提出"];
+      const normalized = base.map((label) => String(label).replace("確認テスト", "確認問題"));
+      if (!hasText) normalized.splice(Math.min(1, normalized.length), 0, "テキスト確認");
+      if (!normalized.some((label) => label.includes("結果"))) normalized.push("結果提出");
+      if (!normalized.some((label) => label.includes("AI"))) normalized.push("AI Check");
+      return normalized;
+    }
+
+    function renderUnitConnection(unit, mission) {
+      const previous = unit?.previous || connectionForMission(mission || {}).previous;
+      const next = unit?.next || connectionForMission(mission || {}).next;
+      const review = unit?.review || reviewPlanForMission(mission || {});
+      const completion = unit?.completion_rule || "映像授業、テキスト確認、確認問題、結果提出まで終えたら完了";
+      return `
+        <div class="route-context">
+          <div><strong>前回とのつながり</strong><span>${previous}</span></div>
+          <div><strong>次回</strong><span>${next}</span></div>
+          <div><strong>復習予定</strong><span>明日: ${review.tomorrow} / 3日後: ${review.day3} / 7日後: ${review.day7}</span></div>
+          <div><strong>完了条件</strong><span>${completion}</span></div>
+        </div>
+      `;
+    }
+
     function pushNavigationSegment(items, base, segment) {
       const type = navigationTypeForSegment(segment.label);
+      if (type === "video") {
+        items.push({
+          ...base,
+          type,
+          label: segment.label,
+          instruction: segment.instruction,
+          button: navigationButtonForSegment(segment.label),
+          minutes: Number(segment.minutes || 0)
+        });
+        items.push({
+          ...base,
+          type: "text",
+          label: "テキスト確認",
+          instruction: "映像と同じ範囲のテキストを開き、POINT・例題・確認問題の場所を確認します。",
+          button: "テキストを確認する",
+          minutes: 15
+        });
+        return;
+      }
       if (type === "check") {
         items.push({
           ...base,
@@ -3139,6 +3411,7 @@
 
     function navigationTypeForSegment(label) {
       if (String(label).includes("映像") || String(label).includes("授業")) return "video";
+      if (String(label).includes("テキスト")) return "text";
       if (String(label).includes("Point") || String(label).includes("要点")) return "point";
       if (String(label).includes("講義問題")) return "lecture_problem";
       if (String(label).includes("確認") || String(label).includes("テスト")) return "check";
@@ -3152,6 +3425,7 @@
       const type = navigationTypeForSegment(label);
       const map = {
         video: "映像授業を始める",
+        text: "テキストを確認する",
         point: "Pointを確認する",
         lecture_problem: "講義問題へ",
         check: "AI 3分確認へ",
@@ -3414,6 +3688,48 @@
 
     function renderHomeBriefs() {
       if (activeView === "home") return;
+    }
+
+    function renderRouteSummary() {
+      if (!routeSummary) return;
+      document.querySelector("#todayDateLabel").textContent = courseRoute.today?.date_label || todayJapanKey();
+      routeSummary.innerHTML = "";
+      (courseRoute.today?.blocks || []).forEach((block) => {
+        const card = document.createElement("article");
+        card.className = "route-summary-card";
+        card.innerHTML = `<strong>${block.label}: ${block.subject}</strong><span>${block.goal}</span>`;
+        routeSummary.appendChild(card);
+      });
+    }
+
+    function renderLongPlan() {
+      if (!longPlanList) return;
+      longPlanList.innerHTML = "";
+      (courseRoute.long_plan || []).forEach((item) => {
+        const card = document.createElement("article");
+        card.className = "plan-card";
+        card.innerHTML = `
+          <strong>${item.subject}</strong>
+          <span>${item.goal}</span>
+          <div class="route-pills">${(item.route || []).map((step) => `<span>${step}</span>`).join("")}</div>
+        `;
+        longPlanList.appendChild(card);
+      });
+    }
+
+    function renderWeekPlan() {
+      if (!weekPlanList) return;
+      weekPlanList.innerHTML = "";
+      (courseRoute.week_plan || []).forEach((item) => {
+        const card = document.createElement("article");
+        card.className = "plan-card week-route-card";
+        card.innerHTML = `
+          <strong>${item.day}</strong>
+          <span>${item.target}</span>
+          <div>${item.check}</div>
+        `;
+        weekPlanList.appendChild(card);
+      });
     }
 
     function levelTaskLabel(level) {
