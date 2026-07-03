@@ -11,18 +11,18 @@
       --bg-2: #08111f;
       --panel: rgba(10, 20, 38, 0.72);
       --panel-strong: rgba(11, 28, 54, 0.88);
-      --line: rgba(125, 211, 252, 0.24);
-      --line-strong: rgba(0, 191, 255, 0.62);
+      --line: rgba(125, 211, 252, 0.18);
+      --line-strong: rgba(0, 191, 255, 0.5);
       --text: #f8fbff;
-      --muted: #a7bed4;
+      --muted: #e5efff;
       --primary: #00bfff;
       --secondary: #38bdf8;
       --accent: #7dd3fc;
       --success: #22c55e;
       --warning: #facc15;
       --danger: #ef4444;
-      --glow: 0 0 22px rgba(0, 191, 255, 0.24);
-      --glow-strong: 0 0 34px rgba(0, 191, 255, 0.42);
+      --glow: 0 0 16px rgba(0, 191, 255, 0.12);
+      --glow-strong: 0 0 24px rgba(0, 191, 255, 0.28);
     }
 
     * { box-sizing: border-box; }
@@ -1156,6 +1156,63 @@
       display: none;
     }
 
+    /* Readability rule: body text stays white; neon is reserved for titles and key numbers. */
+    .system-label,
+    .login-subtitle,
+    .subtitle,
+    .coach-title,
+    h2,
+    .timetable-subject,
+    .navigation-current strong,
+    .subject-head strong,
+    .metric strong,
+    .countdown-card strong {
+      color: var(--primary);
+    }
+
+    .account-panel span,
+    .role-label-sub,
+    .support-type-panel label,
+    .countdown-card h2,
+    .countdown-card span,
+    .nav-button,
+    .phase-copy,
+    .bar-label,
+    .course-line,
+    .mission-note,
+    .lesson-block span,
+    .connection-grid span,
+    .navigation-current span,
+    .journey-caption,
+    .button-note,
+    .load-card span,
+    .permission-card span,
+    .log-card span,
+    .empty {
+      color: var(--text);
+    }
+
+    h3,
+    .journey-card strong,
+    .micro-plan-row strong,
+    .timetable-time,
+    .time {
+      color: var(--text);
+      text-shadow: none;
+    }
+
+    .badge {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.055);
+      border-color: rgba(125, 211, 252, 0.24);
+      box-shadow: none;
+    }
+
+    button,
+    .nav-button.active {
+      box-shadow: none;
+    }
+
     @media (max-width: 980px) {
       .hero, main, .phase-panel { grid-template-columns: 1fr; }
       .countdown-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
@@ -1177,7 +1234,7 @@
   <section class="login-screen" aria-labelledby="login-title">
     <div class="login-card glass">
       <div>
-        <div class="system-label">Blue Neon Learning OS</div>
+        <div class="system-label">学習ナビゲーション</div>
         <h1 class="login-title" id="login-title">LIMIT BREAK PROJECT</h1>
         <p class="login-subtitle">Every Day, Beyond Yesterday.</p>
       </div>
@@ -1203,19 +1260,19 @@
     <header class="hero">
       <section class="brand glass" aria-labelledby="brand-title">
         <div>
-          <div class="system-label">Blue Neon Learning OS</div>
+          <div class="system-label">学習ナビゲーション</div>
           <h1 id="brand-title">LIMIT BREAK PROJECT</h1>
           <p class="subtitle">Every Day,<br>Beyond Yesterday.</p>
         </div>
         <div class="badge-row">
           <span class="badge" id="baselineLabel">基準日 2026-06-30</span>
-          <span class="badge" id="dayBadge">DAY 001</span>
-          <span class="badge" id="levelLabel">LEVEL 1 FOUNDATION</span>
+          <span class="badge" id="dayBadge">1日目</span>
+          <span class="badge" id="levelLabel">基礎固め</span>
         </div>
       </section>
 
       <aside class="coach glass">
-        <div class="coach-title">Yui AI Coach <span aria-hidden="true"></span></div>
+        <div class="coach-title">ユイ先生からの一言 <span aria-hidden="true"></span></div>
         <p class="coach-message" id="coachMessage">今日は英語構文を3つ覚えましょう。</p>
         <div class="role-panel" aria-labelledby="role-heading">
           <h2 id="role-heading">アカウント</h2>
@@ -1232,7 +1289,7 @@
       <div class="stack">
         <section class="view-section view-admin" aria-labelledby="phase-heading">
           <div class="topline">
-            <h2 id="phase-heading">Exam Strategy Phase</h2>
+            <h2 id="phase-heading">受験までの作戦</h2>
             <span class="badge" id="phaseDateLabel"></span>
           </div>
           <div class="phase-panel">
@@ -1254,7 +1311,7 @@
 
         <section class="view-section view-home" aria-labelledby="home-brief-heading">
           <div class="topline">
-            <h2 id="home-brief-heading">Journey Map</h2>
+            <h2 id="home-brief-heading">学習の現在地</h2>
           </div>
           <div class="journey-map" id="journeyMap"></div>
         </section>
@@ -1269,7 +1326,7 @@
 
         <section class="view-section view-progress" aria-labelledby="load-heading">
           <div class="topline">
-            <h2 id="load-heading">Today&apos;s Study Load</h2>
+            <h2 id="load-heading">今日の学習量</h2>
             <span class="badge" id="loadTotalBadge">合計 0分</span>
           </div>
           <div class="load-grid" id="studyLoadGrid"></div>
@@ -1277,14 +1334,14 @@
 
         <section class="view-section view-review" aria-labelledby="review-heading">
           <div class="topline">
-            <h2 id="review-heading">Review Mission</h2>
+            <h2 id="review-heading">復習予定</h2>
           </div>
           <div class="review-list" id="reviewList"></div>
         </section>
 
         <section class="view-section view-memory" aria-labelledby="memory-heading">
           <div class="topline">
-            <h2 id="memory-heading">Today&apos;s Memory</h2>
+            <h2 id="memory-heading">今日の暗記</h2>
             <span class="badge">暗記チェック</span>
           </div>
           <div class="memory-summary" id="memorySummary"></div>
@@ -1293,7 +1350,7 @@
 
         <section class="view-section view-review" aria-labelledby="retention-heading">
           <div class="topline">
-            <h2 id="retention-heading">Retention Test / 定着テスト</h2>
+            <h2 id="retention-heading">定着テスト</h2>
             <span class="badge">忘却曲線</span>
           </div>
           <div class="retention-list" id="retentionList"></div>
@@ -1312,12 +1369,12 @@
       <aside class="stack" aria-label="進捗と分析">
         <section class="view-section view-progress" aria-labelledby="progress-heading">
           <div class="topline">
-            <h2 id="progress-heading">Today&apos;s Progress</h2>
+            <h2 id="progress-heading">今日の進み具合</h2>
             <button class="secondary" id="exportCsvButton" type="button">CSV出力</button>
           </div>
           <div class="metric-grid">
-            <div class="metric"><strong id="todayRate">0%</strong><span>Mission達成率</span></div>
-            <div class="metric"><strong id="remainingCount">0</strong><span>残りMission数</span></div>
+            <div class="metric"><strong id="todayRate">0%</strong><span>今日の達成率</span></div>
+            <div class="metric"><strong id="remainingCount">0</strong><span>残りの学習数</span></div>
             <div class="metric"><strong id="recordCount">0</strong><span>確認テスト記録</span></div>
           </div>
           <div class="ratio-list" id="subjectBars" style="margin-top: 14px;"></div>
@@ -1325,16 +1382,16 @@
 
         <section class="view-section view-ai" aria-labelledby="ai-teacher-heading">
           <div class="topline">
-            <h2 id="ai-teacher-heading">AI Teacher Chat</h2>
-            <span class="badge">Phase1 固定応答</span>
+            <h2 id="ai-teacher-heading">AI先生</h2>
+            <span class="badge">検証版</span>
           </div>
           <div class="teacher-chat" id="teacherChat"></div>
         </section>
 
         <section class="view-section view-support" aria-labelledby="counselor-heading">
           <div class="topline">
-            <h2 id="counselor-heading">Support</h2>
-            <span class="badge">Specialist Support</span>
+            <h2 id="counselor-heading">見守り・相談</h2>
+            <span class="badge">支援者向け</span>
           </div>
           <div class="counselor-list" id="counselorList"></div>
         </section>
@@ -1355,14 +1412,14 @@
 
         <section class="view-section view-admin" aria-labelledby="materials-heading">
           <div class="topline">
-            <h2 id="materials-heading">Materials First DB</h2>
+            <h2 id="materials-heading">教材データ</h2>
           </div>
           <div class="material-list" id="materialList"></div>
         </section>
 
         <section class="view-section view-admin view-memory" aria-labelledby="external-heading">
           <div class="topline">
-            <h2 id="external-heading">External App Progress</h2>
+            <h2 id="external-heading">外部アプリ連携</h2>
             <span class="badge">手動入力</span>
           </div>
           <div class="external-list" id="externalList"></div>
@@ -1370,22 +1427,22 @@
 
         <section class="view-section view-support" aria-labelledby="role-view-heading">
           <div class="topline">
-            <h2 id="role-view-heading">Role View</h2>
+            <h2 id="role-view-heading">表示権限</h2>
           </div>
           <div class="permission-list" id="permissionList"></div>
         </section>
 
         <section class="view-section view-support view-admin" aria-labelledby="notification-heading">
           <div class="topline">
-            <h2 id="notification-heading">Submission Notice</h2>
-            <span class="badge">Phase1 mailto</span>
+            <h2 id="notification-heading">提出通知</h2>
+            <span class="badge">メール作成</span>
           </div>
           <div class="notification-panel" id="notificationPanel"></div>
         </section>
 
         <section class="view-section view-support view-progress" aria-labelledby="records-heading">
           <div class="topline">
-            <h2 id="records-heading">Recent Records</h2>
+            <h2 id="records-heading">最近の記録</h2>
           </div>
           <div class="log-list" id="logList"></div>
           <button class="warning student-only teacher-only" id="resetButton" type="button" style="width: 100%; margin-top: 12px;">検証データをリセット</button>
@@ -1413,7 +1470,7 @@
             <option value="翌日確認テスト">翌日確認テスト</option>
             <option value="3日後確認テスト">3日後確認テスト</option>
             <option value="7日後確認テスト">7日後確認テスト</option>
-            <option value="AI Check Test">AI Check Test</option>
+            <option value="AI確認テスト">AI確認テスト</option>
           </select>
         </div>
         <div class="field">
@@ -1452,7 +1509,7 @@
       <div class="field">
         <label for="evidenceImage">スタサプ確認テスト結果スクショ</label>
         <input id="evidenceImage" type="file" accept="image/png,image/jpeg,image/webp">
-        <span class="button-note" id="evidenceImageNote">スタサプの確認テスト結果画面をアップしてください。回答数と正答率が見えるスクショをMission Clearの証跡にします。</span>
+        <span class="button-note" id="evidenceImageNote">スタサプの確認テスト結果画面をアップしてください。回答数と正答率が見えるスクショを完了の証跡にします。</span>
       </div>
       <div class="field student-only teacher-only">
         <label for="mentalState">今日のメンタル状態</label>
@@ -1490,13 +1547,13 @@
     const NOTICE_QUEUE_KEY = "limitBreakProjectNoticeQueueV370";
     const BASELINE_DATE = "2026-06-30";
     const APP_VIEWS = [
-      { id: "home", label: "Home" },
-      { id: "memory", label: "Memory" },
-      { id: "review", label: "Review" },
-      { id: "progress", label: "Progress" },
-      { id: "ai", label: "AI Teacher" },
-      { id: "support", label: "Support" },
-      { id: "admin", label: "Admin" }
+      { id: "home", label: "今日やること" },
+      { id: "memory", label: "暗記" },
+      { id: "review", label: "復習" },
+      { id: "progress", label: "進み具合" },
+      { id: "ai", label: "AI先生" },
+      { id: "support", label: "見守り" },
+      { id: "admin", label: "設定" }
     ];
 
     const PUBLIC_ROLE_KEYS = ["student", "parent", "supporter", "teacher"];
@@ -1666,14 +1723,14 @@
           course: "ベーシックレベル英語",
           lesson: "第1講",
           part: "Chapter1",
-          title: "Today's Memory / Today's Grammar / Today's Structure",
+          title: "今日の暗記 / 文法 / 構文",
           memory: "肯定文・否定文の基本構文を3つ暗唱",
           level_task: "Basic",
-          check_item: "復習テスト / Today's Memory",
+          check_item: "復習テスト / 今日の暗記",
           tasks: ["授業", "復習", "復習テスト", "例文暗唱", "音読"],
           ai_check_test: [
             "肯定文を否定文に変えるルールを説明する",
-            "Today's Memory 3文を音読して日本語に戻す"
+            "今日の暗記3文を音読して日本語に戻す"
           ],
           reason: "英語は構文を先に固定し、長文期の負荷を下げる。"
         },
@@ -1710,13 +1767,13 @@
       weeks: [
         { week: 1, range: "2026-07-01〜2026-07-05", focus: "数学Ⅰ・英語基礎・物理基礎", daily_missions: ["数学Ⅰ 第1講 PART1", "ベーシック英語 Chapter1", "物理基礎 第1講 PART1"] },
         { week: 2, range: "2026-07-06〜2026-07-12", focus: "数学Ⅰ/A・英語復習テスト・物理基礎", daily_missions: ["確認問題", "復習テスト", "図解説明"] },
-        { week: 3, range: "2026-07-13〜2026-07-19", focus: "数学Ⅱ導入・英語構文・物理基礎", daily_missions: ["数学Ⅱ 第1講", "Today's Memory 3文", "確認問題"] },
-        { week: 4, range: "2026-07-20〜2026-07-26", focus: "数学B導入・化学基礎導入", daily_missions: ["数列導入", "化学基礎 第1講", "AI Check Test"] },
+        { week: 3, range: "2026-07-13〜2026-07-19", focus: "数学Ⅱ導入・英語構文・物理基礎", daily_missions: ["数学Ⅱ 第1講", "今日の暗記3文", "確認問題"] },
+        { week: 4, range: "2026-07-20〜2026-07-26", focus: "数学B導入・化学基礎導入", daily_missions: ["数列導入", "化学基礎 第1講", "AI確認テスト"] },
         { week: 5, range: "2026-07-27〜2026-08-02", focus: "数学Ⅰ/Ⅱ/Bの基礎横断", daily_missions: ["確認問題の解き直し", "間違い理由分類"] },
-        { week: 6, range: "2026-08-03〜2026-08-09", focus: "英語 Standard文法・読解導入", daily_missions: ["文法・読解", "復習テスト", "Today's Memory"] },
+        { week: 6, range: "2026-08-03〜2026-08-09", focus: "英語 標準文法・読解導入", daily_missions: ["文法・読解", "復習テスト", "今日の暗記"] },
         { week: 7, range: "2026-08-10〜2026-08-16", focus: "物理 力学導入", daily_missions: ["物理 第1講", "演習問題", "図解説明"] },
         { week: 8, range: "2026-08-17〜2026-08-23", focus: "8月末確認週 1", daily_missions: ["数学確認問題", "英語復習テスト", "物理確認問題"] },
-        { week: 9, range: "2026-08-24〜2026-08-31", focus: "8月末確認週 2", daily_missions: ["AI Check Test", "復習漏れ回収", "9月標準演習準備"] }
+        { week: 9, range: "2026-08-24〜2026-08-31", focus: "8月末確認週 2", daily_missions: ["AI確認テスト", "復習漏れ回収", "9月標準演習準備"] }
       ]
     };
 
@@ -1724,13 +1781,13 @@
       levels: [
         { level: "Basic", purpose: "講義内容を理解する", evidence: "要点整理・授業・講義を見て、確認項目に進める" },
         { level: "Standard", purpose: "確認問題・復習テストを自力で解ける", evidence: "数学は確認問題、英語は復習テスト、物理は確認問題を記録する" },
-        { level: "Challenge", purpose: "AI Check Testで説明・類題対応できる", evidence: "映像授業後に固定の理解確認問題へ答える" }
+        { level: "Challenge", purpose: "AI確認テストで説明・類題対応できる", evidence: "映像授業後に固定の理解確認問題へ答える" }
       ]
     };
 
     const FALLBACK_MATERIALS = {
       policy_version: "1.7.0",
-      principle: "スタディサプリ教材を最優先教材とし、Mission / Today's Memory / AI Check Testは教材順に沿って設計する。ただし教材本文・問題文の複製配布はしない。",
+      principle: "スタディサプリ教材を最優先教材とし、日々の学習、今日の暗記、AI確認テストは教材順に沿って設計する。ただし教材本文・問題文の複製配布はしない。",
       materials: [
         { subject: "数学Ⅰ", course_name: "ベーシックレベル数学Ⅰ", file_name: "Eベーシックレベル数学Ⅰ_KZB450000_03.pdf", extraction_status: "cataloged" },
         { subject: "数学A", course_name: "ベーシックレベル数学A", file_name: "ベーシックレベル数学Ａ_EKZB460000_01.pdf", extraction_status: "cataloged" },
@@ -1796,7 +1853,7 @@
     const FALLBACK_EXTERNAL = {
       version: "1.7.0",
       apps: [
-        { app_name: "英単語オレンジ", import_type: "manual_csv", last_imported_at: "2026-07-01", studied_count: 120, accuracy: 82, weak_items: ["abandon", "maintain", "available"], reflection: "明日のToday's Memoryに苦手単語を追加" }
+        { app_name: "英単語オレンジ", import_type: "manual_csv", last_imported_at: "2026-07-01", studied_count: 120, accuracy: 82, weak_items: ["abandon", "maintain", "available"], reflection: "明日の暗記に苦手単語を追加" }
       ]
     };
 
@@ -1806,9 +1863,9 @@
       api_policy: { frontend_api_key: false, server_side_secret_required: true },
       roles: ["Yui Teacher", "Yui Coach", "Yui Analyzer"],
       fixed_responses: {
-        teacher: "まず3分で、今日のMissionを自分の言葉で説明してみましょう。詰まった場所だけヒントを出します。",
+        teacher: "まず3分で、今日の学習内容を自分の言葉で説明してみましょう。詰まった場所だけヒントを出します。",
         coach: "今日は全部を完璧にする日ではありません。昨日より一つ進めば、LIMIT BREAK +1です。",
-        analyzer: "先生向け要約: 数学と英語は毎日実施。疲労度が高い日は復習Missionを短くして継続を優先します。"
+        analyzer: "先生向け要約: 数学と英語は毎日実施。疲労度が高い日は復習を短くして継続を優先します。"
       }
     };
 
@@ -2219,9 +2276,9 @@
       document.body.dataset.role = currentRole;
       document.body.dataset.supportType = currentSupportType;
       document.body.dataset.view = activeView;
-      document.querySelector("#baselineLabel").textContent = `Today ${todayJapanKey()}`;
-      document.querySelector("#dayBadge").textContent = `DAY ${String(dailyPlan.day).padStart(3, "0")}`;
-      document.querySelector("#levelLabel").textContent = dailyPlan.level;
+      document.querySelector("#baselineLabel").textContent = `今日 ${todayJapanKey()}`;
+      document.querySelector("#dayBadge").textContent = `${Number(dailyPlan.day || 1)}日目`;
+      document.querySelector("#levelLabel").textContent = levelLabelJa(dailyPlan.level);
       document.querySelector("#phaseDateLabel").textContent = dailyPlan.date;
       document.querySelector("#coachMessage").textContent = dailyPlan.coach_message;
       document.querySelector("#loginName").value = loginName;
@@ -2257,11 +2314,7 @@
         const days = dateDaysUntil(exam.countdown_target);
         const card = document.createElement("section");
         card.className = "countdown-card glass";
-        const compactName = exam.exam_name
-          .replace("本試験", "")
-          .replace("国公立前期・", "")
-          .replace("試験", "")
-          .replace("開始", "");
+        const compactName = countdownLabel(exam);
         card.innerHTML = `
           <h2>${compactName}</h2>
           <strong>あと${days}日</strong>
@@ -2269,6 +2322,23 @@
         `;
         countdownGrid.appendChild(card);
       });
+    }
+
+    function countdownLabel(exam) {
+      if (exam.exam_type === "common_test") return "共通テストまで";
+      if (exam.exam_type === "national_secondary") return "国公立二次まで";
+      if (exam.exam_type === "private_general") return "私立一般入試まで";
+      return `${exam.exam_name.replace("本試験", "").replace("開始", "")}まで`;
+    }
+
+    function levelLabelJa(level) {
+      const text = String(level || "");
+      if (text.includes("FOUNDATION")) return "レベル1 基礎固め";
+      if (text.includes("CORE")) return "レベル2 標準";
+      if (text.includes("ADVANCE")) return "レベル3 応用";
+      if (text.includes("BREAKTHROUGH")) return "レベル4 突破";
+      if (text.includes("ELITE")) return "レベル5 完成";
+      return text.replace("LEVEL", "レベル");
     }
 
     function renderPhase() {
@@ -2340,7 +2410,7 @@
       const labels = (unit.segments || []).map((segment) => segment.label).join(" ");
       if (labels.includes("復習テスト")) return "復習テスト";
       if (labels.includes("基本文テスト")) return "基本文テスト";
-      if (labels.includes("AI Check Test")) return "AI Check Test";
+      if (labels.includes("AI Check Test") || labels.includes("AI確認")) return "AI確認テスト";
       return "確認問題";
     }
 
@@ -2370,7 +2440,7 @@
         const connection = connectionForMission(mission);
         const reviews = reviewPlanForMission(mission);
         const pacing = pacingForMission(mission);
-        const tasks = role.showMissionDetail ? mission.tasks : ["Mission達成率", "努力量", "応援メッセージ"];
+        const tasks = role.showMissionDetail ? mission.tasks : ["学習達成率", "努力量", "応援メッセージ"];
         const card = document.createElement("article");
         const isComplete = hasEvidence(record);
         card.className = `timetable-card${isComplete ? " complete" : ""}`;
@@ -2422,8 +2492,8 @@
       if (!current) {
         missionList.innerHTML = `
           <article class="navigation-card glass">
-            <div class="navigation-kicker">Today's Mission</div>
-            <p class="navigation-message">今日のMission 100%。お疲れ様でした。</p>
+            <div class="navigation-kicker">本日の学習</div>
+            <p class="navigation-message">今日の学習は100%完了です。お疲れ様でした。</p>
             <div class="navigation-current">
               <strong>明日の予定</strong>
               <span>9:00 数学Ⅰ 次のPARTから始めます。</span>
@@ -2444,7 +2514,7 @@
       const card = document.createElement("article");
       card.className = "navigation-card glass";
       card.innerHTML = `
-        <div class="navigation-kicker">Learning Navigation Mode</div>
+        <div class="navigation-kicker">学習ナビゲーション</div>
         <p class="navigation-message">${navigationGreeting(items, currentIndex, remaining)}</p>
         <div class="navigation-current">
           <strong>${current.subject}</strong>
@@ -2619,7 +2689,7 @@
         return "では確認問題へ進みます。終わったらスタサプの回答数と正答率を提出します。";
       }
       if (index === 0) {
-        return `おはようございます。今日のMissionは${navigationMissionCount(items)}つです。あと${formatMinutes(remaining)}で終了予定です。`;
+        return `おはようございます。今日の学習は${navigationMissionCount(items)}つです。あと${formatMinutes(remaining)}で終了予定です。`;
       }
       return `${current.label}に進みます。考えなくて大丈夫です。次はこれだけやりましょう。`;
     }
@@ -2699,7 +2769,7 @@
           const record = getMissionRecord(mission.id);
           const connection = connectionForMission(mission);
           const reviews = reviewPlanForMission(mission);
-          const tasks = role.showMissionDetail ? mission.tasks : ["Mission達成率", "努力量", "応援メッセージ"];
+          const tasks = role.showMissionDetail ? mission.tasks : ["学習達成率", "努力量", "応援メッセージ"];
           const card = document.createElement("article");
           const isComplete = hasEvidence(record);
           card.className = `timetable-card${isComplete ? " complete" : ""}`;
@@ -2795,7 +2865,7 @@
     }
 
     function timeBlockLabel(index) {
-      return ["午前", "午後", "夜"][index] || "Today";
+      return ["午前", "午後", "夜"][index] || "今日";
     }
 
     function pacingForMission(mission) {
@@ -2861,9 +2931,9 @@
     }
 
     function levelTaskLabel(level) {
-      if (level === "Basic") return "Basic";
-      if (level === "Standard") return "Standard";
-      if (level === "Challenge") return "Challenge";
+      if (level === "Basic") return "基礎";
+      if (level === "Standard") return "標準";
+      if (level === "Challenge") return "応用";
       return level;
     }
 
@@ -2989,7 +3059,7 @@
       const intervals = reviewSchedule.review_intervals_days || [1, 3, 7, 14, 30];
       const intervalCard = document.createElement("div");
       intervalCard.className = "review-card";
-      intervalCard.innerHTML = `<strong>復習タイミング</strong><span>${intervals.map((day) => `${day}日後`).join(" / ")}</span><div>確認テスト・復習テスト・AI Check Testの結果をもとにPhase2で自動生成します。</div>`;
+      intervalCard.innerHTML = `<strong>復習タイミング</strong><span>${intervals.map((day) => `${day}日後`).join(" / ")}</span><div>確認テスト・復習テスト・AI確認テストの結果をもとに次の段階で自動生成します。</div>`;
       reviewList.appendChild(intervalCard);
       dailyPlan.review_missions.forEach((review) => {
         const card = document.createElement("div");
@@ -3065,7 +3135,7 @@
           <strong>${app.app_name}</strong>
           <span>今日の学習: ${app.studied_count}語 / 正答率: ${app.accuracy}%</span>
           <div>苦手単語: ${weakItems}</div>
-          <div class="mission-note">LIMIT BREAKへの反映: ${app.reflection || "明日のToday's Memoryに反映"}</div>
+          <div class="mission-note">LIMIT BREAKへの反映: ${app.reflection || "明日の暗記に反映"}</div>
           <div class="external-form">
             <input aria-label="今日の学習語数" type="number" min="0" value="${app.studied_count}" data-field="studied_count">
             <input aria-label="正答率" type="number" min="0" max="100" value="${app.accuracy}" data-field="accuracy">
@@ -3095,7 +3165,7 @@
       teacherChat.innerHTML = `
         <div class="teacher-card">
           <strong>Yui Teacher / Coach / Analyzer</strong>
-          <span>Mission情報・回答数・正答率・疲労度・復習期限・暗記DBを使う想定です。</span>
+          <span>学習内容・回答数・正答率・疲労度・復習期限・暗記データを使う想定です。</span>
           <p class="teacher-response">${response}</p>
           <div class="teacher-actions-row">
             <button type="button" data-action="teacher">3分チェック問題</button>
@@ -3105,7 +3175,7 @@
         </div>
         <div class="teacher-card api-policy">
           <strong>APIキー保護</strong>
-          <span>Phase2ではOpenAI APIキーをブラウザに置かず、Firebase Cloud FunctionsまたはAPIサーバーの環境変数で保持します。</span>
+          <span>正式版ではOpenAI APIキーをブラウザに置かず、Firebase Cloud FunctionsまたはAPIサーバーの環境変数で保持します。</span>
         </div>
       `;
       teacherChat.querySelectorAll("button").forEach((button) => {
@@ -3115,10 +3185,10 @@
 
     function runAiTeacher(action, mission) {
       const fixed = aiTeacherConfig.fixed_responses || FALLBACK_AI_TEACHER.fixed_responses;
-      const missionLabel = mission ? `${mission.subject} ${mission.lesson} ${mission.part}` : "今日のMission";
+      const missionLabel = mission ? `${mission.subject} ${mission.lesson} ${mission.part}` : "今日の学習";
       const responses = {
         teacher: `${missionLabel}: ${fixed.teacher}`,
-        check: `${missionLabel}: AI Check Testは、教材の確認問題と同じ狙いで作るオリジナル類題です。まず解き方を説明し、そのあと1問だけ自力で確認しましょう。`,
+        check: `${missionLabel}: AI確認テストは、教材の確認問題と同じ狙いで作るオリジナル類題です。まず解き方を説明し、そのあと1問だけ自力で確認しましょう。`,
         coach: fixed.coach,
         analyzer: fixed.analyzer
       };
@@ -3145,7 +3215,7 @@
       const summary = document.createElement("article");
       summary.className = "counselor-card";
       summary.innerHTML = `
-          <strong>Support Dashboard</strong>
+          <strong>見守りサマリー</strong>
         <span>医療行為・診断ではなく、学習継続、声かけ、心理的安全性の支援に限定します。</span>
         <div>${role.showFatigue ? `学習負荷: ${loadWarning ? "疲労度高め。休憩を優先" : "通常範囲"}` : "必要な声かけ情報だけを表示します。"}</div>
       `;
@@ -3187,7 +3257,7 @@
         const formCard = document.createElement("article");
         formCard.className = "counselor-card";
         formCard.innerHTML = `
-          <strong>Support Comment</strong>
+          <strong>支援コメント</strong>
           <span>公開範囲を選び、学習継続と心理的安全性の支援に限定して投稿します。</span>
           <div class="field" style="margin-top: 10px;">
             <label for="counselorCategory">カテゴリ</label>
@@ -3349,7 +3419,7 @@
 
     function permissionText(role) {
       const items = [];
-      items.push(role.showMissionDetail ? "今日のMission詳細" : "Mission達成率");
+      items.push(role.showMissionDetail ? "今日の学習詳細" : "学習達成率");
       if (role.showScore === true) items.push("回答数・正答率");
       if (role.showScore === "summary") items.push("正答率推移の要約");
       if (role.showFatigue === true) items.push("疲労度");
@@ -3380,7 +3450,7 @@
         </div>
         <div class="permission-card">
           <strong>通知方式</strong>
-          <span>Phase1はメールアプリを開く方式です。Phase2でCloud Functionsから自動送信します。</span>
+          <span>検証版はメールアプリを開く方式です。正式版でCloud Functionsから自動送信します。</span>
           <div>画像本体はメール添付せず、提出があった事実、回答数、正答率を通知します。</div>
         </div>
         ${latest.length ? latest.map((notice) => renderNoticeCard(notice)).join("") : `<div class="empty">まだ提出通知はありません。</div>`}
@@ -3439,7 +3509,7 @@
         understanding: record.understanding,
         fatigue: record.fatigue,
         evidenceImageName: record.evidenceImageName,
-        autoGradingStatusLabel: "Phase1: スタサプ結果スクショを受領。OCR自動読取はPhase2で実装",
+        autoGradingStatusLabel: "検証版: スタサプ結果スクショを受領。OCR自動読取は正式版で実装",
         recipients,
         createdAt: new Date().toISOString(),
         sentAt: ""
@@ -3455,7 +3525,7 @@
         "スタサプ確認テスト結果スクショが提出されました。",
         "",
         `日付: ${notice.date}`,
-        `Mission: ${notice.missionTitle}`,
+        `学習内容: ${notice.missionTitle}`,
         `科目: ${notice.subject}`,
         `教材: ${notice.course}`,
         `範囲: ${notice.lesson} ${notice.part}`,
@@ -3466,8 +3536,8 @@
         `疲労度: ${notice.fatigue}`,
         `結果スクショファイル名: ${notice.evidenceImageName}`,
         "",
-        "Phase1では画像本体は端末内保存です。画面のRecent Recordsで提出内容を確認してください。",
-        "Phase2ではサーバー側OCR/画像解析で回答数と正答率を自動読取します。"
+        "検証版では画像本体は端末内保存です。画面の「最近の記録」で提出内容を確認してください。",
+        "正式版ではサーバー側OCR/画像解析で回答数と正答率を自動読取します。"
       ].join("\n");
       return `mailto:${encodeURIComponent(to)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
     }
@@ -3497,7 +3567,7 @@
         const mentalLine = role.showMentalState === true && record.mentalState ? `<div>メンタル状態: ${record.mentalState}</div>` : "";
         const mistakeLine = role.showMistake && record.mistakeReason ? `<div>間違い理由: ${record.mistakeReason}</div>` : "";
         const privateLine = role.showPrivateNote && record.privateNote ? `<div>内省メモ: ${record.privateNote}</div>` : "";
-        const evidenceLine = record.evidenceImageName ? `<div>結果スクショ: ${record.evidenceImageName} / OCR読取: Phase2で実装</div>` : `<div>結果スクショ: 未提出 / 後日へ繰り越し</div>`;
+        const evidenceLine = record.evidenceImageName ? `<div>結果スクショ: ${record.evidenceImageName} / OCR読取: 正式版で実装</div>` : `<div>結果スクショ: 未提出 / 後日へ繰り越し</div>`;
         card.innerHTML = `
           <strong>${record.date} / ${record.missionTitle}</strong>
           <span>${record.testType} / ${scoreLine}${fatigueLine ? " / " + fatigueLine : ""}</span>
@@ -3524,7 +3594,7 @@
       document.querySelector("#evidenceImage").value = "";
       document.querySelector("#evidenceImageNote").textContent = record?.evidenceImageName
         ? `提出済み: ${record.evidenceImageName}。差し替える場合だけ新しい画像を選んでください。`
-        : "スタサプの確認テスト結果画面をアップしてください。回答数と正答率が見えるスクショをMission Clearの証跡にします。";
+        : "スタサプの確認テスト結果画面をアップしてください。回答数と正答率が見えるスクショを完了の証跡にします。";
       document.querySelector("#mentalState").value = record ? record.mentalState || "落ち着いている" : "落ち着いている";
       document.querySelector("#privateNote").value = record ? record.privateNote : "";
       document.querySelector("#deleteRecordButton").style.display = record ? "inline-flex" : "none";
@@ -3581,7 +3651,7 @@
         evidenceImageData,
         rescheduleStatus: "not_required",
         autoGradingStatus: "phase1_sutasapu_result_screenshot",
-        autoGradingSummary: "スタサプ結果スクショと手入力の回答数・正答率を受領。OCR自動読取はPhase2で実装。",
+        autoGradingSummary: "スタサプ結果スクショと手入力の回答数・正答率を受領。OCR自動読取は正式版で実装。",
         notificationStatus: "queued",
         savedAt: new Date().toISOString()
       };

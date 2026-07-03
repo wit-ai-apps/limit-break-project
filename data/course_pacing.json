@@ -194,7 +194,7 @@
             },
             {
               "minutes": 15,
-              "label": "Today's Memory",
+              "label": "今日の暗記",
               "instruction": "基本文3文を音読し、1文は見ずに暗唱する。"
             }
           ],
@@ -380,7 +380,7 @@
         "lesson": "第1講",
         "part": "Chapter1",
         "title": "基本文・語順確認",
-        "target": "文法ポイントを確認し、Today's Memory 3文を固定",
+        "target": "文法ポイントを確認し、今日の暗記3文を固定",
         "segments": [
           {
             "minutes": 10,
@@ -408,7 +408,7 @@
           },
           {
             "minutes": 15,
-            "label": "Today's Memory",
+            "label": "今日の暗記",
             "instruction": "基本文3文を音読し、1文は見ずに暗唱する。",
             "completion_check": "基本文1文を暗唱できる"
           }

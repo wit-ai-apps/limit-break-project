@@ -120,14 +120,14 @@
       "course": "ベーシックレベル英語",
       "lesson": "第1講",
       "part": "Chapter1",
-      "title": "Today's Memory / Today's Grammar / Today's Structure",
+      "title": "今日の暗記 / 文法 / 構文",
       "memory": "肯定文・否定文の基本構文を3つ暗唱",
       "level_task": "Basic",
-      "check_item": "復習テスト / Today's Memory",
+      "check_item": "復習テスト / 今日の暗記",
       "tasks": ["授業", "復習", "復習テスト", "例文暗唱", "音読"],
       "ai_check_test": [
         "肯定文を否定文に変えるルールを説明する",
-        "Today's Memory 3文を音読して日本語に戻す"
+        "今日の暗記3文を音読して日本語に戻す"
       ],
       "reason": "英語は構文を先に固定し、長文期の負荷を下げる。"
     },

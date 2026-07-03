@@ -35,13 +35,13 @@
       "week": 3,
       "range": "2026-07-13〜2026-07-19",
       "focus": "数学Ⅱ導入・英語構文・物理基礎",
-      "daily_missions": ["数学Ⅱ 第1講", "Today's Memory 3文", "確認問題"]
+      "daily_missions": ["数学Ⅱ 第1講", "今日の暗記3文", "確認問題"]
     },
     {
       "week": 4,
       "range": "2026-07-20〜2026-07-26",
       "focus": "数学B導入・化学基礎導入",
-      "daily_missions": ["数列導入", "化学基礎 第1講", "AI Check Test"]
+      "daily_missions": ["数列導入", "化学基礎 第1講", "AI確認テスト"]
     },
     {
       "week": 5,
@@ -52,8 +52,8 @@
     {
       "week": 6,
       "range": "2026-08-03〜2026-08-09",
-      "focus": "英語 Standard文法・読解導入",
-      "daily_missions": ["文法・読解", "復習テスト", "Today's Memory"]
+      "focus": "英語 標準文法・読解導入",
+      "daily_missions": ["文法・読解", "復習テスト", "今日の暗記"]
     },
     {
       "week": 7,
@@ -71,7 +71,7 @@
       "week": 9,
       "range": "2026-08-24〜2026-08-31",
       "focus": "8月末確認週 2",
-      "daily_missions": ["AI Check Test", "復習漏れ回収", "9月標準演習準備"]
+      "daily_missions": ["AI確認テスト", "復習漏れ回収", "9月標準演習準備"]
     }
   ]
 }

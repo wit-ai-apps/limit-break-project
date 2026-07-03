@@ -1,18 +1,18 @@
 {
   "levels": [
     {
-      "level": "Basic",
+      "level": "基礎",
       "purpose": "講義内容を理解する",
       "evidence": "要点整理・授業・講義を見て、確認項目に進める"
     },
     {
-      "level": "Standard",
+      "level": "標準",
       "purpose": "確認問題・復習テストを自力で解ける",
       "evidence": "数学は確認問題、英語は復習テスト、物理は確認問題を記録する"
     },
     {
-      "level": "Challenge",
-      "purpose": "AI Check Testで説明・類題対応できる",
+      "level": "応用",
+      "purpose": "AI確認テストで説明・類題対応できる",
       "evidence": "映像授業後に固定の理解確認問題へ答える"
     }
   ]
