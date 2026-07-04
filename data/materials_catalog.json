@@ -106,6 +106,34 @@
       "extraction_status": "cataloged"
     },
     {
+      "subject": "化学",
+      "course_name": "ベーシックレベル化学",
+      "file_name": "ベーシックレベル化学_EKZB550000_250530.pdf",
+      "priority": 14,
+      "extraction_status": "uploaded_pending_outline"
+    },
+    {
+      "subject": "国語",
+      "course_name": "高3スタンダード現代文",
+      "file_name": "高3スタンダード現代文_KZ137000_03.pdf",
+      "priority": 15,
+      "extraction_status": "uploaded_pending_outline"
+    },
+    {
+      "subject": "国語",
+      "course_name": "高1・高2・高3 漢文",
+      "file_name": "高1・高2・高3　漢文_EKZB360000_250925.pdf",
+      "priority": 16,
+      "extraction_status": "cataloged"
+    },
+    {
+      "subject": "公共",
+      "course_name": "ベーシックレベル公共",
+      "file_name": "ベーシックレベル公共_EKZB390000_260224.pdf",
+      "priority": 17,
+      "extraction_status": "uploaded_pending_outline"
+    },
+    {
       "subject": "世界史",
       "course_name": "世界史教材",
       "file_name": "",

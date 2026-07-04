@@ -1,7 +1,7 @@
 {
   "version": "3.5.0",
   "extraction_method": "PDF冒頭の目次・見出しから講座構造を抽出。本文・問題文は保存しない。",
-  "status_note": "国語と世界史は教材アップロード後に追加する。",
+  "status_note": "8月末までの主要教材は登録済み。化学、現代文、公共は構造抽出待ち。世界史は教材ファイル確認後に追加する。",
   "materials": [
     {
       "subject": "物理",
@@ -26,6 +26,15 @@
       "page_count": 403,
       "observed_lessons": 24,
       "sample_outline": ["第1講 物質の成分と構成元素", "第2講 混合物の分離", "第3講 物質の三態", "第4講 原子の構造", "第5講 原子の電子配置"]
+    },
+    {
+      "subject": "化学",
+      "course_name": "ベーシックレベル化学",
+      "file_name": "ベーシックレベル化学_EKZB550000_250530.pdf",
+      "page_count": null,
+      "observed_lessons": null,
+      "sample_outline": [],
+      "extraction_status": "uploaded_pending_outline"
     },
     {
       "subject": "数学Ⅰ",
@@ -82,6 +91,32 @@
       "page_count": 156,
       "observed_lessons": 10,
       "sample_outline": ["第1講 長文問題演習1", "第2講 長文問題演習2", "第3講 長文問題演習3", "第4講 長文問題演習4", "第5講 長文問題演習5"]
+    },
+    {
+      "subject": "国語",
+      "course_name": "高3スタンダード現代文",
+      "file_name": "高3スタンダード現代文_KZ137000_03.pdf",
+      "page_count": null,
+      "observed_lessons": null,
+      "sample_outline": [],
+      "extraction_status": "uploaded_pending_outline"
+    },
+    {
+      "subject": "国語",
+      "course_name": "高1・高2・高3 漢文",
+      "file_name": "高1・高2・高3　漢文_EKZB360000_250925.pdf",
+      "page_count": 238,
+      "observed_lessons": 9,
+      "sample_outline": ["第1講", "第2講", "第3講", "第4講", "第5講"]
+    },
+    {
+      "subject": "公共",
+      "course_name": "ベーシックレベル公共",
+      "file_name": "ベーシックレベル公共_EKZB390000_260224.pdf",
+      "page_count": null,
+      "observed_lessons": null,
+      "sample_outline": [],
+      "extraction_status": "uploaded_pending_outline"
     }
   ]
 }
