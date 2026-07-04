@@ -1,0 +1,144 @@
+{
+  "version": "4.5.0",
+  "period": "2026-07-04_to_2026-08-31",
+  "goal": "8月末までに対象教材の映像授業、テキスト確認、確認テスト、再視聴復習を一体で完了する。",
+  "principle": "ただ見るだけで完了にしない。確認テストの回答数・正答率・間違い理由により、翌日以降の再視聴時間を自動的に確保する。",
+  "lesson_count_basis": {
+    "known_from_outline": [
+      { "subject": "数学Ⅰ", "course": "ベーシックレベル数学Ⅰ", "lessons": 16 },
+      { "subject": "数学A", "course": "ベーシックレベル数学A", "lessons": 12 },
+      { "subject": "数学Ⅱ", "course": "ベーシックレベル数学Ⅱ", "lessons": 20 },
+      { "subject": "数学B", "course": "ベーシックレベル数学B", "lessons": 11 },
+      { "subject": "英語", "course": "ベーシックレベル英語", "lessons": 17 },
+      { "subject": "英語", "course": "スタンダードレベル英語 文法・読解", "lessons": 15 },
+      { "subject": "英語", "course": "スタンダードレベル英語 長文", "lessons": 10 },
+      { "subject": "物理基礎", "course": "ベーシックレベル物理基礎", "lessons": 10 },
+      { "subject": "物理", "course": "ベーシックレベル物理", "lessons": 16 },
+      { "subject": "化学基礎", "course": "ベーシックレベル化学基礎", "lessons": 24 },
+      { "subject": "国語", "course": "高1・高2・高3 漢文", "lessons": 9 }
+    ],
+    "pending_outline_estimates": [
+      { "subject": "化学", "course": "ベーシックレベル化学", "estimated_lessons": 16, "note": "PDF構造抽出後に確定" },
+      { "subject": "国語", "course": "高3スタンダード現代文", "estimated_lessons": 10, "note": "PDF構造抽出後に確定" },
+      { "subject": "公共", "course": "ベーシックレベル公共", "estimated_lessons": 12, "note": "PDF構造抽出後に確定" }
+    ]
+  },
+  "daily_time_model": {
+    "weekday": {
+      "new_video_minutes": 210,
+      "text_and_test_minutes": 210,
+      "rewatch_buffer_minutes": 60,
+      "memory_minutes": 30,
+      "total_minutes": 510
+    },
+    "weekend": {
+      "new_video_minutes": 180,
+      "text_and_test_minutes": 180,
+      "rewatch_buffer_minutes": 180,
+      "weekly_rebuild_minutes": 60,
+      "total_minutes": 600
+    }
+  },
+  "rewatch_rules": [
+    {
+      "condition": "正答率85%以上、間違い理由を説明できる",
+      "action": "再視聴なし。翌日5分の要点確認のみ。",
+      "reserved_minutes": 5
+    },
+    {
+      "condition": "正答率70〜84%",
+      "action": "翌日に該当POINTだけを部分再視聴し、類題を1問解く。",
+      "reserved_minutes": 20
+    },
+    {
+      "condition": "正答率50〜69%",
+      "action": "48時間以内に該当PARTを30〜45分再視聴し、確認問題を解き直す。",
+      "reserved_minutes": 45
+    },
+    {
+      "condition": "正答率50%未満、回答数が少ない、または未提出",
+      "action": "その講を未完了扱いにし、翌日または週末に全体再視聴する。次の講義は後ろへずらす。",
+      "reserved_minutes": 90
+    }
+  ],
+  "weekly_schedule": [
+    {
+      "week": 0,
+      "range": "2026-07-04_to_2026-07-05",
+      "theme": "開始調整・診断",
+      "new_video_targets": ["数学Ⅰ 第1講", "ベーシック英語 第0〜1講", "物理基礎 第1講"],
+      "rewatch_and_test": "初回確認テストの提出ルールを固定。正答率70%未満は翌週冒頭に再視聴。",
+      "buffer_minutes": 240
+    },
+    {
+      "week": 1,
+      "range": "2026-07-06_to_2026-07-12",
+      "theme": "数学Ⅰ・数学A・英語基礎・物理基礎",
+      "new_video_targets": ["数学Ⅰ 第2〜5講", "数学A 第1〜2講", "ベーシック英語 第2〜5講", "物理基礎 第2〜3講"],
+      "rewatch_and_test": "毎日最後60分を再視聴枠に固定。数学と英語は70%未満なら翌朝に戻す。",
+      "buffer_minutes": 540
+    },
+    {
+      "week": 2,
+      "range": "2026-07-13_to_2026-07-19",
+      "theme": "数学Ⅰ前半完成・英語基礎・物理基礎・化学基礎開始",
+      "new_video_targets": ["数学Ⅰ 第6〜9講", "数学A 第3〜5講", "ベーシック英語 第6〜9講", "物理基礎 第4〜6講", "化学基礎 第1〜2講"],
+      "rewatch_and_test": "日曜を確認テストやり直し日にする。化学基礎は用語ミスが出たら翌日20分再視聴。",
+      "buffer_minutes": 600
+    },
+    {
+      "week": 3,
+      "range": "2026-07-20_to_2026-07-26",
+      "theme": "数学Ⅰ完了・数学Ⅱ導入・英文法導入・化学基礎",
+      "new_video_targets": ["数学Ⅰ 第10〜16講", "数学Ⅱ 第1〜2講", "数学B 第1講", "スタンダード英語 文法・読解 第1〜3講", "化学基礎 第3〜6講"],
+      "rewatch_and_test": "数学Ⅰの確認問題で70%未満の講は完了扱いにせず、7/27週へ再視聴を繰り越す。",
+      "buffer_minutes": 660
+    },
+    {
+      "week": 4,
+      "range": "2026-07-27_to_2026-08-02",
+      "theme": "数学Ⅱ・数学B・英文法・物理基礎完了",
+      "new_video_targets": ["数学Ⅱ 第3〜7講", "数学B 第2〜4講", "スタンダード英語 文法・読解 第4〜7講", "物理基礎 第7〜10講", "化学基礎 第7〜10講"],
+      "rewatch_and_test": "物理基礎は図で説明できない講を週末に全体再視聴。数学Ⅱは確認問題提出を必須にする。",
+      "buffer_minutes": 720
+    },
+    {
+      "week": 5,
+      "range": "2026-08-03_to_2026-08-09",
+      "theme": "数学Ⅱ中盤・数学B・英語文法完成・物理開始",
+      "new_video_targets": ["数学Ⅱ 第8〜12講", "数学B 第5〜7講", "スタンダード英語 文法・読解 第8〜12講", "物理 第1〜3講", "化学基礎 第11〜15講"],
+      "rewatch_and_test": "英文法は復習テスト80%未満なら翌日音読・文法POINT再視聴。物理は公式説明ができなければ45分再視聴。",
+      "buffer_minutes": 720
+    },
+    {
+      "week": 6,
+      "range": "2026-08-10_to_2026-08-16",
+      "theme": "数学Ⅱ・数学B完了へ、英語長文、物理・化学",
+      "new_video_targets": ["数学Ⅱ 第13〜17講", "数学B 第8〜11講", "スタンダード英語 文法・読解 第13〜15講", "英語長文 第1〜3講", "物理 第4〜7講", "化学基礎 第16〜20講"],
+      "rewatch_and_test": "数学Bは数列の確認問題を優先。英語長文は本文再読より設問根拠の再視聴を優先。",
+      "buffer_minutes": 780
+    },
+    {
+      "week": 7,
+      "range": "2026-08-17_to_2026-08-23",
+      "theme": "数学Ⅱ完了・英語長文・物理化学・国語公共接続",
+      "new_video_targets": ["数学Ⅱ 第18〜20講", "英語長文 第4〜7講", "物理 第8〜12講", "化学基礎 第21〜24講", "化学 第1〜4講", "漢文 第1〜3講", "公共 第1〜2講"],
+      "rewatch_and_test": "ここから新規視聴を詰め込みすぎない。確認テスト70%未満は最終週の再視聴リストへ入れる。",
+      "buffer_minutes": 900
+    },
+    {
+      "week": 8,
+      "range": "2026-08-24_to_2026-08-31",
+      "theme": "最終完成・弱点再視聴・提出漏れ回収",
+      "new_video_targets": ["英語長文 第8〜10講", "物理 第13〜16講", "化学 第5〜8講", "漢文 第4〜9講", "現代文 第1〜4講", "公共 第3〜6講"],
+      "rewatch_and_test": "新規視聴は午前・午後の前半だけ。毎日最低180分を再視聴、確認問題解き直し、提出漏れ回収に使う。",
+      "buffer_minutes": 1440
+    }
+  ],
+  "carry_over_policy": {
+    "if_submission_missing": "該当講義は未完了。翌日の最初の再視聴枠へ移動し、新規講義を1本減らす。",
+    "if_accuracy_low": "70%未満は再視聴対象。50%未満は全体再視聴し、確認問題を再提出する。",
+    "if_fatigue_high": "疲労度4以上の日は新規視聴を1本減らし、再視聴と暗記だけにする。",
+    "weekly_review_day": "毎週日曜は新規視聴を抑え、確認テスト未提出、70%未満、間違い理由未記入を回収する。"
+  }
+}
