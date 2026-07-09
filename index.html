@@ -256,10 +256,27 @@
       line-height: 1.65;
     }
 
-    .role-panel h2 {
+    .role-panel h2,
+    .role-panel h3 {
       margin: 0 0 10px;
       font-size: 0.95rem;
       color: var(--muted);
+    }
+
+    .coach-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      margin-top: 14px;
+    }
+
+    .coach-actions button {
+      width: 100%;
+      min-height: 42px;
+    }
+
+    .account-settings-panel {
+      margin-bottom: 12px;
     }
 
     .role-options {
@@ -466,7 +483,8 @@
     body[data-view="home"] main,
     body[data-view="long"] main,
     body[data-view="week"] main,
-    body[data-view="today"] main {
+    body[data-view="today"] main,
+    body[data-view="evidence"] main {
       grid-template-columns: 1fr;
     }
 
@@ -474,6 +492,10 @@
     body[data-view="long"] main > aside,
     body[data-view="week"] main > aside,
     body[data-view="today"] main > aside {
+      display: none;
+    }
+
+    body[data-view="evidence"] main > .stack:first-child {
       display: none;
     }
 
@@ -505,6 +527,7 @@
     body[data-view="today"] .view-today,
     body[data-view="memory"] .view-memory,
     body[data-view="review"] .view-review,
+    body[data-view="evidence"] .view-evidence,
     body[data-view="progress"] .view-progress,
     body[data-view="ai"] .view-ai,
     body[data-view="support"] .view-support,
@@ -2213,9 +2236,9 @@
       <aside class="coach glass">
         <div class="coach-title">AIユイ先生からの一言 <span aria-hidden="true"></span></div>
         <p class="coach-message" id="coachMessage">今日は英語構文を3つ覚えましょう。</p>
-        <div class="role-panel" aria-labelledby="role-heading">
-          <h2 id="role-heading">アカウント</h2>
-          <div class="account-panel" id="accountPanel"></div>
+        <div class="coach-actions" aria-label="よく使う画面">
+          <button class="secondary view-link" type="button" data-target-view="evidence">提出画像を見る</button>
+          <button class="secondary view-link" type="button" data-target-view="admin">設定・アカウント</button>
         </div>
       </aside>
     </header>
@@ -2409,6 +2432,10 @@
             <h2 id="settings-heading">設定</h2>
             <span class="badge">管理</span>
           </div>
+          <div class="role-panel account-settings-panel" aria-labelledby="account-heading">
+            <h3 id="account-heading">アカウント</h3>
+            <div class="account-panel" id="accountPanel"></div>
+          </div>
           <div class="settings-list" id="settingsList"></div>
         </section>
 
@@ -2435,9 +2462,10 @@
           <div class="notification-panel" id="notificationPanel"></div>
         </section>
 
-        <section class="view-section view-support view-progress" aria-labelledby="records-heading">
+        <section class="view-section view-evidence view-support view-progress" aria-labelledby="records-heading">
           <div class="topline">
-            <h2 id="records-heading">最近の記録</h2>
+            <h2 id="records-heading">提出画像・最近の記録</h2>
+            <span class="badge">画像確認</span>
           </div>
           <div class="log-list" id="logList"></div>
           <button class="warning student-only teacher-only" id="resetButton" type="button" style="width: 100%; margin-top: 12px;">検証データをリセット</button>
@@ -2554,8 +2582,19 @@
     const NOTICE_CONTACTS_KEY = "limitBreakProjectNoticeContactsV370";
     const NOTICE_QUEUE_KEY = "limitBreakProjectNoticeQueueV370";
     const FIREBASE_CONFIG_PATH = "data/firebase_config.json";
-    const APP_VERSION = "v4.6.2-dev";
+    const APP_VERSION = "v4.6.3-dev";
     const RELEASE_NOTES = [
+      {
+        version: "v4.6.3-dev",
+        date: "2026-07-09",
+        title: "ホーム整理と提出画像確認",
+        items: [
+          "Homeからアカウント詳細を外し、設定・アカウントへ移動",
+          "Homeに提出画像確認への短い導線を追加",
+          "提出画像タブを新設し、保護者・サポーター・講師が確認しやすい画面に変更",
+          "提出画像がない場合も状態が分かる案内を表示"
+        ]
+      },
       {
         version: "v4.6.2-dev",
         date: "2026-07-09",
@@ -2620,6 +2659,7 @@
       { id: "today", label: "今日の手順" },
       { id: "memory", label: "暗記" },
       { id: "review", label: "復習" },
+      { id: "evidence", label: "提出画像" },
       { id: "progress", label: "進み具合" },
       { id: "ai", label: "AI先生" },
       { id: "support", label: "見守り" },
@@ -5382,9 +5422,18 @@
     function renderLogs() {
       const role = activeRoleConfig();
       logList.innerHTML = "";
+      const evidenceGuide = role.canEditRecord
+        ? "予定にない確認テストも、ここから教科・教材・講座を選んで画像提出できます。提出後は保護者・サポーター・講師の確認画面に並びます。"
+        : "生徒が提出した確認テスト画像をここで確認します。画像名を押すと拡大表示できます。表示されない場合は、生徒側でFirebase同期済みの提出になっているか確認してください。";
+      logList.insertAdjacentHTML("beforeend", `
+        <div class="log-card">
+          <strong>${role.canEditRecord ? "確認テスト画像の提出" : "提出画像の確認"}</strong>
+          <span>${evidenceGuide}</span>
+        </div>
+      `);
       renderRandomEvidenceUploader(logList, role);
       if (!records.length) {
-        logList.insertAdjacentHTML("beforeend", `<div class="empty">まだ記録がありません。</div>`);
+        logList.insertAdjacentHTML("beforeend", `<div class="empty">まだ提出画像・記録がありません。</div>`);
         return;
       }
       const evidenceRecords = [...records]
@@ -5433,6 +5482,8 @@
           button.addEventListener("click", () => openEvidencePreview(button.dataset.evidenceKey));
         });
         logList.appendChild(tableCard);
+      } else {
+        logList.insertAdjacentHTML("beforeend", `<div class="empty">提出画像はまだありません。生徒が確認テスト結果を提出すると、ここに日時・教科・教材ごとに表示されます。</div>`);
       }
       [...records].sort((a, b) => b.savedAt.localeCompare(a.savedAt)).slice(0, 10).forEach((record) => {
         const card = document.createElement("div");
