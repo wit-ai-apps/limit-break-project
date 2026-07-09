@@ -1,0 +1,150 @@
+{
+  "version": "1.0.0",
+  "material_name": "英文300選",
+  "purpose": "英語が苦手な生徒でも入りやすい形式から始め、最終的に日本文から英文を書き、構文を説明できる状態まで育てる。",
+  "data_policy": {
+    "scope": "student_private_memory_db",
+    "store_original_text": "allowed_only_for_student_private_use",
+    "do_not_publish_material_text": true,
+    "public_app_display": "show_counts_and_learning_points_only",
+    "notes": "英文本文・和文は本人がアップロードした教材に基づく本人専用データとして扱う。GitHub Pages等の公開画面には全文を含めない。"
+  },
+  "item_schema": {
+    "id": "ENG300_0001",
+    "type": "sentence",
+    "source": "英文300選",
+    "number": 1,
+    "english": "student_private_text",
+    "japanese": "student_private_text",
+    "chunked_english": [],
+    "grammar_tags": [],
+    "structure_pattern": "",
+    "key_points": [],
+    "linked_video_lessons": [
+      {
+        "course": "ベーシックレベル英語",
+        "lesson": "",
+        "chapter": "",
+        "link_strength": "primary"
+      }
+    ],
+    "mastery": {
+      "stage": 0,
+      "accuracy": 0,
+      "consecutive_correct": 0,
+      "last_result": "",
+      "next_review": "",
+      "review_count": 0
+    }
+  },
+  "training_stages": [
+    {
+      "stage": 0,
+      "name": "見るだけ理解",
+      "goal": "英文と日本語を見て、意味の対応をつかむ。",
+      "question_types": ["英文を見て日本語を選ぶ", "重要語句をハイライトする", "音読をまねる"],
+      "pass_condition": "意味選択で80%以上"
+    },
+    {
+      "stage": 1,
+      "name": "穴埋め",
+      "goal": "文の骨格を残した状態で、重要語句を入れられる。",
+      "question_types": ["1語穴埋め", "熟語穴埋め", "前置詞穴埋め"],
+      "pass_condition": "3回中2回正解"
+    },
+    {
+      "stage": 2,
+      "name": "並べ替え",
+      "goal": "語順を理解し、英文の構造を再現できる。",
+      "question_types": ["語句並べ替え", "主語・動詞・目的語の分類", "修飾部分の位置確認"],
+      "pass_condition": "語順正答率80%以上"
+    },
+    {
+      "stage": 3,
+      "name": "部分英作文",
+      "goal": "日本語の一部を英文に変換できる。",
+      "question_types": ["下線部英作文", "構文だけ英作文", "時制・助動詞だけ変換"],
+      "pass_condition": "重要構文部分を自力で書ける"
+    },
+    {
+      "stage": 4,
+      "name": "全文再現",
+      "goal": "日本文から英文全体を書ける。",
+      "question_types": ["日本語→英語", "白紙再現", "音読後に暗唱"],
+      "pass_condition": "意味を保ち、主要構文・語順・時制が正しい"
+    },
+    {
+      "stage": 5,
+      "name": "構文説明",
+      "goal": "なぜその英文になるのかを説明できる。",
+      "question_types": ["構文名を答える", "主語・動詞・補語・目的語を説明", "日本語から英文になる理由を説明"],
+      "pass_condition": "構文・語順・文法理由を自分の言葉で説明できる"
+    },
+    {
+      "stage": 6,
+      "name": "応用生成",
+      "goal": "同じ構文を使って別の英文を作れる。",
+      "question_types": ["類文作成", "語句入れ替え", "自分の例文作成"],
+      "pass_condition": "同じ構文で新しい英文を作れる"
+    }
+  ],
+  "daily_training_flow": [
+    "今日の映像授業に関連する英文を3文出す",
+    "前日に間違えた英文を2文出す",
+    "3日後・7日後の復習英文を混ぜる",
+    "最初は選択式や穴埋めを優先する",
+    "正答が続いた英文だけ日本語→英語へ進める",
+    "最後に構文説明を1問だけ入れる"
+  ],
+  "adaptive_rules": [
+    {
+      "condition": "初回または正答率50%未満",
+      "next_action": "stage 0 or 1に戻し、選択式・穴埋め中心にする"
+    },
+    {
+      "condition": "正答率50〜79%",
+      "next_action": "stage 1〜2で、語順と重要語句を確認する"
+    },
+    {
+      "condition": "正答率80%以上が2回連続",
+      "next_action": "次のstageへ進める"
+    },
+    {
+      "condition": "日本語→英語で語順ミス",
+      "next_action": "並べ替えと構文説明へ戻す"
+    },
+    {
+      "condition": "構文説明ができない",
+      "next_action": "映像授業の該当Chapterを再リンクし、POINTを再確認する"
+    }
+  ],
+  "video_link_strategy": {
+    "principle": "英文を単独暗記にしない。必ずベーシックレベル英語の文法単元とリンクする。",
+    "examples": [
+      {
+        "grammar_tag": "不定詞",
+        "linked_lessons": ["第9講 不定詞①", "第10講 不定詞②", "第11講 不定詞③"]
+      },
+      {
+        "grammar_tag": "動名詞",
+        "linked_lessons": ["第12講 動名詞"]
+      },
+      {
+        "grammar_tag": "分詞",
+        "linked_lessons": ["第13講 分詞①", "第14講 分詞②"]
+      },
+      {
+        "grammar_tag": "比較",
+        "linked_lessons": ["第15講 比較①", "第16講 比較②", "第17講 比較③"]
+      },
+      {
+        "grammar_tag": "関係詞",
+        "linked_lessons": ["第18講 関係詞①", "第19講 関係詞②", "第20講 関係詞③"]
+      },
+      {
+        "grammar_tag": "仮定法",
+        "linked_lessons": ["第21講 仮定法①", "第22講 仮定法②"]
+      }
+    ]
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "enabled": true,
+  "student_id": "STU_0001",
+  "firebase": {
+    "apiKey": "AIzaSyCN8NZDYB8IEfbbymEU-Y4f6fcSoif9vFI",
+    "authDomain": "cortex-limit-break.firebaseapp.com",
+    "projectId": "cortex-limit-break",
+    "storageBucket": "cortex-limit-break.firebasestorage.app",
+    "messagingSenderId": "692007913486",
+    "appId": "1:692007913486:web:b295d23dd3d9f2b197945f",
+    "measurementId": "G-1THQDDDP8R"
+  }
+}

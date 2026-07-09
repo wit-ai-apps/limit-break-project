@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" role="img" aria-label="CORTEX Limit Break">
+  <rect width="192" height="192" rx="42" fill="#050816"/>
+  <path d="M34 142V52h24v90H34Zm50 0V76h24v66H84Zm50 0V40h24v102h-24Z" fill="#00bfff"/>
+  <path d="M34 142h124" stroke="#7dd3fc" stroke-width="10" stroke-linecap="round"/>
+  <path d="M70 52h38L84 91h38l-58 60 22-46H52l18-53Z" fill="#ffffff" opacity=".92"/>
+</svg>

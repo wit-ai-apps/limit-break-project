@@ -1,0 +1,63 @@
+{
+  "users": {
+    "STUDENT_FIREBASE_UID": {
+      "uid": "STUDENT_FIREBASE_UID",
+      "email": "student@example.com",
+      "displayName": "生徒",
+      "role": "student",
+      "linked_student_ids": ["STU_0001"],
+      "classroom_ids": ["room_001"],
+      "status": "active"
+    },
+    "PARENT_FIREBASE_UID": {
+      "uid": "PARENT_FIREBASE_UID",
+      "email": "parent@example.com",
+      "displayName": "保護者",
+      "role": "parent",
+      "linked_student_ids": ["STU_0001"],
+      "classroom_ids": [],
+      "status": "active"
+    },
+    "SUPPORTER_FIREBASE_UID": {
+      "uid": "SUPPORTER_FIREBASE_UID",
+      "email": "supporter@example.com",
+      "displayName": "サポーター",
+      "role": "supporter",
+      "supporter_type": "family",
+      "linked_student_ids": ["STU_0001"],
+      "classroom_ids": [],
+      "status": "active"
+    },
+    "TEACHER_FIREBASE_UID": {
+      "uid": "TEACHER_FIREBASE_UID",
+      "email": "teacher@example.com",
+      "displayName": "講師",
+      "role": "teacher",
+      "linked_student_ids": ["STU_0001"],
+      "classroom_ids": ["room_001"],
+      "status": "active"
+    }
+  },
+  "students": {
+    "STU_0001": {
+      "student_id": "STU_0001",
+      "display_name": "生徒 1",
+      "grade": "未設定",
+      "classroom_ids": ["room_001"],
+      "primary_teacher_uid": "TEACHER_FIREBASE_UID",
+      "parent_uids": ["PARENT_FIREBASE_UID"],
+      "supporter_uids": ["SUPPORTER_FIREBASE_UID"],
+      "status": "active"
+    }
+  },
+  "classrooms": {
+    "room_001": {
+      "classroom_id": "room_001",
+      "name": "CORTEX Limit Break 検証クラス",
+      "teacher_uids": ["TEACHER_FIREBASE_UID"],
+      "student_ids": ["STU_0001"],
+      "subject": "all",
+      "status": "active"
+    }
+  }
+}

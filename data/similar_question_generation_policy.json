@@ -1,0 +1,211 @@
+{
+  "version": "1.0.0",
+  "name": "Similar Question Generation Policy",
+  "purpose": "アップロード済み教材の確認テストから学習ポイントを抽出し、教材本文を複製せずに、同じ力を測るオリジナル類題で到達度テスト・復習テストを作成する。",
+  "copyright_guardrails": {
+    "copy_original_problem_text": false,
+    "copy_original_answer_text": false,
+    "copy_original_explanation_text": false,
+    "store_original_problem_in_public_db": false,
+    "allowed": [
+      "学習ポイントの抽出",
+      "数値・条件・文脈を変えたオリジナル類題",
+      "解法ステップの抽象化",
+      "弱点タグへの変換",
+      "本人専用OCR結果の利用"
+    ],
+    "not_allowed": [
+      "教材問題文の丸写し",
+      "解答解説の転載",
+      "問題の順番・表現をほぼ同じまま再配布",
+      "本人以外のユーザーへの教材由来本文の共有"
+    ]
+  },
+  "pipeline": [
+    {
+      "step": 1,
+      "name": "確認テスト索引",
+      "input": "confirmation_tests_index.json",
+      "output": "教材名・講・PART/Chapter・ページ・テスト種別"
+    },
+    {
+      "step": 2,
+      "name": "本人専用OCR",
+      "input": "生徒または管理者が利用権限を持つ教材PDF/画像",
+      "output": "本人専用の一時OCRテキスト"
+    },
+    {
+      "step": 3,
+      "name": "学習ポイント抽出",
+      "input": "確認テスト周辺の問題・POINT・講義問題",
+      "output": "concept_tags, skill_tags, solution_methods, mistake_patterns"
+    },
+    {
+      "step": 4,
+      "name": "類題生成",
+      "input": "抽象化した学習ポイント",
+      "output": "original_questions_only"
+    },
+    {
+      "step": 5,
+      "name": "到達度判定",
+      "input": "類題テスト結果",
+      "output": "pass/short_review/rewatch/rebuild"
+    },
+    {
+      "step": 6,
+      "name": "学習プラン反映",
+      "input": "弱点タグと判定",
+      "output": "翌日以降のRecovery Mission"
+    }
+  ],
+  "question_set_shape": {
+    "set_id": "SIM_TEST_MATH1_001_PART1",
+    "source_reference": {
+      "subject": "数学Ⅰ",
+      "course": "ベーシックレベル数学Ⅰ",
+      "lesson": "第1講",
+      "part_or_chapter": "PART1",
+      "source_test_type": "確認問題",
+      "source_pages": [11, 12]
+    },
+    "learning_points": [],
+    "questions": [
+      {
+        "question_id": "SIM_Q_0001",
+        "question_type": "original_similar",
+        "difficulty": "basic",
+        "format": "multiple_choice|fill_blank|short_answer|written_explanation|calculation|ordering",
+        "prompt": "original_prompt",
+        "answer": "original_answer",
+        "rubric": [],
+        "skill_tags": [],
+        "mistake_patterns": [],
+        "linked_recovery": []
+      }
+    ],
+    "scoring": {
+      "pass_rate": 85,
+      "short_review_rate": 70,
+      "rewatch_rate": 50
+    }
+  },
+  "subject_generation_rules": [
+    {
+      "subject": "英語",
+      "formats": [
+        "選択式",
+        "穴埋め",
+        "語句並べ替え",
+        "日本語→英語",
+        "英語→日本語",
+        "構文説明",
+        "誤文訂正"
+      ],
+      "similarity_method": [
+        "同じ文法タグを使う",
+        "語彙・主語・時制を変える",
+        "英文300選の構文タグとリンクする",
+        "最初は選択式、正答が続いたら日本語→英語へ上げる"
+      ],
+      "weakness_tags": ["品詞", "文型", "時制", "助動詞", "不定詞", "動名詞", "分詞", "関係詞", "比較", "仮定法", "語順", "構文説明"]
+    },
+    {
+      "subject": "数学",
+      "formats": [
+        "数値変更",
+        "条件変更",
+        "途中式チェック",
+        "解法選択",
+        "理由説明",
+        "グラフ読み取り"
+      ],
+      "similarity_method": [
+        "同じ解法を使う別数値にする",
+        "条件を少し変えて理解を確認する",
+        "計算量を段階的に上げる",
+        "なぜその式になるか説明させる"
+      ],
+      "weakness_tags": ["計算", "文字式", "方程式", "関数", "二次関数", "図形", "三角比", "場合の数", "確率", "データ分析"]
+    },
+    {
+      "subject": "理科",
+      "formats": [
+        "単位変換",
+        "公式選択",
+        "計算類題",
+        "図解説明",
+        "現象説明",
+        "用語選択"
+      ],
+      "similarity_method": [
+        "同じ公式で数値を変える",
+        "単位を変えて換算を確認する",
+        "物理・化学・数学のメッシュタグへ接続する",
+        "図で説明できるかを問う"
+      ],
+      "weakness_tags": ["単位", "比例", "速さ", "力", "エネルギー", "波", "電気", "mol", "濃度", "酸化還元", "気体", "平衡"]
+    },
+    {
+      "subject": "古文",
+      "formats": [
+        "品詞選択",
+        "活用形判定",
+        "助動詞識別",
+        "敬語方向",
+        "主語把握",
+        "現代語訳",
+        "読解理由説明"
+      ],
+      "similarity_method": [
+        "同じ文法事項の短文に変える",
+        "本文依存ではなく識別ポイントを問う",
+        "読解編は1講を分割して主語把握・古文常識・現代語訳へ分ける"
+      ],
+      "weakness_tags": ["歴史的仮名遣い", "品詞", "活用", "助動詞", "係り結び", "敬語", "主語把握", "古文常識", "現代語訳"]
+    }
+  ],
+  "adaptive_scoring_rules": [
+    {
+      "condition": "正答率85%以上かつ理由説明ができる",
+      "decision": "pass",
+      "schedule_action": "次単元へ進む。翌日5分確認のみ。"
+    },
+    {
+      "condition": "正答率70〜84%",
+      "decision": "short_review",
+      "schedule_action": "翌日にPOINT確認と類題1〜2問を追加。"
+    },
+    {
+      "condition": "正答率50〜69%",
+      "decision": "rewatch",
+      "schedule_action": "該当講座の該当PARTを再視聴し、類題セットを再実施。"
+    },
+    {
+      "condition": "正答率50%未満または未提出",
+      "decision": "rebuild",
+      "schedule_action": "次の講義を止め、前提単元まで戻す。"
+    },
+    {
+      "condition": "正答率は高いが理由説明ができない",
+      "decision": "concept_gap",
+      "schedule_action": "構文説明・解法説明・図解説明の問題を追加する。"
+    }
+  ],
+  "recovery_mission_shape": {
+    "mission_id": "RECOVERY_0001",
+    "trigger_test_id": "SIM_TEST_MATH1_001_PART1",
+    "weakness_tags": [],
+    "actions": [
+      {
+        "type": "rewatch|point_review|similar_questions|memory|teacher_comment",
+        "target_course": "",
+        "target_lesson": "",
+        "target_part_or_chapter": "",
+        "minutes": 20,
+        "due": "next_day"
+      }
+    ],
+    "insert_policy": "翌日の最初の同一教科枠に差し込む。重い場合は週末バッファへ送る。"
+  }
+}

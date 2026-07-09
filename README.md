@@ -69,6 +69,14 @@ Mission完了条件:
 
 Home画面は「今日の学習ルート」専用にします。メール通知、外部アプリ連携、OCR、AI Teacher API、Firebase、管理者用DB表示はHomeに置かず、設定画面へ移動します。
 
+#### v4.6 複数生徒管理拡張とHTML/JS分離方針
+
+開発中は、まず1人の生徒 `STU_0001` に対して、本人、保護者、保護者以外のサポーター、学習塾講師または学校教師の4方向から確認できる構成で実装します。複数生徒管理は最初から画面に出しすぎず、Firestore構造として拡張可能にしておきます。
+
+将来の複数生徒対応では、`classrooms/{classroom_id}` を追加し、先生が教室単位で生徒一覧、提出状況、未提出、正答率、疲労度、復習漏れを確認できるようにします。先生が複数教室を担当する可能性、生徒が複数教室に所属する可能性を考え、`users/{uid}` と `students/{student_id}` の両方に `classroom_ids` を持たせる設計にします。
+
+現在の実装は `index.html` 1ファイルにHTML/CSS/JSがまとまっています。次フェーズでは、`css/style.css` と `js/app.js`、`js/auth.js`、`js/firestore.js`、`js/storage.js`、`js/evidence.js`、`js/classroom.js` へ段階的に分離します。分離方針の詳細は `docs/multi-student-and-js-separation-plan.md` にまとめます。
+
 Homeに表示してよいもの:
 
 - 今日の学習ルート
@@ -89,6 +97,66 @@ Homeに表示しないもの:
 #### Firebase Authentication前提のユーザー管理
 
 Phase2ではFirebase Authenticationで本人確認を行い、Firestoreにユーザー情報とログイン履歴を保存します。Phase1の仮ログインUIは、この構造へ移行する前提の検証版です。
+
+#### v4.5 Firebase Storage + Firestore 提出画像保存
+
+確認テスト結果スクショは、設定ファイル `data/firebase_config.json` が存在し、`enabled: true` の場合に Firebase Storage と Firestore へ保存します。設定が無い場合、または接続に失敗した場合は検証版として従来どおり `localStorage` に保存します。
+
+目的:
+
+- 生徒が提出した確認テスト画像を、保護者・サポーター・塾講師が別端末から確認できるようにする
+- 画像本体は Firebase Storage に保存する
+- 提出記録、回答数、正答率、理解度、疲労度、画像URLは Firestore に保存する
+- 手書き採点・OCRは後続フェーズとし、まずは「提出されたこと」を共有できる状態にする
+
+設定手順:
+
+1. `data/firebase_config.example.json` をコピーして `data/firebase_config.json` を作成
+2. Firebase Web App の設定値を `firebase` に入力
+3. `enabled` を `true` に変更
+4. `student_id` を対象生徒IDに設定
+
+詳細な設定、検証用ルール、正式運用ルール方針は `docs/firebase-storage-firestore-setup.md` にまとめます。
+
+Firebaseコンソールでの作業順は `docs/firebase-console-checklist.md` にまとめます。
+
+Storage保存先:
+
+```text
+students/{student_id}/evidence/{date}/{record_id}-{timestamp}-{file_name}
+```
+
+Firestore保存先:
+
+```text
+students/{student_id}/evidence_records/{date}_{mission_id}
+```
+
+Firestoreレコード例:
+
+```json
+{
+  "student_id": "STU_0001",
+  "missionId": "MATH_001",
+  "missionTitle": "数学Ⅰ 第1講 PART1",
+  "subject": "数学Ⅰ",
+  "course": "ベーシックレベル数学Ⅰ",
+  "lesson": "第1講",
+  "part": "PART1",
+  "testType": "初回確認テスト",
+  "answeredCount": "14",
+  "score": "64",
+  "understanding": "4",
+  "fatigue": "2",
+  "evidenceImageName": "sutasapu-result.jpg",
+  "evidenceImageUrl": "https://firebasestorage.googleapis.com/...",
+  "evidenceStoragePath": "students/STU_0001/evidence/2026-07-08/...",
+  "visible_to": ["student", "parent", "supporter", "teacher"],
+  "firebaseSyncStatus": "synced"
+}
+```
+
+現段階では Firebase Authentication 未接続のため、Firestore / Storage のセキュリティルールは検証用に限定して運用します。正式運用では `request.auth.uid` と `users/{uid}.linked_student_id` を照合し、本人・保護者・サポーター・講師の閲覧範囲を分けます。
 
 ロール:
 
@@ -745,6 +813,50 @@ counselorコメントは `visibility` で公開範囲を選びます。
 塾講師用です。全科目の進捗、確認テストの回答数・正答率、理解度、疲労度、間違い理由、復習漏れ、週間分析を見られます。将来的にはMission調整、復習追加、コメント追加、次週方針作成を行います。
 
 ## 将来構成
+
+v4.5.0以降は、新機能追加よりも共通基盤の固定を優先します。
+
+詳細設計は [CORTEX Core v1.0 Design](docs/cortex-core-v1-design.md) にまとめています。
+
+主な方針：
+
+- Homeはロール別ページではなく、カードを切り替えるHome Layout Engineにする
+- 学習順序はUIではなくLearning Engineが決める
+- 教材情報はMaterial Engineで管理する
+- 戻る・飛ばす・追加演習はAdaptive Learning Route Engineで判断する
+- Firebase Authentication / Firestore / StorageはCORTEX Coreとして共通化する
+- GitHub Pagesは検証環境として維持し、Firebase Hosting移行は後段にする
+
+## PWA化とサーバー移行方針
+
+v4.6.0-dev では、スマホ検証のためにPWA対応を追加します。
+
+PWAで行うこと:
+
+- スマホのホーム画面に `CORTEX Limit Break` として追加できるようにする
+- 起動時にアプリ風の全画面表示へ近づける
+- 最低限のアプリ本体をキャッシュし、通信が不安定でも画面を開けるようにする
+- Firebase Hostingへ移行しても同じ構成を使えるよう、相対パスで構成する
+
+PWAで行わないこと:
+
+- 生徒の提出画像をブラウザキャッシュへ保存し続ける
+- AI TeacherのAPIキーをフロントエンドへ置く
+- 認証や権限管理をlocalStorageだけで完結させる
+
+サーバー移行は、GitHub Pagesでの公開検証を維持したまま、Firebaseを中心に段階移行します。
+
+1. Phase1: PWA化。GitHub Pagesのままスマホ、タブレット、PCで検証する
+2. Phase2: Firebase Authenticationで本人、保護者、サポーター、講師をログイン管理する
+3. Phase3: Firestoreでユーザー、学生、教室、提出記録を管理する
+4. Phase4: Firebase Storageで確認テスト結果画像を保存する
+5. Phase5: Cloud Functionsで通知、権限補助、AI連携の入口を作る
+6. Phase6: AI TeacherをCloud FunctionsまたはAPI Server経由でOpenAI APIへ接続する
+7. Phase7: Firebase Hostingへ公開先を切り替える
+
+現在の公開URL `https://wit-ai-apps.github.io/limit-break-project/` は、Phase7までは検証環境として維持します。Firebase Hostingは急がず、認証、権限、提出画像共有、AI Teacherの流れが固まってから切り替えます。
+
+Firebase Authentication以降のHomeは、ログインした役割に応じて表示を変えます。本人には今日の学習順、保護者には学習時間と提出状況、サポーターには見守り要約、講師には担当生徒の未提出・提出済み一覧を出します。LIMIT BREAKは個人学習アプリではなく、塾、家庭、AIが一緒に生徒を支える学習プラットフォームとして設計します。
 
 ## 現在の時間割負荷
 

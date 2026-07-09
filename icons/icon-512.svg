@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="CORTEX Limit Break">
+  <rect width="512" height="512" rx="112" fill="#050816"/>
+  <circle cx="256" cy="256" r="202" fill="#08111f" stroke="#00bfff" stroke-width="14"/>
+  <path d="M92 382V138h64v244H92Zm132 0V202h64v180h-64Zm132 0V106h64v276h-64Z" fill="#00bfff"/>
+  <path d="M92 382h328" stroke="#7dd3fc" stroke-width="26" stroke-linecap="round"/>
+  <path d="M190 136h104l-66 108h104L174 406l60-126h-92l48-144Z" fill="#ffffff" opacity=".94"/>
+</svg>

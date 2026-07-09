@@ -1,0 +1,82 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function userDoc() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid));
+    }
+
+    function userRole() {
+      return userDoc().data.role;
+    }
+
+    function linkedStudentIds() {
+      return signedIn() && userDoc().data.linked_student_ids is list
+        ? userDoc().data.linked_student_ids
+        : [];
+    }
+
+    function classroomIds() {
+      return signedIn() && userDoc().data.classroom_ids is list
+        ? userDoc().data.classroom_ids
+        : [];
+    }
+
+    function canReadStudent(studentId) {
+      return signedIn() && (
+        userRole() == "admin" ||
+        studentId in linkedStudentIds()
+      );
+    }
+
+    function canWriteStudentEvidence(studentId) {
+      return signedIn() && (
+        userRole() == "admin" ||
+        userRole() == "teacher" ||
+        userRole() == "student" && studentId in linkedStudentIds()
+      );
+    }
+
+    match /users/{uid} {
+      allow read: if signedIn() && (request.auth.uid == uid || userRole() == "admin");
+      allow create, update: if signedIn() && (request.auth.uid == uid || userRole() == "admin");
+      allow delete: if signedIn() && userRole() == "admin";
+    }
+
+    match /students/{studentId} {
+      allow read: if canReadStudent(studentId);
+      allow create, update: if signedIn() && (userRole() == "admin" || userRole() == "teacher");
+      allow delete: if signedIn() && userRole() == "admin";
+
+      match /evidence_records/{recordId} {
+        allow read: if canReadStudent(studentId);
+        allow create, update: if canWriteStudentEvidence(studentId);
+        allow delete: if signedIn() && (userRole() == "admin" || userRole() == "teacher");
+      }
+
+      match /missions/{missionId} {
+        allow read: if canReadStudent(studentId);
+        allow create, update: if signedIn() && (userRole() == "admin" || userRole() == "teacher");
+        allow delete: if signedIn() && userRole() == "admin";
+      }
+    }
+
+    match /classrooms/{classroomId} {
+      allow read: if signedIn() && (
+        userRole() == "admin" ||
+        classroomId in classroomIds()
+      );
+      allow create, update, delete: if signedIn() && userRole() == "admin";
+    }
+
+    match /login_logs/{logId} {
+      allow create: if signedIn();
+      allow read: if signedIn() && userRole() == "admin";
+      allow update, delete: if false;
+    }
+  }
+}

@@ -4,6 +4,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>CORTEX Limit Break</title>
+  <meta name="description" content="CORTEX Limit Break learning navigation app.">
+  <meta name="theme-color" content="#050816">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="CORTEX Limit Break">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.svg">
   <style>
     :root {
       color-scheme: dark;
@@ -328,8 +337,12 @@
       display: flex;
       gap: 8px;
       overflow-x: auto;
+      overflow-y: hidden;
       padding: 4px 0 14px;
       margin-bottom: 4px;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+      scroll-snap-type: x proximity;
     }
 
     .nav-button {
@@ -340,6 +353,8 @@
       border-color: rgba(125, 211, 252, 0.22);
       box-shadow: none;
       color: var(--muted);
+      scroll-snap-align: start;
+      white-space: nowrap;
     }
 
     .nav-button.active {
@@ -347,6 +362,67 @@
       border-color: rgba(0, 191, 255, 0.72);
       background: rgba(0, 191, 255, 0.16);
       box-shadow: var(--glow);
+    }
+
+    .dev-drawer {
+      position: fixed;
+      inset: 0 0 0 auto;
+      width: min(420px, 92vw);
+      padding: 18px;
+      z-index: 50;
+      transform: translateX(108%);
+      transition: transform 220ms ease;
+      border-radius: 18px 0 0 18px;
+      background: rgba(5, 8, 22, 0.96);
+      border-left: 1px solid rgba(125, 211, 252, 0.38);
+      box-shadow: -18px 0 48px rgba(0, 0, 0, 0.42);
+      overflow-y: auto;
+    }
+
+    .dev-drawer.open {
+      transform: translateX(0);
+    }
+
+    .dev-drawer-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 49;
+      background: rgba(0, 0, 0, 0.42);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 180ms ease;
+    }
+
+    .dev-drawer-backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .dev-version-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .dev-version-item {
+      padding: 12px;
+      border-radius: 14px;
+      border: 1px solid rgba(125, 211, 252, 0.2);
+      background: rgba(255, 255, 255, 0.045);
+    }
+
+    .dev-version-item strong {
+      display: block;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+
+    .dev-version-item ul {
+      margin: 0;
+      padding-left: 18px;
+      color: var(--text);
+      line-height: 1.65;
+      font-weight: 720;
     }
 
     main {
@@ -499,7 +575,7 @@
       transition: width 420ms ease;
     }
 
-    .mission-list, .subject-mission-list, .review-list, .log-list, .permission-list, .exam-list, .level-list, .week-list, .material-list, .pace-list, .memory-list, .retention-list, .external-list, .teacher-chat, .counselor-list {
+    .mission-list, .subject-mission-list, .review-list, .log-list, .permission-list, .exam-list, .level-list, .week-list, .material-list, .pace-list, .memory-list, .retention-list, .external-list, .teacher-chat, .counselor-list, .role-dashboard {
       display: grid;
       gap: 12px;
     }
@@ -962,7 +1038,7 @@
       gap: 10px;
     }
 
-    .metric, .review-card, .log-card, .permission-card, .exam-card, .level-card, .week-card, .ai-check, .material-card, .pace-card, .load-card, .memory-card, .retention-card, .external-card, .teacher-card, .counselor-card {
+    .metric, .review-card, .log-card, .permission-card, .exam-card, .level-card, .week-card, .ai-check, .material-card, .pace-card, .load-card, .memory-card, .retention-card, .external-card, .teacher-card, .counselor-card, .dashboard-card {
       padding: 13px;
       border: 1px solid rgba(125, 211, 252, 0.2);
       border-radius: 16px;
@@ -977,7 +1053,7 @@
       text-shadow: 0 0 16px rgba(0, 191, 255, 0.48);
     }
 
-    .metric span, .review-card span, .log-card span, .permission-card span, .exam-card span, .level-card span, .week-card span, .ai-check span, .material-card span, .pace-card span, .load-card span, .memory-card span, .retention-card span, .external-card span, .teacher-card span, .counselor-card span {
+    .metric span, .review-card span, .log-card span, .permission-card span, .exam-card span, .level-card span, .week-card span, .ai-check span, .material-card span, .pace-card span, .load-card span, .memory-card span, .retention-card span, .external-card span, .teacher-card span, .counselor-card span, .dashboard-card span {
       display: block;
       margin-top: 6px;
       color: var(--muted);
@@ -985,9 +1061,76 @@
       font-weight: 760;
     }
 
-    .review-card strong, .log-card strong, .permission-card strong, .exam-card strong, .level-card strong, .week-card strong, .ai-check strong, .material-card strong, .pace-card strong, .load-card strong, .memory-card strong, .retention-card strong, .external-card strong, .teacher-card strong, .counselor-card strong {
+    .review-card strong, .log-card strong, .permission-card strong, .exam-card strong, .level-card strong, .week-card strong, .ai-check strong, .material-card strong, .pace-card strong, .load-card strong, .memory-card strong, .retention-card strong, .external-card strong, .teacher-card strong, .counselor-card strong, .dashboard-card strong {
       display: block;
       color: var(--text);
+    }
+
+    .evidence-table-wrap {
+      overflow-x: auto;
+      border: 1px solid rgba(125, 211, 252, 0.22);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .evidence-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 720px;
+      font-size: 0.92rem;
+    }
+
+    .evidence-table th,
+    .evidence-table td {
+      padding: 10px;
+      border-bottom: 1px solid rgba(125, 211, 252, 0.16);
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .evidence-table th {
+      color: var(--accent);
+      font-size: 0.82rem;
+      font-weight: 950;
+      background: rgba(0, 191, 255, 0.08);
+    }
+
+    .evidence-table td {
+      color: var(--text);
+      font-weight: 760;
+    }
+
+    .evidence-open-button {
+      min-height: 34px;
+      border-radius: 12px;
+      padding: 0 10px;
+      white-space: nowrap;
+    }
+
+    .evidence-preview-dialog {
+      width: min(980px, calc(100% - 24px));
+    }
+
+    .evidence-preview-panel {
+      padding: 16px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .evidence-preview-meta {
+      color: var(--muted);
+      font-weight: 780;
+      line-height: 1.55;
+    }
+
+    .evidence-preview-image {
+      display: block;
+      width: 100%;
+      max-height: 74vh;
+      object-fit: contain;
+      border-radius: 14px;
+      border: 1px solid rgba(125, 211, 252, 0.24);
+      background: rgba(2, 8, 23, 0.8);
     }
 
     .pace-summary, .load-grid, .memory-summary {
@@ -1021,6 +1164,84 @@
       background: rgba(34, 197, 94, 0.09);
       font-weight: 900;
     }
+
+    .role-dashboard-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .dashboard-card {
+      display: grid;
+      gap: 8px;
+      min-height: 108px;
+      background: #f9fbfd;
+      border-color: #dbeaf2;
+    }
+
+    .dashboard-card strong {
+      color: #2f3748;
+      font-size: 1.04rem;
+      font-weight: 900;
+    }
+
+    .dashboard-card span,
+    .dashboard-card p {
+      margin: 0;
+      color: var(--text);
+      line-height: 1.55;
+      font-weight: 740;
+    }
+
+    .dashboard-card.highlight {
+      border-color: rgba(0, 191, 255, 0.52);
+      background: linear-gradient(180deg, #f4fbff, #f9fbfd);
+    }
+
+    .student-status-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .student-status-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 10px;
+      align-items: center;
+      padding: 10px 12px;
+      border: 1px solid #dbeaf2;
+      border-radius: 12px;
+      background: #ffffff;
+    }
+
+    .student-status-row strong {
+      color: #2f3748;
+    }
+
+    .student-status-row span {
+      margin: 2px 0 0;
+      color: #5a6474;
+      font-size: 0.9rem;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      color: #ffffff;
+      font-size: 0.78rem;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .status-pill.done { background: #16a34a; }
+    .status-pill.pending { background: #2563eb; }
+    .status-pill.waiting { background: #f59e0b; color: #111827; }
+    .status-pill.missing { background: #ef4444; }
 
     .load-card strong {
       color: var(--accent);
@@ -1445,17 +1666,23 @@
       border: 1px solid var(--line-strong);
       border-radius: 12px;
       background: #fff;
-      overflow: hidden;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      scrollbar-width: thin;
+      scroll-snap-type: x proximity;
     }
 
     .nav-button {
-      flex: 1 0 auto;
-      min-width: 92px;
+      flex: 0 0 auto;
+      min-width: 112px;
       border: 0;
       border-radius: 0;
       background: #ffffff;
       color: var(--primary);
       font-weight: 900;
+      white-space: nowrap;
+      scroll-snap-align: start;
     }
 
     .nav-button + .nav-button {
@@ -1879,7 +2106,7 @@
       .countdown-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
       .route-summary, .route-context { grid-template-columns: 1fr; }
       .timetable-list, .home-brief-grid { grid-template-columns: 1fr; }
-      .metric-grid, .form-grid, .pace-summary, .load-grid, .memory-summary, .visibility-grid { grid-template-columns: 1fr; }
+      .metric-grid, .form-grid, .pace-summary, .load-grid, .memory-summary, .visibility-grid, .role-dashboard-grid { grid-template-columns: 1fr; }
       .mission-head { grid-template-columns: 1fr; }
     }
 
@@ -1903,13 +2130,14 @@
       </div>
       <form class="login-form" id="loginForm">
         <div class="field">
-          <label for="loginName">ユーザー名</label>
-          <input id="loginName" autocomplete="username" placeholder="例: student">
+          <label for="loginName">メールアドレス</label>
+          <input id="loginName" type="email" autocomplete="email" placeholder="例: student@example.com">
         </div>
         <div class="field">
-          <label for="loginPasscode">パスコード</label>
-          <input id="loginPasscode" type="password" autocomplete="current-password" placeholder="検証版は空欄でもログイン可">
+          <label for="loginPasscode">パスワード</label>
+          <input id="loginPasscode" type="password" autocomplete="current-password" placeholder="検証用: Test1234">
         </div>
+        <p class="button-note" id="loginStatus">Firebase未接続時は、下のログイン種別で検証表示します。</p>
         <div>
           <label class="role-label-sub">ログイン種別</label>
           <div class="role-options" id="loginRoleOptions"></div>
@@ -1931,11 +2159,12 @@
           <span class="badge" id="baselineLabel">基準日 2026-06-30</span>
           <span class="badge" id="dayBadge">1日目</span>
           <span class="badge" id="levelLabel">基礎固め</span>
+          <span class="badge" id="versionBadge">v4.6.0-dev</span>
         </div>
       </section>
 
       <aside class="coach glass">
-        <div class="coach-title">ユイ先生からの一言 <span aria-hidden="true"></span></div>
+        <div class="coach-title">AIユイ先生からの一言 <span aria-hidden="true"></span></div>
         <p class="coach-message" id="coachMessage">今日は英語構文を3つ覚えましょう。</p>
         <div class="role-panel" aria-labelledby="role-heading">
           <h2 id="role-heading">アカウント</h2>
@@ -1947,6 +2176,22 @@
     <section class="countdown-grid" aria-label="入試カウントダウン" id="countdownGrid"></section>
 
     <nav class="app-nav" aria-label="画面切替" id="appNav"></nav>
+
+    <div class="dev-drawer-backdrop" id="devDrawerBackdrop" hidden></div>
+    <aside class="dev-drawer" id="devDrawer" aria-labelledby="devDrawerTitle" aria-hidden="true" hidden>
+      <div class="topline">
+        <div>
+          <div class="system-label">開発中の更新内容</div>
+          <h2 id="devDrawerTitle">検証メモ</h2>
+        </div>
+        <button class="secondary" type="button" id="closeDevDrawerButton">閉じる</button>
+      </div>
+      <div class="badge-row">
+        <span class="badge" id="devVersionBadge">v4.6.0-dev</span>
+        <span class="badge">検証用</span>
+      </div>
+      <div class="dev-version-list" id="devVersionList"></div>
+    </aside>
 
     <main>
       <div class="stack">
@@ -1971,6 +2216,14 @@
             <span class="badge" id="todayDateLabel">7月3日（金）</span>
           </div>
           <div class="route-summary" id="routeSummary"></div>
+        </section>
+
+        <section class="view-section view-home" aria-labelledby="role-dashboard-heading">
+          <div class="topline">
+            <h2 id="role-dashboard-heading">役割別ダッシュボード</h2>
+            <span class="badge" id="roleDashboardBadge">本人</span>
+          </div>
+          <div class="role-dashboard" id="roleDashboard"></div>
         </section>
 
         <section class="view-section view-home view-today" aria-labelledby="mission-heading">
@@ -2226,10 +2479,23 @@
     </form>
   </dialog>
 
+  <dialog id="evidencePreviewDialog" class="glass evidence-preview-dialog">
+    <div class="evidence-preview-panel">
+      <div class="topline">
+        <h2 id="evidencePreviewTitle">提出画像</h2>
+        <button class="secondary" type="button" id="closeEvidencePreviewButton">閉じる</button>
+      </div>
+      <div class="evidence-preview-meta" id="evidencePreviewMeta"></div>
+      <img class="evidence-preview-image" id="evidencePreviewImage" alt="提出された確認テスト結果スクショ">
+    </div>
+  </dialog>
+
   <script>
     const STORAGE_KEY = "limitBreakProjectRecordsV120";
     const LOGIN_KEY = "limitBreakProjectLoggedInV390";
     const LOGIN_NAME_KEY = "limitBreakProjectLoginNameV390";
+    const LOGIN_EMAIL_KEY = "limitBreakProjectLoginEmailV460";
+    const AUTH_UID_KEY = "limitBreakProjectAuthUidV460";
     const ROLE_KEY = "limitBreakProjectRole";
     const NAV_STEP_KEY = "limitBreakProjectNavigationStepV340";
     const SUPPORT_TYPE_KEY = "limitBreakProjectSupportTypeV380";
@@ -2240,6 +2506,43 @@
     const VIEW_KEY = "limitBreakProjectActiveViewV330";
     const NOTICE_CONTACTS_KEY = "limitBreakProjectNoticeContactsV370";
     const NOTICE_QUEUE_KEY = "limitBreakProjectNoticeQueueV370";
+    const FIREBASE_CONFIG_PATH = "data/firebase_config.json";
+    const APP_VERSION = "v4.6.0-dev";
+    const RELEASE_NOTES = [
+      {
+        version: "v4.6.0-dev",
+        date: "2026-07-09",
+        title: "スマホ検証UIとFirebase提出準備",
+        items: [
+          "「ユイ先生」を「AIユイ先生」に変更",
+          "スマホの画面切替タブを横スクロール対応",
+          "バージョン表示と開発中の更新内容タブを追加",
+          "ログイン種別ごとにHomeのダッシュボード表示を変更",
+          "Firebase Auth、Firestore、Storageで提出画像を扱う準備を追加",
+          "本人、保護者、サポーター、講師で検証しやすい表示へ整理"
+        ]
+      },
+      {
+        version: "v4.5.x",
+        date: "2026-07-08",
+        title: "提出画像の共有設計",
+        items: [
+          "確認テスト結果スクショのアップロード口を設計",
+          "提出画像一覧と拡大確認の画面を追加",
+          "保護者、サポーター、講師が学習履歴を確認できる権限設計を追加"
+        ]
+      },
+      {
+        version: "v4.4.x",
+        date: "2026-07-07",
+        title: "学習ルートと全教科計画",
+        items: [
+          "映像授業、テキスト、確認テスト、復習をつなぐ学習ルートへ整理",
+          "英語、数学、理科、古文の8月末プラン作成に対応",
+          "到達度テストから受講推奨コースを作る方針を追加"
+        ]
+      }
+    ];
     const BASELINE_DATE = "2026-06-30";
     const APP_VIEWS = [
       { id: "home", label: "ホーム" },
@@ -2672,6 +2975,14 @@
     let counselorNotes = loadCounselorNotes();
     let noticeContacts = loadNoticeContacts();
     let noticeQueue = loadNoticeQueue();
+    let firebaseBridge = {
+      enabled: false,
+      status: "not_configured",
+      message: "Firebase未設定のため、localStorageで保存します。",
+      studentId: "STU_0001",
+      currentUser: null,
+      userDoc: null
+    };
     let isLoggedIn = localStorage.getItem(LOGIN_KEY) === "true";
     let loginName = localStorage.getItem(LOGIN_NAME_KEY) || "";
     let currentRole = localStorage.getItem(ROLE_KEY) || "student";
@@ -2684,14 +2995,22 @@
     let aiTeacherLog = loadAiTeacherLog();
 
     const loginForm = document.querySelector("#loginForm");
+    const loginStatus = document.querySelector("#loginStatus");
     const loginRoleOptions = document.querySelector("#loginRoleOptions");
     const loginSupportTypePanel = document.querySelector("#loginSupportTypePanel");
     const accountPanel = document.querySelector("#accountPanel");
     const appNav = document.querySelector("#appNav");
+    const versionBadge = document.querySelector("#versionBadge");
+    const devDrawer = document.querySelector("#devDrawer");
+    const devDrawerBackdrop = document.querySelector("#devDrawerBackdrop");
+    const devVersionBadge = document.querySelector("#devVersionBadge");
+    const devVersionList = document.querySelector("#devVersionList");
     const countdownGrid = document.querySelector("#countdownGrid");
     const missionList = document.querySelector("#missionList");
     const journeyMap = document.querySelector("#journeyMap");
     const routeSummary = document.querySelector("#routeSummary");
+    const roleDashboard = document.querySelector("#roleDashboard");
+    const roleDashboardBadge = document.querySelector("#roleDashboardBadge");
     const longPlanList = document.querySelector("#longPlanList");
     const weekPlanList = document.querySelector("#weekPlanList");
     const reviewList = document.querySelector("#reviewList");
@@ -2714,6 +3033,10 @@
     const counselorList = document.querySelector("#counselorList");
     const recordDialog = document.querySelector("#recordDialog");
     const recordForm = document.querySelector("#recordForm");
+    const evidencePreviewDialog = document.querySelector("#evidencePreviewDialog");
+    const evidencePreviewTitle = document.querySelector("#evidencePreviewTitle");
+    const evidencePreviewMeta = document.querySelector("#evidencePreviewMeta");
+    const evidencePreviewImage = document.querySelector("#evidencePreviewImage");
 
     async function init() {
       renderRoleOptions();
@@ -2774,6 +3097,7 @@
         subjectBalance = FALLBACK_SUBJECT_BALANCE;
         counselorNotes = loadCounselorNotes();
       }
+      await initFirebaseBridge();
       render();
     }
 
@@ -2789,6 +3113,204 @@
 
     function saveRecords() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+    }
+
+    async function initFirebaseBridge() {
+      try {
+        const response = await fetch(FIREBASE_CONFIG_PATH, { cache: "no-store" });
+        if (!response.ok) return;
+        const config = await response.json();
+        if (!config.enabled || !config.firebase) {
+          firebaseBridge.message = "Firebase設定は読み込みましたが、enabled=falseです。";
+          return;
+        }
+        const [
+          firebaseApp,
+          firebaseFirestore,
+          firebaseStorage,
+          firebaseAuth
+        ] = await Promise.all([
+          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js"),
+          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js"),
+          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js"),
+          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js")
+        ]);
+        const app = firebaseApp.initializeApp(config.firebase);
+        const db = firebaseFirestore.getFirestore(app);
+        const storage = firebaseStorage.getStorage(app);
+        const auth = firebaseAuth.getAuth(app);
+        firebaseBridge = {
+          enabled: true,
+          status: "connected",
+          message: "Firebase接続済み。メールアドレスでログインしてください。",
+          studentId: config.student_id || "STU_0001",
+          currentUser: null,
+          userDoc: null,
+          app,
+          db,
+          storage,
+          auth,
+          collection: firebaseFirestore.collection,
+          doc: firebaseFirestore.doc,
+          getDoc: firebaseFirestore.getDoc,
+          getDocs: firebaseFirestore.getDocs,
+          addDoc: firebaseFirestore.addDoc,
+          setDoc: firebaseFirestore.setDoc,
+          serverTimestamp: firebaseFirestore.serverTimestamp,
+          signInWithEmailAndPassword: firebaseAuth.signInWithEmailAndPassword,
+          signOut: firebaseAuth.signOut,
+          storageRef: firebaseStorage.ref,
+          uploadBytes: firebaseStorage.uploadBytes,
+          getDownloadURL: firebaseStorage.getDownloadURL
+        };
+        if (auth.currentUser) {
+          await applyFirebaseUser(auth.currentUser);
+        }
+      } catch (error) {
+        firebaseBridge.enabled = false;
+        firebaseBridge.status = "error";
+        firebaseBridge.message = `Firebase接続に失敗しました。localStorageで保存します。${error.message || error}`;
+      }
+    }
+
+    async function applyFirebaseUser(user) {
+      if (!firebaseBridge.enabled || !user) return;
+      firebaseBridge.currentUser = user;
+      const userRef = firebaseBridge.doc(firebaseBridge.db, "users", user.uid);
+      const userSnap = await firebaseBridge.getDoc(userRef);
+      const userData = userSnap.exists() ? userSnap.data() : {};
+      firebaseBridge.userDoc = userData;
+      firebaseBridge.studentId = Array.isArray(userData.linked_student_ids) && userData.linked_student_ids[0]
+        ? userData.linked_student_ids[0]
+        : firebaseBridge.studentId;
+      currentRole = userData.role || currentRole || "student";
+      loginName = userData.displayName || user.displayName || user.email || loginName;
+      localStorage.setItem(LOGIN_KEY, "true");
+      localStorage.setItem(LOGIN_NAME_KEY, loginName);
+      localStorage.setItem(LOGIN_EMAIL_KEY, user.email || "");
+      localStorage.setItem(AUTH_UID_KEY, user.uid);
+      localStorage.setItem(ROLE_KEY, currentRole);
+      isLoggedIn = true;
+      firebaseBridge.status = userSnap.exists() ? "authenticated" : "profile_missing";
+      firebaseBridge.message = userSnap.exists()
+        ? "Firebaseログイン済み。提出画像はStorage、記録はFirestoreへ保存します。"
+        : "Firebaseログイン済みですが、users/{uid} が未作成です。管理者に確認してください。";
+      await writeLoginLog(user, userData);
+      await syncFirebaseRecords();
+    }
+
+    async function writeLoginLog(user, userData) {
+      if (!firebaseBridge.enabled || !firebaseBridge.addDoc || !user) return;
+      try {
+        await firebaseBridge.addDoc(firebaseBridge.collection(firebaseBridge.db, "login_logs"), {
+          uid: user.uid,
+          email: user.email || "",
+          role: userData.role || currentRole || "student",
+          linked_student_id: firebaseBridge.studentId,
+          login_at: firebaseBridge.serverTimestamp(),
+          user_agent: navigator.userAgent,
+          source: "web"
+        });
+      } catch (_) {
+        // Login logs are useful but should never block the student workflow.
+      }
+    }
+
+    async function syncFirebaseRecords() {
+      if (!firebaseBridge.enabled || !firebaseBridge.currentUser) return;
+      try {
+        const collectionRef = firebaseBridge.collection(firebaseBridge.db, "students", firebaseBridge.studentId, "evidence_records");
+        const snapshot = await firebaseBridge.getDocs(collectionRef);
+        const remoteRecords = snapshot.docs.map((docSnap) => ({
+          ...docSnap.data(),
+          firebaseDocumentId: docSnap.id,
+          firebaseSyncStatus: "synced"
+        }));
+        if (!remoteRecords.length) return;
+        const merged = new Map(records.map((record) => [recordIdentity(record), record]));
+        remoteRecords.forEach((record) => {
+          merged.set(recordIdentity(record), {
+            ...merged.get(recordIdentity(record)),
+            ...record
+          });
+        });
+        records = [...merged.values()].sort((a, b) => String(b.savedAt || "").localeCompare(String(a.savedAt || "")));
+        saveRecords();
+      } catch (error) {
+        firebaseBridge.status = "read_error";
+        firebaseBridge.message = `Firestore読込に失敗しました。localStorage表示を継続します。${error.message || error}`;
+      }
+    }
+
+    function recordIdentity(record) {
+      return `${record.date || ""}_${record.missionId || ""}`;
+    }
+
+    function sanitizeFileName(value) {
+      return String(value || "evidence-image")
+        .replace(/[\\/:*?"<>|#%{}^~[\]`]/g, "_")
+        .replace(/\s+/g, "_")
+        .slice(0, 120);
+    }
+
+    function firebaseSafeId(value) {
+      return String(value || "record")
+        .replace(/[\/#?[\]]/g, "_")
+        .replace(/\s+/g, "_")
+        .slice(0, 180);
+    }
+
+    function recordForFirestore(record) {
+      const copy = { ...record };
+      delete copy.evidenceImageData;
+      Object.keys(copy).forEach((key) => {
+        if (copy[key] === undefined) delete copy[key];
+      });
+      return copy;
+    }
+
+    async function saveEvidenceRecordRemote(record, evidenceFile) {
+      if (!firebaseBridge.enabled || !firebaseBridge.currentUser) return record;
+      const recordId = firebaseSafeId(recordIdentity(record));
+      let remoteRecord = { ...record };
+      try {
+        if (evidenceFile) {
+          const storagePath = `students/${firebaseBridge.studentId}/evidence/${record.date}/${recordId}-${Date.now()}-${sanitizeFileName(evidenceFile.name)}`;
+          const imageRef = firebaseBridge.storageRef(firebaseBridge.storage, storagePath);
+          await firebaseBridge.uploadBytes(imageRef, evidenceFile, {
+            contentType: evidenceFile.type || "image/jpeg",
+            customMetadata: {
+              student_id: firebaseBridge.studentId,
+              mission_id: record.missionId || "",
+              subject: record.subject || "",
+              test_type: record.testType || ""
+            }
+          });
+          remoteRecord.evidenceImageUrl = await firebaseBridge.getDownloadURL(imageRef);
+          remoteRecord.evidenceStoragePath = storagePath;
+        }
+        const docRef = firebaseBridge.doc(firebaseBridge.db, "students", firebaseBridge.studentId, "evidence_records", recordId);
+        const firestoreRecord = {
+          ...recordForFirestore(remoteRecord),
+          student_id: firebaseBridge.studentId,
+          visible_to: ["student", "parent", "supporter", "teacher"],
+          firebaseSyncStatus: "synced",
+          updated_at: firebaseBridge.serverTimestamp()
+        };
+        await firebaseBridge.setDoc(docRef, firestoreRecord, { merge: true });
+        return {
+          ...remoteRecord,
+          firebaseDocumentId: recordId,
+          firebaseSyncStatus: "synced",
+          firebaseSyncError: ""
+        };
+      } catch (error) {
+        return {
+          ...remoteRecord,
+          firebaseSyncStatus: "error",
+          firebaseSyncError: error.message || String(error)
+        };
+      }
     }
 
     function loadMemoryResults() {
@@ -2945,14 +3467,28 @@
     function renderAccountPanel() {
       const role = activeRoleConfig();
       const supportType = SUPPORTER_TYPES.find((type) => type.value === currentSupportType);
+      const authLabel = firebaseBridge.currentUser
+        ? `Firebase認証: ${firebaseBridge.currentUser.email || firebaseBridge.currentUser.uid}`
+        : firebaseBridge.message;
       accountPanel.innerHTML = `
         <strong>${escapeHtml(loginName || "ゲスト")} / ${role.label}${currentRole === "supporter" && supportType ? ` / ${supportType.label}` : ""}</strong>
         <span>${role.headline}</span>
+        <span>${escapeHtml(authLabel)}</span>
         <button class="secondary" type="button" id="logoutButton">ログアウト</button>
       `;
-      accountPanel.querySelector("#logoutButton").addEventListener("click", () => {
+      accountPanel.querySelector("#logoutButton").addEventListener("click", async () => {
+        if (firebaseBridge.enabled && firebaseBridge.currentUser && firebaseBridge.signOut) {
+          try {
+            await firebaseBridge.signOut(firebaseBridge.auth);
+          } catch (_) {
+            // Local logout still proceeds so the user is not trapped on this screen.
+          }
+        }
+        firebaseBridge.currentUser = null;
+        firebaseBridge.userDoc = null;
         isLoggedIn = false;
         localStorage.setItem(LOGIN_KEY, "false");
+        localStorage.removeItem(AUTH_UID_KEY);
         activeView = "home";
         localStorage.setItem(VIEW_KEY, activeView);
         render();
@@ -2995,6 +3531,13 @@
         button.addEventListener("click", () => setActiveView(view.id));
         appNav.appendChild(button);
       });
+      const devButton = document.createElement("button");
+      devButton.type = "button";
+      devButton.className = "nav-button";
+      devButton.textContent = "更新内容";
+      devButton.setAttribute("aria-controls", "devDrawer");
+      devButton.addEventListener("click", openDevDrawer);
+      appNav.appendChild(devButton);
     }
 
     function setActiveView(viewId) {
@@ -3003,22 +3546,62 @@
       render();
     }
 
+    function renderDevDrawer() {
+      if (!devVersionList) return;
+      devVersionList.innerHTML = RELEASE_NOTES.map((note) => `
+        <section class="dev-version-item">
+          <strong>${escapeHtml(note.version)} / ${escapeHtml(note.date)} / ${escapeHtml(note.title)}</strong>
+          <ul>
+            ${note.items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
+          </ul>
+        </section>
+      `).join("");
+    }
+
+    function openDevDrawer() {
+      if (!devDrawer || !devDrawerBackdrop) return;
+      devDrawer.hidden = false;
+      devDrawerBackdrop.hidden = false;
+      requestAnimationFrame(() => {
+        devDrawer.classList.add("open");
+        devDrawerBackdrop.classList.add("open");
+        devDrawer.setAttribute("aria-hidden", "false");
+      });
+    }
+
+    function closeDevDrawer() {
+      if (!devDrawer || !devDrawerBackdrop) return;
+      devDrawer.classList.remove("open");
+      devDrawerBackdrop.classList.remove("open");
+      devDrawer.setAttribute("aria-hidden", "true");
+      setTimeout(() => {
+        if (!devDrawer.classList.contains("open")) {
+          devDrawer.hidden = true;
+          devDrawerBackdrop.hidden = true;
+        }
+      }, 230);
+    }
+
     function render() {
       document.body.dataset.auth = isLoggedIn ? "in" : "out";
       document.body.dataset.role = currentRole;
       document.body.dataset.supportType = currentSupportType;
       document.body.dataset.view = activeView;
+      if (versionBadge) versionBadge.textContent = APP_VERSION;
+      if (devVersionBadge) devVersionBadge.textContent = APP_VERSION;
       document.querySelector("#baselineLabel").textContent = `今日 ${todayJapanKey()}`;
       document.querySelector("#dayBadge").textContent = `${Number(dailyPlan.day || 1)}日目`;
       document.querySelector("#levelLabel").textContent = levelLabelJa(dailyPlan.level);
       document.querySelector("#phaseDateLabel").textContent = dailyPlan.date;
       document.querySelector("#coachMessage").textContent = dailyPlan.coach_message;
-      document.querySelector("#loginName").value = loginName;
+      document.querySelector("#loginName").value = localStorage.getItem(LOGIN_EMAIL_KEY) || loginName;
+      loginStatus.textContent = firebaseBridge.message;
       renderRoleOptions();
       if (isLoggedIn) renderAccountPanel();
       renderAppNav();
       renderCountdowns();
       renderRouteSummary();
+      renderRoleDashboard();
       renderPhase();
       renderMissions();
       renderHomeBriefs();
@@ -3041,6 +3624,7 @@
       renderPermissions();
       renderNotificationPanel();
       renderLogs();
+      renderDevDrawer();
     }
 
     function renderCountdowns() {
@@ -3743,6 +4327,118 @@
       });
     }
 
+    function renderRoleDashboard() {
+      if (!roleDashboard) return;
+      const role = activeRoleConfig();
+      const todayRecords = records.filter((record) => record.date === todayKey());
+      const evidenceRecords = todayRecords.filter(hasEvidence);
+      const schedule = todayScheduleLoad();
+      const navItems = navigationItems();
+      const currentIndex = normalizeNavigationIndex(navItems);
+      const current = navItems[currentIndex];
+      roleDashboardBadge.textContent = role.label;
+      roleDashboard.innerHTML = "";
+
+      if (currentRole === "teacher") {
+        renderTeacherDashboard(todayRecords, evidenceRecords);
+        return;
+      }
+
+      if (currentRole === "parent") {
+        roleDashboard.innerHTML = `
+          <div class="role-dashboard-grid">
+            <article class="dashboard-card highlight">
+              <strong>今日の学習時間</strong>
+              <span>${formatMinutes(schedule.totalMinutes)} / 終了目安 ${schedule.end || "--:--"}</span>
+            </article>
+            <article class="dashboard-card">
+              <strong>提出状況</strong>
+              <span>${evidenceRecords.length}件提出済み / 未提出は本人画面で継続確認</span>
+            </article>
+            <article class="dashboard-card">
+              <strong>AI先生コメント</strong>
+              <p>${evidenceRecords.length ? "今日は学習の証跡が残っています。結果だけでなく、続けられたことを評価してください。" : "今日はまだ提出待ちです。急かしすぎず、終わったら見せてね、くらいの声かけが良いです。"}</p>
+            </article>
+          </div>
+        `;
+        return;
+      }
+
+      if (currentRole === "supporter") {
+        const supportType = SUPPORTER_TYPES.find((type) => type.value === currentSupportType);
+        roleDashboard.innerHTML = `
+          <div class="role-dashboard-grid">
+            <article class="dashboard-card highlight">
+              <strong>${supportType?.label || "サポーター"}向け</strong>
+              <span>細かい成績より、継続状況と応援コメントを中心に確認します。</span>
+            </article>
+            <article class="dashboard-card">
+              <strong>今日の努力</strong>
+              <span>${evidenceRecords.length ? "提出記録あり" : "提出待ち"} / 学習予定 ${formatMinutes(schedule.totalMinutes)}</span>
+            </article>
+            <article class="dashboard-card">
+              <strong>声かけ</strong>
+              <p>点数よりも「今日も机に向かったこと」を先に認める表示にしています。</p>
+            </article>
+          </div>
+        `;
+        return;
+      }
+
+      roleDashboard.innerHTML = `
+        <div class="role-dashboard-grid">
+          <article class="dashboard-card highlight">
+            <strong>次にやること</strong>
+            <span>${current ? `${current.subject} / ${current.label}` : "今日の学習は完了"}</span>
+          </article>
+          <article class="dashboard-card">
+            <strong>今日の流れ</strong>
+            <span>${(courseRoute.today?.blocks || []).map((block) => `${block.label}: ${block.subject}`).join(" → ")}</span>
+          </article>
+          <article class="dashboard-card">
+            <strong>提出</strong>
+            <span>${evidenceRecords.length}件提出済み。確認テスト結果スクショが完了の証拠です。</span>
+          </article>
+        </div>
+      `;
+    }
+
+    function renderTeacherDashboard(todayRecords, evidenceRecords) {
+      const demoStudents = [
+        { name: "生徒", subject: "数学", status: evidenceRecords.length ? "提出済" : "未提出", tone: evidenceRecords.length ? "done" : "missing" },
+        { name: "○○君", subject: "英語", status: "終了", tone: "done" },
+        { name: "△△さん", subject: "物理", status: "確認テスト待ち", tone: "waiting" },
+        { name: "□□君", subject: "数学", status: "未提出", tone: "missing" }
+      ];
+      roleDashboard.innerHTML = `
+        <div class="role-dashboard-grid">
+          <article class="dashboard-card highlight">
+            <strong>担当生徒</strong>
+            <span>${demoStudents.length}名 / 今日の提出 ${evidenceRecords.length}件</span>
+          </article>
+          <article class="dashboard-card">
+            <strong>確認待ち</strong>
+            <span>${demoStudents.filter((student) => student.tone === "waiting" || student.tone === "missing").length}件。提出画像を見て次の指示を決めます。</span>
+          </article>
+          <article class="dashboard-card">
+            <strong>今日の運用</strong>
+            <span>未提出のカードは後日にずらし、提出済みカードは次の講義へ進めます。</span>
+          </article>
+        </div>
+        <div class="student-status-list">
+          ${demoStudents.map((student) => `
+            <div class="student-status-row">
+              <div>
+                <strong>${escapeHtml(student.name)}</strong>
+                <span>${escapeHtml(student.subject)} / ${student.name === "生徒" ? `${todayRecords.length}件記録` : "デモ表示"}</span>
+              </div>
+              <span class="status-pill ${student.tone}">${escapeHtml(student.status)}</span>
+            </div>
+          `).join("")}
+        </div>
+      `;
+    }
+
     function renderLongPlan() {
       if (!longPlanList) return;
       longPlanList.innerHTML = "";
@@ -3971,6 +4667,10 @@
     function renderSettings() {
       if (!settingsList) return;
       const settings = [
+        {
+          title: "Firebase Storage + Firestore",
+          body: `${firebaseBridge.message} 現在の保存先: ${firebaseBridge.enabled ? `Firebase / student_id=${firebaseBridge.studentId}` : "localStorage"}`
+        },
         {
           title: "メール通知設定",
           body: "保護者、サポーター、塾講師への提出通知先を管理します。Phase1はmailto作成、Phase2はサーバー送信へ移行します。"
@@ -4439,6 +5139,51 @@
         logList.innerHTML = `<div class="empty">まだ記録がありません。</div>`;
         return;
       }
+      const evidenceRecords = [...records]
+        .filter((record) => record.evidenceImageName && (record.evidenceImageData || record.evidenceImageUrl))
+        .sort((a, b) => b.savedAt.localeCompare(a.savedAt));
+      if (evidenceRecords.length) {
+        const tableCard = document.createElement("div");
+        tableCard.className = "log-card";
+        tableCard.innerHTML = `
+          <strong>確認テスト提出画像一覧</strong>
+          <span>提出済みのスクショを一覧で確認できます。画像ボタンを押すと拡大表示します。</span>
+          <div class="evidence-table-wrap" style="margin-top: 10px;">
+            <table class="evidence-table">
+              <thead>
+                <tr>
+                  <th>提出日時</th>
+                  <th>教科</th>
+                  <th>講座</th>
+                  <th>テスト</th>
+                  <th>回答数</th>
+                  <th>正答率</th>
+                  <th>保存先</th>
+                  <th>画像</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${evidenceRecords.map((record) => `
+                  <tr>
+                    <td>${formatSavedAt(record.savedAt)}</td>
+                    <td>${escapeHtml(record.subject || "-")}</td>
+                    <td>${escapeHtml(record.lesson || "")} ${escapeHtml(record.part || "")}</td>
+                    <td>${escapeHtml(record.testType || "-")}</td>
+                    <td>${role.showScore === true ? escapeHtml(record.answeredCount || "-") : "提出あり"}</td>
+                    <td>${role.showScore === true ? `${escapeHtml(record.score || "-")}%` : "提出あり"}</td>
+                    <td>${record.firebaseSyncStatus === "synced" ? "Firebase" : "端末内"}</td>
+                    <td><button type="button" class="evidence-open-button" data-evidence-key="${recordKey(record)}">${escapeHtml(record.evidenceImageName)}</button></td>
+                  </tr>
+                `).join("")}
+              </tbody>
+            </table>
+          </div>
+        `;
+        tableCard.querySelectorAll("[data-evidence-key]").forEach((button) => {
+          button.addEventListener("click", () => openEvidencePreview(button.dataset.evidenceKey));
+        });
+        logList.appendChild(tableCard);
+      }
       [...records].sort((a, b) => b.savedAt.localeCompare(a.savedAt)).slice(0, 10).forEach((record) => {
         const card = document.createElement("div");
         card.className = "log-card";
@@ -4451,7 +5196,9 @@
         const mentalLine = role.showMentalState === true && record.mentalState ? `<div>メンタル状態: ${record.mentalState}</div>` : "";
         const mistakeLine = role.showMistake && record.mistakeReason ? `<div>間違い理由: ${record.mistakeReason}</div>` : "";
         const privateLine = role.showPrivateNote && record.privateNote ? `<div>内省メモ: ${record.privateNote}</div>` : "";
-        const evidenceLine = record.evidenceImageName ? `<div>結果スクショ: ${record.evidenceImageName} / OCR読取: 正式版で実装</div>` : `<div>結果スクショ: 未提出 / 後日へ繰り越し</div>`;
+        const evidenceLine = record.evidenceImageName
+          ? `<div>結果スクショ: <button type="button" class="evidence-open-button" data-evidence-key="${recordKey(record)}">${escapeHtml(record.evidenceImageName)}</button> / OCR読取: 正式版で実装</div>`
+          : `<div>結果スクショ: 未提出 / 後日へ繰り越し</div>`;
         card.innerHTML = `
           <strong>${record.date} / ${record.missionTitle}</strong>
           <span>${record.testType} / ${scoreLine}${fatigueLine ? " / " + fatigueLine : ""}</span>
@@ -4460,8 +5207,41 @@
           ${mistakeLine}
           ${privateLine}
         `;
+        card.querySelectorAll("[data-evidence-key]").forEach((button) => {
+          button.addEventListener("click", () => openEvidencePreview(button.dataset.evidenceKey));
+        });
         logList.appendChild(card);
       });
+    }
+
+    function recordKey(record) {
+      return `${record.date}_${record.missionId}_${record.savedAt}`;
+    }
+
+    function findRecordByKey(key) {
+      return records.find((record) => recordKey(record) === key);
+    }
+
+    function formatSavedAt(value) {
+      if (!value) return "-";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return value;
+      return date.toLocaleString("ja-JP", {
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+
+    function openEvidencePreview(key) {
+      const record = findRecordByKey(key);
+      const src = record?.evidenceImageData || record?.evidenceImageUrl;
+      if (!src) return;
+      evidencePreviewTitle.textContent = record.evidenceImageName || "提出画像";
+      evidencePreviewMeta.textContent = `${record.subject || ""} ${record.lesson || ""} ${record.part || ""} / ${record.testType || ""} / 回答数 ${record.answeredCount || "-"} / 正答率 ${record.score || "-"}% / 保存先 ${record.firebaseSyncStatus === "synced" ? "Firebase" : "端末内"}`;
+      evidencePreviewImage.src = src;
+      evidencePreviewDialog.showModal();
     }
 
     function openRecordDialog(mission, record) {
@@ -4485,9 +5265,26 @@
       recordDialog.showModal();
     }
 
-    loginForm.addEventListener("submit", (event) => {
+    loginForm.addEventListener("submit", async (event) => {
       event.preventDefault();
-      loginName = document.querySelector("#loginName").value.trim() || ROLES[currentRole].label;
+      const email = document.querySelector("#loginName").value.trim();
+      const password = document.querySelector("#loginPasscode").value;
+      if (firebaseBridge.enabled && firebaseBridge.signInWithEmailAndPassword) {
+        if (!email || !password) {
+          loginStatus.textContent = "Firebaseログインにはメールアドレスとパスワードが必要です。";
+          return;
+        }
+        loginStatus.textContent = "Firebaseにログイン中です...";
+        try {
+          const credential = await firebaseBridge.signInWithEmailAndPassword(firebaseBridge.auth, email, password);
+          await applyFirebaseUser(credential.user);
+        } catch (error) {
+          loginStatus.textContent = `Firebaseログインに失敗しました。${error.message || error}`;
+          return;
+        }
+      } else {
+        loginName = email || ROLES[currentRole].label;
+      }
       localStorage.setItem(LOGIN_NAME_KEY, loginName);
       localStorage.setItem(ROLE_KEY, currentRole);
       localStorage.setItem(SUPPORT_TYPE_KEY, currentSupportType);
@@ -4510,7 +5307,7 @@
       }
       const evidenceImageData = evidenceFile ? await fileToDataUrl(evidenceFile) : existingRecord.evidenceImageData;
       records = records.filter((record) => !(record.date === todayKey() && record.missionId === missionId));
-      const submittedRecord = {
+      let submittedRecord = {
         date: todayKey(),
         day: dailyPlan.day,
         missionId,
@@ -4533,12 +5330,15 @@
         evidenceImageName: evidenceFile ? evidenceFile.name : existingRecord.evidenceImageName,
         evidenceImageType: evidenceFile ? evidenceFile.type : existingRecord.evidenceImageType,
         evidenceImageData,
+        evidenceImageUrl: evidenceFile ? "" : existingRecord.evidenceImageUrl,
+        evidenceStoragePath: evidenceFile ? "" : existingRecord.evidenceStoragePath,
         rescheduleStatus: "not_required",
         autoGradingStatus: "phase1_sutasapu_result_screenshot",
         autoGradingSummary: "スタサプ結果スクショと手入力の回答数・正答率を受領。OCR自動読取は正式版で実装。",
         notificationStatus: "queued",
         savedAt: new Date().toISOString()
       };
+      submittedRecord = await saveEvidenceRecordRemote(submittedRecord, evidenceFile);
       records.push(submittedRecord);
       saveRecords();
       createSubmissionNotice(submittedRecord);
@@ -4562,6 +5362,15 @@
     }
 
     document.querySelector("#closeDialogButton").addEventListener("click", () => recordDialog.close());
+    document.querySelector("#closeEvidencePreviewButton").addEventListener("click", () => evidencePreviewDialog.close());
+    document.querySelector("#closeDevDrawerButton").addEventListener("click", closeDevDrawer);
+    devDrawerBackdrop.addEventListener("click", closeDevDrawer);
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") closeDevDrawer();
+    });
+    evidencePreviewDialog.addEventListener("close", () => {
+      evidencePreviewImage.removeAttribute("src");
+    });
     document.querySelector("#deleteRecordButton").addEventListener("click", () => {
       const missionId = document.querySelector("#missionId").value;
       records = records.filter((record) => !(record.date === todayKey() && record.missionId === missionId));
@@ -4603,6 +5412,16 @@
       return /[",\n]/.test(text) ? `"${text}"` : text;
     }
 
+    function registerServiceWorker() {
+      if (!("serviceWorker" in navigator)) return;
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("./sw.js").catch((error) => {
+          console.warn("Service Worker registration failed:", error);
+        });
+      });
+    }
+
+    registerServiceWorker();
     init();
   </script>
 </body>
