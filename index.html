@@ -2144,6 +2144,7 @@
         </div>
         <div class="support-type-panel" id="loginSupportTypePanel" hidden></div>
         <button type="submit">ログイン</button>
+        <button class="secondary" type="button" id="registerAccountButton">検証用アカウントを登録</button>
       </form>
     </div>
   </section>
@@ -2507,8 +2508,19 @@
     const NOTICE_CONTACTS_KEY = "limitBreakProjectNoticeContactsV370";
     const NOTICE_QUEUE_KEY = "limitBreakProjectNoticeQueueV370";
     const FIREBASE_CONFIG_PATH = "data/firebase_config.json";
-    const APP_VERSION = "v4.6.0-dev";
+    const APP_VERSION = "v4.6.1-dev";
     const RELEASE_NOTES = [
+      {
+        version: "v4.6.1-dev",
+        date: "2026-07-09",
+        title: "公開検証用アカウント登録",
+        items: [
+          "ログイン画面に検証用アカウント登録ボタンを追加",
+          "メールアドレスとパスワードでFirebase Authへ登録",
+          "選択中の役割でFirestore usersに検証用プロフィールを作成",
+          "登録後は自動でログインしてHomeへ移動"
+        ]
+      },
       {
         version: "v4.6.0-dev",
         date: "2026-07-09",
@@ -3158,6 +3170,7 @@
           setDoc: firebaseFirestore.setDoc,
           serverTimestamp: firebaseFirestore.serverTimestamp,
           signInWithEmailAndPassword: firebaseAuth.signInWithEmailAndPassword,
+          createUserWithEmailAndPassword: firebaseAuth.createUserWithEmailAndPassword,
           signOut: firebaseAuth.signOut,
           storageRef: firebaseStorage.ref,
           uploadBytes: firebaseStorage.uploadBytes,
@@ -3197,6 +3210,40 @@
         : "Firebaseログイン済みですが、users/{uid} が未作成です。管理者に確認してください。";
       await writeLoginLog(user, userData);
       await syncFirebaseRecords();
+    }
+
+    function defaultUserProfile(user) {
+      const role = currentRole || "student";
+      const roleLabel = ROLES[role]?.label || "生徒";
+      const emailName = String(user.email || "").split("@")[0];
+      const profile = {
+        uid: user.uid,
+        email: user.email || "",
+        displayName: loginName || emailName || roleLabel,
+        role,
+        linked_student_ids: ["STU_0001"],
+        classroom_ids: ["room_001"],
+        status: "active",
+        created_at: firebaseBridge.serverTimestamp(),
+        last_login_at: firebaseBridge.serverTimestamp(),
+        login_count: 1
+      };
+      if (role === "supporter") {
+        profile.supporter_type = currentSupportType || "family";
+      }
+      return profile;
+    }
+
+    async function createFirebaseAccount(email, password) {
+      if (!firebaseBridge.enabled || !firebaseBridge.createUserWithEmailAndPassword) {
+        throw new Error("Firebaseが未接続です。公開URLで再読み込みしてから登録してください。");
+      }
+      const credential = await firebaseBridge.createUserWithEmailAndPassword(firebaseBridge.auth, email, password);
+      const user = credential.user;
+      const userRef = firebaseBridge.doc(firebaseBridge.db, "users", user.uid);
+      await firebaseBridge.setDoc(userRef, defaultUserProfile(user), { merge: true });
+      await applyFirebaseUser(user);
+      return user;
     }
 
     async function writeLoginLog(user, userData) {
@@ -5293,6 +5340,40 @@
       activeView = "home";
       localStorage.setItem(VIEW_KEY, activeView);
       render();
+    });
+
+    document.querySelector("#registerAccountButton").addEventListener("click", async () => {
+      const email = document.querySelector("#loginName").value.trim();
+      const password = document.querySelector("#loginPasscode").value;
+      if (!email || !password) {
+        loginStatus.textContent = "登録にはメールアドレスとパスワードが必要です。";
+        return;
+      }
+      if (password.length < 6) {
+        loginStatus.textContent = "Firebase登録のパスワードは6文字以上にしてください。";
+        return;
+      }
+      loginName = email;
+      loginStatus.textContent = "Firebaseに検証用アカウントを登録中です...";
+      try {
+        await createFirebaseAccount(email, password);
+        localStorage.setItem(LOGIN_NAME_KEY, loginName);
+        localStorage.setItem(ROLE_KEY, currentRole);
+        localStorage.setItem(SUPPORT_TYPE_KEY, currentSupportType);
+        localStorage.setItem(LOGIN_KEY, "true");
+        isLoggedIn = true;
+        activeView = "home";
+        localStorage.setItem(VIEW_KEY, activeView);
+        loginStatus.textContent = "登録してログインしました。";
+        render();
+      } catch (error) {
+        const message = String(error.message || error);
+        if (message.includes("auth/email-already-in-use")) {
+          loginStatus.textContent = "このメールアドレスは登録済みです。ログインボタンを押してください。";
+          return;
+        }
+        loginStatus.textContent = `登録に失敗しました。${message}`;
+      }
     });
 
     recordForm.addEventListener("submit", async (event) => {
