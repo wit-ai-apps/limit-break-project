@@ -125,6 +125,33 @@
       line-height: 1.5;
     }
 
+    .login-guide {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+      border: 1px solid rgba(125, 211, 252, 0.22);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.045);
+      color: var(--muted);
+      font-size: 0.9rem;
+      font-weight: 760;
+      line-height: 1.55;
+    }
+
+    .login-guide strong {
+      color: var(--accent);
+      font-size: 0.95rem;
+    }
+
+    .login-actions {
+      display: grid;
+      gap: 10px;
+    }
+
+    .login-actions button {
+      width: 100%;
+    }
+
     .login-form {
       display: grid;
       gap: 12px;
@@ -1076,7 +1103,7 @@
     .evidence-table {
       width: 100%;
       border-collapse: collapse;
-      min-width: 720px;
+      min-width: 860px;
       font-size: 0.92rem;
     }
 
@@ -1105,6 +1132,17 @@
       border-radius: 12px;
       padding: 0 10px;
       white-space: nowrap;
+    }
+
+    .random-evidence-card {
+      display: grid;
+      gap: 12px;
+      border-color: rgba(34, 197, 94, 0.32);
+      background: linear-gradient(135deg, rgba(34, 197, 94, 0.08), rgba(255, 255, 255, 0.04));
+    }
+
+    .random-evidence-card strong {
+      color: var(--accent);
     }
 
     .evidence-preview-dialog {
@@ -2129,6 +2167,12 @@
         <p class="login-subtitle">Every Day, Beyond Yesterday.</p>
       </div>
       <form class="login-form" id="loginForm">
+        <div class="login-guide">
+          <strong>はじめて使う人</strong>
+          <div>ログイン種別を選び、メールアドレスとパスワードを入れて「新規登録する」を押してください。</div>
+          <strong>登録済みの人</strong>
+          <div>登録したメールアドレスとパスワードで「ログインする」を押してください。</div>
+        </div>
         <div class="field">
           <label for="loginName">メールアドレス</label>
           <input id="loginName" type="email" autocomplete="email" placeholder="例: student@example.com">
@@ -2137,14 +2181,16 @@
           <label for="loginPasscode">パスワード</label>
           <input id="loginPasscode" type="password" autocomplete="current-password" placeholder="検証用: Test1234">
         </div>
-        <p class="button-note" id="loginStatus">Firebase未接続時は、下のログイン種別で検証表示します。</p>
+        <p class="button-note" id="loginStatus">新規登録またはログインを選んでください。</p>
         <div>
           <label class="role-label-sub">ログイン種別</label>
           <div class="role-options" id="loginRoleOptions"></div>
         </div>
         <div class="support-type-panel" id="loginSupportTypePanel" hidden></div>
-        <button type="submit">ログイン</button>
-        <button class="secondary" type="button" id="registerAccountButton">検証用アカウントを登録</button>
+        <div class="login-actions">
+          <button type="submit">登録済みの人：ログインする</button>
+          <button class="secondary" type="button" id="registerAccountButton">はじめて使う人：新規登録する</button>
+        </div>
       </form>
     </div>
   </section>
@@ -2508,8 +2554,19 @@
     const NOTICE_CONTACTS_KEY = "limitBreakProjectNoticeContactsV370";
     const NOTICE_QUEUE_KEY = "limitBreakProjectNoticeQueueV370";
     const FIREBASE_CONFIG_PATH = "data/firebase_config.json";
-    const APP_VERSION = "v4.6.1-dev";
+    const APP_VERSION = "v4.6.2-dev";
     const RELEASE_NOTES = [
+      {
+        version: "v4.6.2-dev",
+        date: "2026-07-09",
+        title: "ログイン案内とランダム確認テスト提出",
+        items: [
+          "ログイン画面を「はじめて使う人」と「登録済みの人」に分けて案内",
+          "新規登録ボタンの表記を分かりやすく変更",
+          "予定カードに紐づかないランダム確認テスト画像の提出口を追加",
+          "提出日時、教科、教材、講座、単元、画像を一覧で整理できるように変更"
+        ]
+      },
       {
         version: "v4.6.1-dev",
         date: "2026-07-09",
@@ -2990,7 +3047,7 @@
     let firebaseBridge = {
       enabled: false,
       status: "not_configured",
-      message: "Firebase未設定のため、localStorageで保存します。",
+      message: "公開検証では、メールアドレスとパスワードで新規登録またはログインできます。",
       studentId: "STU_0001",
       currentUser: null,
       userDoc: null
@@ -3154,7 +3211,7 @@
         firebaseBridge = {
           enabled: true,
           status: "connected",
-          message: "Firebase接続済み。メールアドレスでログインしてください。",
+          message: "登録済みの人はログイン、はじめて使う人は新規登録してください。",
           studentId: config.student_id || "STU_0001",
           currentUser: null,
           userDoc: null,
@@ -5108,7 +5165,7 @@
       return `
         <div class="permission-card">
           <strong>${notice.missionTitle}</strong>
-          <span>${notice.date} / ${notice.subject} / ${notice.testType} / 回答数 ${notice.answeredCount || "-"} / 正答率 ${notice.score}%</span>
+          <span>${notice.date} / ${notice.subject} / ${notice.testType} / 回答数 ${notice.answeredCount || "-"} / 正答率 ${notice.score ? `${notice.score}%` : "-"}</span>
           <div>結果スクショ: ${notice.evidenceImageName} / 判定: ${notice.autoGradingStatusLabel}</div>
           <div>通知先: ${recipients.length ? recipients.map((recipient) => recipient.label).join(" / ") : "未設定"}</div>
           <div class="form-actions" style="margin-top: 10px;">
@@ -5162,9 +5219,9 @@
         `範囲: ${notice.lesson} ${notice.part}`,
         `テスト種別: ${notice.testType}`,
         `回答数: ${notice.answeredCount || "-"}`,
-        `正答率: ${notice.score}%`,
-        `理解度: ${notice.understanding}`,
-        `疲労度: ${notice.fatigue}`,
+        `正答率: ${notice.score ? `${notice.score}%` : "-"}`,
+        `理解度: ${notice.understanding || "-"}`,
+        `疲労度: ${notice.fatigue || "-"}`,
         `結果スクショファイル名: ${notice.evidenceImageName}`,
         "",
         "検証版では画像本体は端末内保存です。画面の「最近の記録」で提出内容を確認してください。",
@@ -5179,11 +5236,155 @@
       renderNotificationPanel();
     }
 
+    function formatDateTimeInput(date = new Date()) {
+      const pad = (value) => String(value).padStart(2, "0");
+      return [
+        date.getFullYear(),
+        pad(date.getMonth() + 1),
+        pad(date.getDate())
+      ].join("-") + `T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    }
+
+    function renderRandomEvidenceUploader(container, role) {
+      if (!role.canEditRecord) return;
+      const card = document.createElement("div");
+      card.className = "log-card random-evidence-card";
+      card.innerHTML = `
+        <strong>ランダム確認テスト提出</strong>
+        <span>時間短縮のため、指定された教科・講座の確認テスト画像を提出します。できている単元は飛ばす判定に使い、分析機能は次の段階で追加します。</span>
+        <form id="randomEvidenceForm" class="login-form">
+          <div class="form-grid">
+            <div class="field">
+              <label for="randomSubmittedAt">提出日時</label>
+              <input id="randomSubmittedAt" type="datetime-local" value="${formatDateTimeInput()}">
+            </div>
+            <div class="field">
+              <label for="randomSubject">教科</label>
+              <select id="randomSubject" required>
+                <option value="">選択してください</option>
+                <option>数学</option>
+                <option>英語</option>
+                <option>物理</option>
+                <option>化学</option>
+                <option>古文</option>
+                <option>国語</option>
+                <option>世界史</option>
+                <option>情報</option>
+                <option>その他</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="randomCourse">教材名</label>
+              <input id="randomCourse" type="text" placeholder="例: ベーシックレベル数学I">
+            </div>
+            <div class="field">
+              <label for="randomLesson">講座 / Chapter</label>
+              <input id="randomLesson" type="text" placeholder="例: 第3講 PART2">
+            </div>
+            <div class="field">
+              <label for="randomUnit">単元名</label>
+              <input id="randomUnit" type="text" placeholder="例: 三角形の外心・内心">
+            </div>
+            <div class="field">
+              <label for="randomTestType">テスト種別</label>
+              <input id="randomTestType" type="text" value="ランダム確認テスト">
+            </div>
+            <div class="field">
+              <label for="randomAnsweredCount">回答数（任意）</label>
+              <input id="randomAnsweredCount" type="number" min="0" placeholder="例: 10">
+            </div>
+            <div class="field">
+              <label for="randomCorrectRate">正答率（任意）</label>
+              <input id="randomCorrectRate" type="number" min="0" max="100" placeholder="例: 80">
+            </div>
+          </div>
+          <div class="field">
+            <label for="randomEvidenceImage">確認テスト画像</label>
+            <input id="randomEvidenceImage" type="file" accept="image/*" required>
+            <span class="button-note">結果画面、答案、自己採点済み画像などをアップしてください。</span>
+          </div>
+          <div class="field">
+            <label for="randomNote">メモ（任意）</label>
+            <textarea id="randomNote" placeholder="例: ここは飛ばせそう / 公式だけ再確認が必要"></textarea>
+          </div>
+          <button type="submit">画像を提出して記録する</button>
+          <p class="button-note" id="randomEvidenceStatus">提出後、下の一覧に日時・教科・教材・画像が整理されます。</p>
+        </form>
+      `;
+      card.querySelector("#randomEvidenceForm").addEventListener("submit", handleRandomEvidenceSubmit);
+      container.appendChild(card);
+    }
+
+    async function handleRandomEvidenceSubmit(event) {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const status = form.querySelector("#randomEvidenceStatus");
+      const evidenceFile = form.querySelector("#randomEvidenceImage").files[0];
+      if (!evidenceFile) {
+        status.textContent = "確認テスト画像を選んでください。";
+        return;
+      }
+
+      const submittedAtInput = form.querySelector("#randomSubmittedAt").value;
+      const submittedAt = submittedAtInput ? new Date(submittedAtInput).toISOString() : new Date().toISOString();
+      const dateKey = submittedAtInput ? submittedAtInput.slice(0, 10) : todayKey();
+      const subject = form.querySelector("#randomSubject").value;
+      const course = form.querySelector("#randomCourse").value.trim();
+      const lesson = form.querySelector("#randomLesson").value.trim();
+      const unit = form.querySelector("#randomUnit").value.trim();
+      const testType = form.querySelector("#randomTestType").value.trim() || "ランダム確認テスト";
+      const missionTitle = [subject, lesson, unit].filter(Boolean).join(" ") || `${subject} ランダム確認テスト`;
+      const evidenceImageData = await fileToDataUrl(evidenceFile);
+
+      let submittedRecord = {
+        date: dateKey,
+        day: dailyPlan.day,
+        missionId: `random_${Date.now()}`,
+        missionTitle,
+        subject,
+        course,
+        lesson,
+        part: unit,
+        testType,
+        checkItem: "ランダム確認テスト",
+        levelTask: "到達度判定",
+        answeredCount: form.querySelector("#randomAnsweredCount").value,
+        score: form.querySelector("#randomCorrectRate").value,
+        understanding: "",
+        fatigue: "",
+        mistakeReason: form.querySelector("#randomNote").value.trim(),
+        mentalState: "",
+        privateNote: "",
+        evidenceStatus: "submitted",
+        evidenceImageName: evidenceFile.name,
+        evidenceImageType: evidenceFile.type,
+        evidenceImageData,
+        evidenceImageUrl: "",
+        evidenceStoragePath: "",
+        rescheduleStatus: "random_diagnostic",
+        autoGradingStatus: "phase1_random_evidence",
+        autoGradingSummary: "ランダム確認テスト画像を受領。自動分析と飛ばす判定は次の段階で追加。",
+        notificationStatus: "queued",
+        submittedAt,
+        savedAt: new Date().toISOString()
+      };
+
+      status.textContent = "提出画像を保存中です...";
+      submittedRecord = await saveEvidenceRecordRemote(submittedRecord, evidenceFile);
+      records.push(submittedRecord);
+      saveRecords();
+      createSubmissionNotice(submittedRecord);
+      form.reset();
+      status.textContent = "提出しました。下の一覧に追加されています。";
+      render();
+    }
+
     function renderLogs() {
       const role = activeRoleConfig();
       logList.innerHTML = "";
+      renderRandomEvidenceUploader(logList, role);
       if (!records.length) {
-        logList.innerHTML = `<div class="empty">まだ記録がありません。</div>`;
+        logList.insertAdjacentHTML("beforeend", `<div class="empty">まだ記録がありません。</div>`);
         return;
       }
       const evidenceRecords = [...records]
@@ -5201,7 +5402,8 @@
                 <tr>
                   <th>提出日時</th>
                   <th>教科</th>
-                  <th>講座</th>
+                  <th>教材</th>
+                  <th>講座 / 単元</th>
                   <th>テスト</th>
                   <th>回答数</th>
                   <th>正答率</th>
@@ -5212,8 +5414,9 @@
               <tbody>
                 ${evidenceRecords.map((record) => `
                   <tr>
-                    <td>${formatSavedAt(record.savedAt)}</td>
+                    <td>${formatSavedAt(record.submittedAt || record.savedAt)}</td>
                     <td>${escapeHtml(record.subject || "-")}</td>
+                    <td>${escapeHtml(record.course || "-")}</td>
                     <td>${escapeHtml(record.lesson || "")} ${escapeHtml(record.part || "")}</td>
                     <td>${escapeHtml(record.testType || "-")}</td>
                     <td>${role.showScore === true ? escapeHtml(record.answeredCount || "-") : "提出あり"}</td>
@@ -5286,7 +5489,7 @@
       const src = record?.evidenceImageData || record?.evidenceImageUrl;
       if (!src) return;
       evidencePreviewTitle.textContent = record.evidenceImageName || "提出画像";
-      evidencePreviewMeta.textContent = `${record.subject || ""} ${record.lesson || ""} ${record.part || ""} / ${record.testType || ""} / 回答数 ${record.answeredCount || "-"} / 正答率 ${record.score || "-"}% / 保存先 ${record.firebaseSyncStatus === "synced" ? "Firebase" : "端末内"}`;
+      evidencePreviewMeta.textContent = `${record.subject || ""} ${record.course || ""} ${record.lesson || ""} ${record.part || ""} / ${record.testType || ""} / 回答数 ${record.answeredCount || "-"} / 正答率 ${record.score ? `${record.score}%` : "-"} / 保存先 ${record.firebaseSyncStatus === "synced" ? "Firebase" : "端末内"}`;
       evidencePreviewImage.src = src;
       evidencePreviewDialog.showModal();
     }
@@ -5318,15 +5521,15 @@
       const password = document.querySelector("#loginPasscode").value;
       if (firebaseBridge.enabled && firebaseBridge.signInWithEmailAndPassword) {
         if (!email || !password) {
-          loginStatus.textContent = "Firebaseログインにはメールアドレスとパスワードが必要です。";
+          loginStatus.textContent = "ログインするには、登録済みのメールアドレスとパスワードを入力してください。";
           return;
         }
-        loginStatus.textContent = "Firebaseにログイン中です...";
+        loginStatus.textContent = "ログイン中です...";
         try {
           const credential = await firebaseBridge.signInWithEmailAndPassword(firebaseBridge.auth, email, password);
           await applyFirebaseUser(credential.user);
         } catch (error) {
-          loginStatus.textContent = `Firebaseログインに失敗しました。${error.message || error}`;
+          loginStatus.textContent = `ログインできませんでした。未登録の場合は「新規登録する」を押してください。${error.message || error}`;
           return;
         }
       } else {
@@ -5346,15 +5549,15 @@
       const email = document.querySelector("#loginName").value.trim();
       const password = document.querySelector("#loginPasscode").value;
       if (!email || !password) {
-        loginStatus.textContent = "登録にはメールアドレスとパスワードが必要です。";
+        loginStatus.textContent = "新規登録するには、メールアドレスとパスワードを入力してください。";
         return;
       }
       if (password.length < 6) {
-        loginStatus.textContent = "Firebase登録のパスワードは6文字以上にしてください。";
+        loginStatus.textContent = "パスワードは6文字以上にしてください。";
         return;
       }
       loginName = email;
-      loginStatus.textContent = "Firebaseに検証用アカウントを登録中です...";
+      loginStatus.textContent = "新規登録中です...";
       try {
         await createFirebaseAccount(email, password);
         localStorage.setItem(LOGIN_NAME_KEY, loginName);
@@ -5364,7 +5567,7 @@
         isLoggedIn = true;
         activeView = "home";
         localStorage.setItem(VIEW_KEY, activeView);
-        loginStatus.textContent = "登録してログインしました。";
+        loginStatus.textContent = "新規登録してログインしました。";
         render();
       } catch (error) {
         const message = String(error.message || error);
