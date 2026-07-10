@@ -275,6 +275,40 @@
       min-height: 42px;
     }
 
+    .settings-gear {
+      display: inline-grid;
+      place-items: center;
+      min-height: 42px;
+      padding: 0;
+      font-size: 1.2rem;
+      border-radius: 999px;
+    }
+
+    .notice-methods {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 8px;
+    }
+
+    .notice-methods label {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 10px;
+      border: 1px solid rgba(56, 189, 248, 0.24);
+      border-radius: 999px;
+      color: #334155;
+      background: rgba(255, 255, 255, 0.76);
+      font-size: 0.86rem;
+      font-weight: 800;
+    }
+
+    .notice-methods input {
+      width: auto;
+      min-height: 0;
+    }
+
     .account-settings-panel {
       margin-bottom: 12px;
     }
@@ -2066,9 +2100,37 @@
 
     .settings-card span,
     .settings-card div {
-      color: var(--text);
+      color: #334155;
       line-height: 1.55;
       font-weight: 700;
+    }
+
+    .custom-countdown-list {
+      display: grid;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .custom-countdown-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: center;
+      padding: 10px;
+      border: 1px solid #d7e2ea;
+      border-radius: 12px;
+      background: #ffffff;
+    }
+
+    .custom-countdown-row strong,
+    .custom-countdown-row span {
+      display: block;
+      color: #2f3748;
+    }
+
+    .custom-countdown-row span {
+      color: #64748b;
+      font-size: 0.9rem;
     }
 
     .bar {
@@ -2238,7 +2300,7 @@
         <p class="coach-message" id="coachMessage">今日は英語構文を3つ覚えましょう。</p>
         <div class="coach-actions" aria-label="よく使う画面">
           <button class="secondary view-link" type="button" data-target-view="evidence">提出画像を見る</button>
-          <button class="secondary view-link" type="button" data-target-view="admin">設定・アカウント</button>
+          <button class="secondary view-link settings-gear" type="button" data-target-view="admin" aria-label="設定">⚙</button>
         </div>
       </aside>
     </header>
@@ -2260,6 +2322,10 @@
         <span class="badge" id="devVersionBadge">v4.6.0-dev</span>
         <span class="badge">検証用</span>
       </div>
+      <button class="secondary" type="button" id="refreshAppCacheButton">キャッシュ更新</button>
+      <p class="button-note">
+        リロードしても古いバージョンが出る時だけ使います。学習記録は消さず、PWAの古い表示キャッシュだけ更新します。
+      </p>
       <div class="dev-version-list" id="devVersionList"></div>
     </aside>
 
@@ -2581,9 +2647,45 @@
     const VIEW_KEY = "limitBreakProjectActiveViewV330";
     const NOTICE_CONTACTS_KEY = "limitBreakProjectNoticeContactsV370";
     const NOTICE_QUEUE_KEY = "limitBreakProjectNoticeQueueV370";
+    const CUSTOM_COUNTDOWNS_KEY = "limitBreakProjectCustomCountdownsV464";
+    const STUDY_START_DATE_KEY = "limitBreakProjectStudyStartDateV465";
+    const DEFAULT_STUDY_START_DATE = "2026-07-08";
     const FIREBASE_CONFIG_PATH = "data/firebase_config.json";
-    const APP_VERSION = "v4.6.3-dev";
+    const APP_VERSION = "v4.6.6-dev";
     const RELEASE_NOTES = [
+      {
+        version: "v4.6.6-dev",
+        date: "2026-07-10",
+        title: "PWAキャッシュ更新",
+        items: [
+          "リロードしても古いバージョンが表示される時のためにキャッシュ更新ボタンを追加",
+          "Service WorkerとPWAキャッシュだけを削除し、学習記録は残す復旧導線を追加",
+          "ナビゲーション時に最新HTMLを取得しやすい設定へ調整"
+        ]
+      },
+      {
+        version: "v4.6.5-dev",
+        date: "2026-07-10",
+        title: "通知設定の個人化と学習開始日管理",
+        items: [
+          "通知設定でログイン中ユーザー本人の連絡先だけを表示",
+          "メール、LINE、携帯/SMS、その他の通知チャネル入力を追加",
+          "Homeの提出画像・設定ボタンを押せる導線へ修正",
+          "学習開始日を2026-07-08既定にし、開始日からの経過日数を表示",
+          "カウントダウンと学習管理の設定を設定画面へ集約"
+        ]
+      },
+      {
+        version: "v4.6.4-dev",
+        date: "2026-07-10",
+        title: "短期目標カウントダウンと教材連携設計",
+        items: [
+          "定期テスト、模試、提出期限などをユーザーが追加できる短期目標カウントダウンを追加",
+          "近い目標3件を上部カウントダウンへ表示",
+          "英文300選の文法分析と映像授業リンクの管理方針を設定へ追加",
+          "確認テスト合格後に一段上の類題へ進むAI Teacher設計を追加"
+        ]
+      },
       {
         version: "v4.6.3-dev",
         date: "2026-07-09",
@@ -3034,11 +3136,12 @@
 
     const FALLBACK_NOTICE_CONTACTS = {
       recipients: [
-        { role: "parent", label: "保護者", email: "" },
-        { role: "supporter", label: "サポーター", email: "" },
-        { role: "teacher", label: "塾講師", email: "" }
+        { role: "student", label: "本人", email: "", line: "", phone: "", other: "", methods: ["email"] },
+        { role: "parent", label: "保護者", email: "", line: "", phone: "", other: "", methods: ["email"] },
+        { role: "supporter", label: "サポーター", email: "", line: "", phone: "", other: "", methods: ["email"] },
+        { role: "teacher", label: "塾講師", email: "", line: "", phone: "", other: "", methods: ["email"] }
       ],
-      phase: "Phase1 mailto"
+      phase: "Phase1 user-owned channels"
     };
 
     const FALLBACK_COURSE_ROUTE = {
@@ -3084,6 +3187,8 @@
     let counselorNotes = loadCounselorNotes();
     let noticeContacts = loadNoticeContacts();
     let noticeQueue = loadNoticeQueue();
+    let customCountdowns = loadCustomCountdowns();
+    let studyStartDate = localStorage.getItem(STUDY_START_DATE_KEY) || DEFAULT_STUDY_START_DATE;
     let firebaseBridge = {
       enabled: false,
       status: "not_configured",
@@ -3507,14 +3612,45 @@
 
     function loadNoticeContacts() {
       try {
-        return JSON.parse(localStorage.getItem(NOTICE_CONTACTS_KEY) || JSON.stringify(FALLBACK_NOTICE_CONTACTS));
+        return normalizeNoticeContacts(JSON.parse(localStorage.getItem(NOTICE_CONTACTS_KEY) || JSON.stringify(FALLBACK_NOTICE_CONTACTS)));
       } catch (_) {
-        return FALLBACK_NOTICE_CONTACTS;
+        return normalizeNoticeContacts(FALLBACK_NOTICE_CONTACTS);
       }
     }
 
     function saveNoticeContacts() {
       localStorage.setItem(NOTICE_CONTACTS_KEY, JSON.stringify(noticeContacts));
+    }
+
+    function normalizeNoticeContacts(value) {
+      const defaults = FALLBACK_NOTICE_CONTACTS.recipients.map((contact) => ({ ...contact, methods: [...contact.methods] }));
+      const incoming = Array.isArray(value?.recipients) ? value.recipients : [];
+      return {
+        phase: value?.phase || FALLBACK_NOTICE_CONTACTS.phase,
+        recipients: defaults.map((base) => {
+          const found = incoming.find((contact) => contact.role === base.role) || {};
+          const methods = Array.isArray(found.methods) && found.methods.length ? found.methods : base.methods;
+          return {
+            ...base,
+            ...found,
+            email: found.email || "",
+            line: found.line || "",
+            phone: found.phone || "",
+            other: found.other || "",
+            methods
+          };
+        })
+      };
+    }
+
+    function currentNotificationRole() {
+      return currentRole === "counselor" ? "supporter" : currentRole;
+    }
+
+    function visibleNoticeContacts() {
+      const contacts = normalizeNoticeContacts(noticeContacts).recipients;
+      if (currentRole === "admin") return contacts;
+      return contacts.filter((contact) => contact.role === currentNotificationRole());
     }
 
     function loadNoticeQueue() {
@@ -3527,6 +3663,63 @@
 
     function saveNoticeQueue() {
       localStorage.setItem(NOTICE_QUEUE_KEY, JSON.stringify(noticeQueue));
+    }
+
+    function loadCustomCountdowns() {
+      try {
+        const payload = JSON.parse(localStorage.getItem(CUSTOM_COUNTDOWNS_KEY) || "[]");
+        return Array.isArray(payload) ? payload : [];
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function saveCustomCountdowns() {
+      localStorage.setItem(CUSTOM_COUNTDOWNS_KEY, JSON.stringify(customCountdowns));
+    }
+
+    function allCountdownTargets() {
+      const fixed = (examSchedule || []).map((exam) => ({ ...exam, source: "fixed" }));
+      const custom = customCountdowns.map((item, index) => ({
+        exam_name: item.exam_name || "短期目標",
+        exam_type: "custom_goal",
+        date_start: item.date_start || item.countdown_target,
+        date_end: item.date_end || item.date_start || item.countdown_target,
+        countdown_target: item.countdown_target || item.date_start,
+        priority: item.priority || 20 + index,
+        notes: item.notes || "ユーザー追加の短期目標",
+        source: "custom",
+        custom_id: item.id
+      }));
+      return [...fixed, ...custom].filter((item) => item.countdown_target);
+    }
+
+    function addCustomCountdown(event) {
+      event.preventDefault();
+      const nameInput = document.querySelector("#customCountdownName");
+      const dateInput = document.querySelector("#customCountdownDate");
+      const notesInput = document.querySelector("#customCountdownNotes");
+      const name = nameInput?.value.trim();
+      const targetDate = dateInput?.value;
+      if (!name || !targetDate) return;
+      customCountdowns.push({
+        id: `goal_${Date.now()}`,
+        exam_name: name,
+        exam_type: "custom_goal",
+        date_start: targetDate,
+        date_end: targetDate,
+        countdown_target: targetDate,
+        priority: 20 + customCountdowns.length,
+        notes: notesInput?.value.trim() || "短期目標"
+      });
+      saveCustomCountdowns();
+      render();
+    }
+
+    function deleteCustomCountdown(id) {
+      customCountdowns = customCountdowns.filter((item) => item.id !== id);
+      saveCustomCountdowns();
+      render();
     }
 
     function todayKey() {
@@ -3548,6 +3741,22 @@
       const start = new Date(`${todayJapanKey()}T00:00:00+09:00`);
       const end = new Date(`${targetDate}T00:00:00+09:00`);
       return Math.ceil((end - start) / 86400000);
+    }
+
+    function dateDaysBetween(startDate, endDate) {
+      const start = new Date(`${startDate}T00:00:00+09:00`);
+      const end = new Date(`${endDate}T00:00:00+09:00`);
+      return Math.floor((end - start) / 86400000);
+    }
+
+    function studyElapsedDays() {
+      return Math.max(1, dateDaysBetween(studyStartDate, todayJapanKey()) + 1);
+    }
+
+    function saveStudyStartDate(value) {
+      studyStartDate = value || DEFAULT_STUDY_START_DATE;
+      localStorage.setItem(STUDY_START_DATE_KEY, studyStartDate);
+      render();
     }
 
     function activePhase() {
@@ -3734,7 +3943,7 @@
       if (versionBadge) versionBadge.textContent = APP_VERSION;
       if (devVersionBadge) devVersionBadge.textContent = APP_VERSION;
       document.querySelector("#baselineLabel").textContent = `今日 ${todayJapanKey()}`;
-      document.querySelector("#dayBadge").textContent = `${Number(dailyPlan.day || 1)}日目`;
+      document.querySelector("#dayBadge").textContent = `開始 ${studyStartDate} / ${studyElapsedDays()}日目`;
       document.querySelector("#levelLabel").textContent = levelLabelJa(dailyPlan.level);
       document.querySelector("#phaseDateLabel").textContent = dailyPlan.date;
       document.querySelector("#coachMessage").textContent = dailyPlan.coach_message;
@@ -3772,7 +3981,9 @@
     }
 
     function renderCountdowns() {
-      const sorted = [...examSchedule].sort((a, b) => a.priority - b.priority).slice(0, 3);
+      const sorted = allCountdownTargets()
+        .sort((a, b) => dateDaysUntil(a.countdown_target) - dateDaysUntil(b.countdown_target))
+        .slice(0, 3);
       countdownGrid.innerHTML = "";
       sorted.forEach((exam) => {
         const days = dateDaysUntil(exam.countdown_target);
@@ -3782,7 +3993,7 @@
         card.innerHTML = `
           <h2>${compactName}</h2>
           <strong>あと${days}日</strong>
-          <span>${exam.date_start}</span>
+          <span>${exam.date_start}${exam.source === "custom" ? " / 短期目標" : ""}</span>
         `;
         countdownGrid.appendChild(card);
       });
@@ -3792,6 +4003,7 @@
       if (exam.exam_type === "common_test") return "共通テストまで";
       if (exam.exam_type === "national_secondary") return "国公立二次まで";
       if (exam.exam_type === "private_general") return "私立一般入試まで";
+      if (exam.exam_type === "custom_goal") return `${exam.exam_name}まで`;
       return `${exam.exam_name.replace("本試験", "").replace("開始", "")}まで`;
     }
 
@@ -4840,6 +5052,14 @@
           body: "OpenAI APIキーはブラウザに置かず、Cloud FunctionsまたはAPIサーバーの環境変数で保持します。"
         },
         {
+          title: "英文300選 Grammar Link",
+          body: "英文300選は各英文を文法タグ、構文、難度、出題形式、関連する映像授業IDでDB化し、Today's Memory、AI Check、復習Missionへつなげる設計です。Phase1は管理方針、Phase2でOCR・構文解析・講座紐付けを実装します。"
+        },
+        {
+          title: "確認テスト合格後の上位類題",
+          body: "確認テスト画像または正答率が合格基準を超えた場合、同じ学習ポイントの一段上の類題をAI Teacherで作る設計です。Phase1は提案表示、Phase2はサーバーAPIで生成します。教材本文の複製ではなく、学習ポイントを抽象化したオリジナル問題を作ります。"
+        },
+        {
           title: "管理者用設定",
           body: "教材DB、Exam DB、権限、通知、AI接続、外部連携を管理者画面に集約します。"
         }
@@ -4850,6 +5070,57 @@
         card.className = "settings-card";
         card.innerHTML = `<strong>${item.title}</strong><span>${item.body}</span>`;
         settingsList.appendChild(card);
+      });
+      const startDateCard = document.createElement("article");
+      startDateCard.className = "settings-card";
+      startDateCard.innerHTML = `
+        <strong>学習開始日</strong>
+        <span>ホームの「何日目」は、この開始日から数えます。検証版の既定日は2026-07-08です。</span>
+        <form class="external-form" id="studyStartForm">
+          <input id="studyStartDateInput" aria-label="学習開始日" type="date" value="${escapeHtml(studyStartDate)}" required>
+          <button type="submit">開始日を保存</button>
+        </form>
+      `;
+      settingsList.appendChild(startDateCard);
+      startDateCard.querySelector("#studyStartForm")?.addEventListener("submit", (event) => {
+        event.preventDefault();
+        saveStudyStartDate(startDateCard.querySelector("#studyStartDateInput")?.value);
+      });
+      const countdownCard = document.createElement("article");
+      countdownCard.className = "settings-card";
+      const customRows = customCountdowns.length
+        ? customCountdowns
+            .slice()
+            .sort((a, b) => dateDaysUntil(a.countdown_target || a.date_start) - dateDaysUntil(b.countdown_target || b.date_start))
+            .map((item) => {
+              const target = item.countdown_target || item.date_start;
+              return `
+                <div class="custom-countdown-row">
+                  <div>
+                    <strong>${escapeHtml(item.exam_name || "短期目標")}</strong>
+                    <span>${escapeHtml(target)} / あと${dateDaysUntil(target)}日 / ${escapeHtml(item.notes || "短期目標")}</span>
+                  </div>
+                  <button type="button" class="warning" data-delete-countdown="${escapeHtml(item.id)}">削除</button>
+                </div>
+              `;
+            })
+            .join("")
+        : `<div class="custom-countdown-row"><div><strong>未登録</strong><span>定期テスト、模試、提出期限などを追加できます。</span></div></div>`;
+      countdownCard.innerHTML = `
+        <strong>短期目標カウントダウン</strong>
+        <span>定期テスト、模試、到達度テスト、面談日などを自由に追加できます。近い3件は上部のカウントダウンに表示します。</span>
+        <form class="external-form" id="customCountdownForm">
+          <input id="customCountdownName" aria-label="短期目標名" placeholder="例: 7月英語到達度テスト" required>
+          <input id="customCountdownDate" aria-label="目標日" type="date" required>
+          <input id="customCountdownNotes" aria-label="メモ" placeholder="例: 英文300選 No.1-60">
+          <button type="submit">追加</button>
+        </form>
+        <div class="custom-countdown-list">${customRows}</div>
+      `;
+      settingsList.appendChild(countdownCard);
+      countdownCard.querySelector("#customCountdownForm")?.addEventListener("submit", addCustomCountdown);
+      countdownCard.querySelectorAll("[data-delete-countdown]").forEach((button) => {
+        button.addEventListener("click", () => deleteCustomCountdown(button.dataset.deleteCountdown));
       });
     }
 
@@ -5060,11 +5331,22 @@
 
     function renderExamList() {
       examList.innerHTML = "";
-      examSchedule.forEach((exam) => {
+      allCountdownTargets().forEach((exam) => {
         const card = document.createElement("div");
         card.className = "exam-card";
-        card.innerHTML = `<strong>${exam.exam_name}</strong><span>${exam.date_start}${exam.date_end && exam.date_end !== exam.date_start ? " - " + exam.date_end : ""}</span><div>${exam.notes}</div>`;
+        const customAction = exam.source === "custom"
+          ? `<button type="button" class="warning" data-delete-countdown="${escapeHtml(exam.custom_id)}">削除</button>`
+          : "";
+        card.innerHTML = `
+          <strong>${escapeHtml(exam.exam_name)}</strong>
+          <span>${escapeHtml(exam.date_start)}${exam.date_end && exam.date_end !== exam.date_start ? " - " + escapeHtml(exam.date_end) : ""} / あと${dateDaysUntil(exam.countdown_target)}日${exam.source === "custom" ? " / 短期目標" : ""}</span>
+          <div>${escapeHtml(exam.notes)}</div>
+          ${customAction}
+        `;
         examList.appendChild(card);
+      });
+      examList.querySelectorAll("[data-delete-countdown]").forEach((button) => {
+        button.addEventListener("click", () => deleteCustomCountdown(button.dataset.deleteCountdown));
       });
     }
 
@@ -5159,18 +5441,83 @@
       return items.join(" / ");
     }
 
+    function notificationMethodLabel(method) {
+      return {
+        email: "メール",
+        line: "LINE",
+        phone: "携帯/SMS",
+        other: "その他"
+      }[method] || method;
+    }
+
+    function noticeRecipientSummary(recipients) {
+      if (!recipients.length) return "この役割の通知先は未設定です。";
+      return recipients.map((recipient) => {
+        const methods = (recipient.methods || ["email"]).map(notificationMethodLabel).join(" / ");
+        const destinations = [
+          recipient.email ? `メール: ${recipient.email}` : "",
+          recipient.line ? `LINE: ${recipient.line}` : "",
+          recipient.phone ? `携帯/SMS: ${recipient.phone}` : "",
+          recipient.other ? `その他: ${recipient.other}` : ""
+        ].filter(Boolean).join("、");
+        return `${recipient.label} (${methods})${destinations ? ` - ${destinations}` : ""}`;
+      }).join(" / ");
+    }
+
+    function saveVisibleNoticeContactsFromPanel() {
+      const normalized = normalizeNoticeContacts(noticeContacts);
+      visibleNoticeContacts().forEach((visible) => {
+        const target = normalized.recipients.find((contact) => contact.role === visible.role);
+        if (!target) return;
+        ["email", "line", "phone", "other"].forEach((field) => {
+          const input = notificationPanel.querySelector(`[data-notice-role="${visible.role}"][data-notice-field="${field}"]`);
+          if (input) target[field] = input.value.trim();
+        });
+        const methods = Array.from(notificationPanel.querySelectorAll(`[data-notice-role="${visible.role}"][data-notice-method]:checked`))
+          .map((input) => input.dataset.noticeMethod);
+        target.methods = methods.length ? methods : ["email"];
+      });
+      noticeContacts = normalized;
+      saveNoticeContacts();
+      renderNotificationPanel();
+    }
+
     function renderNotificationPanel() {
-      const contacts = noticeContacts.recipients || [];
+      noticeContacts = normalizeNoticeContacts(noticeContacts);
+      const contacts = visibleNoticeContacts();
       const latest = [...noticeQueue].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 5);
       notificationPanel.innerHTML = `
         <div class="permission-card">
-          <strong>通知先設定</strong>
-          <span>スタサプ確認テスト結果スクショが提出されたら、保護者・サポーター・塾講師へ案内します。</span>
+          <strong>自分の通知設定</strong>
+          <span>この画面では、ログイン中の役割に対応する自分の連絡先だけを表示します。他の保護者・サポーター・講師のアドレスは表示しません。</span>
           <div class="form-grid" style="margin-top: 10px;">
             ${contacts.map((contact) => `
               <div class="field">
-                <label>${contact.label}</label>
-                <input type="email" value="${escapeHtml(contact.email || "")}" data-notice-role="${contact.role}" placeholder="${contact.label}のメールアドレス">
+                <label>${contact.label}のメール</label>
+                <input type="email" value="${escapeHtml(contact.email || "")}" data-notice-role="${contact.role}" data-notice-field="email" placeholder="${contact.label}のメールアドレス">
+              </div>
+              <div class="field">
+                <label>${contact.label}のLINE</label>
+                <input value="${escapeHtml(contact.line || "")}" data-notice-role="${contact.role}" data-notice-field="line" placeholder="LINE ID または連絡メモ">
+              </div>
+              <div class="field">
+                <label>${contact.label}の携帯/SMS</label>
+                <input value="${escapeHtml(contact.phone || "")}" data-notice-role="${contact.role}" data-notice-field="phone" placeholder="携帯番号またはSMS連絡先">
+              </div>
+              <div class="field">
+                <label>${contact.label}のその他</label>
+                <input value="${escapeHtml(contact.other || "")}" data-notice-role="${contact.role}" data-notice-field="other" placeholder="例: Slack / Chatwork / 学校連絡">
+              </div>
+              <div class="field">
+                <label>通知方法</label>
+                <div class="notice-methods">
+                  ${["email", "line", "phone", "other"].map((method) => `
+                    <label>
+                      <input type="checkbox" data-notice-role="${contact.role}" data-notice-method="${method}" ${(contact.methods || []).includes(method) ? "checked" : ""}>
+                      ${notificationMethodLabel(method)}
+                    </label>
+                  `).join("")}
+                </div>
               </div>
             `).join("")}
           </div>
@@ -5178,21 +5525,14 @@
         </div>
         <div class="permission-card">
           <strong>通知方式</strong>
-          <span>検証版はメールアプリを開く方式です。正式版でCloud Functionsから自動送信します。</span>
-          <div>画像本体はメール添付せず、提出があった事実、回答数、正答率を通知します。</div>
+          <span>検証版はメールのみ手動作成できます。LINE、携帯/SMS、その他は連絡先の保存まで対応し、正式版でCloud Functionsや外部サービス連携へ移行します。</span>
+          <div>画像本体は通知に添付せず、提出があった事実、回答数、正答率、アプリ内確認導線を通知します。</div>
         </div>
         ${latest.length ? latest.map((notice) => renderNoticeCard(notice)).join("") : `<div class="empty">まだ提出通知はありません。</div>`}
       `;
       const saveButton = document.querySelector("#saveNoticeContactsButton");
       if (saveButton) {
-        saveButton.addEventListener("click", () => {
-          document.querySelectorAll("[data-notice-role]").forEach((input) => {
-            const target = contacts.find((contact) => contact.role === input.dataset.noticeRole);
-            if (target) target.email = input.value.trim();
-          });
-          saveNoticeContacts();
-          renderNotificationPanel();
-        });
+        saveButton.addEventListener("click", saveVisibleNoticeContactsFromPanel);
       }
       notificationPanel.querySelectorAll("[data-notice-id]").forEach((button) => {
         button.addEventListener("click", () => markNoticeSent(button.dataset.noticeId));
@@ -5200,16 +5540,23 @@
     }
 
     function renderNoticeCard(notice) {
-      const recipients = (notice.recipients || []).filter((recipient) => recipient.email);
-      const mailto = buildMailto(notice, recipients);
+      const visibleRoles = visibleNoticeContacts().map((contact) => contact.role);
+      const recipients = (notice.recipients || [])
+        .filter((recipient) => visibleRoles.includes(recipient.role))
+        .map((recipient) => {
+          const liveContact = (noticeContacts.recipients || []).find((contact) => contact.role === recipient.role) || {};
+          return { ...recipient, ...liveContact };
+        });
+      const emailRecipients = recipients.filter((recipient) => recipient.email);
+      const mailto = buildMailto(notice, emailRecipients);
       return `
         <div class="permission-card">
           <strong>${notice.missionTitle}</strong>
           <span>${notice.date} / ${notice.subject} / ${notice.testType} / 回答数 ${notice.answeredCount || "-"} / 正答率 ${notice.score ? `${notice.score}%` : "-"}</span>
           <div>結果スクショ: ${notice.evidenceImageName} / 判定: ${notice.autoGradingStatusLabel}</div>
-          <div>通知先: ${recipients.length ? recipients.map((recipient) => recipient.label).join(" / ") : "未設定"}</div>
+          <div>通知設定: ${noticeRecipientSummary(recipients)}</div>
           <div class="form-actions" style="margin-top: 10px;">
-            <a class="secondary" href="${mailto}">メール作成</a>
+            ${emailRecipients.length ? `<a class="secondary" href="${mailto}">メール作成</a>` : `<span class="limited">メール未設定</span>`}
             <button type="button" data-notice-id="${notice.noticeId}">${notice.sentAt ? "送信済み" : "送信済みにする"}</button>
           </div>
         </div>
@@ -5217,10 +5564,14 @@
     }
 
     function createSubmissionNotice(record) {
-      const recipients = (noticeContacts.recipients || []).map((recipient) => ({
+      const recipients = normalizeNoticeContacts(noticeContacts).recipients.map((recipient) => ({
         role: recipient.role,
         label: recipient.label,
-        email: recipient.email || ""
+        email: recipient.email || "",
+        line: recipient.line || "",
+        phone: recipient.phone || "",
+        other: recipient.other || "",
+        methods: recipient.methods || ["email"]
       }));
       const notice = {
         noticeId: `NOTICE_${Date.now()}`,
@@ -5699,6 +6050,7 @@
     document.querySelector("#closeDialogButton").addEventListener("click", () => recordDialog.close());
     document.querySelector("#closeEvidencePreviewButton").addEventListener("click", () => evidencePreviewDialog.close());
     document.querySelector("#closeDevDrawerButton").addEventListener("click", closeDevDrawer);
+    document.querySelector("#refreshAppCacheButton").addEventListener("click", refreshAppCache);
     devDrawerBackdrop.addEventListener("click", closeDevDrawer);
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape") closeDevDrawer();
@@ -5725,8 +6077,11 @@
       render();
     });
 
-    document.querySelectorAll(".view-link").forEach((button) => {
-      button.addEventListener("click", () => setActiveView(button.dataset.targetView));
+    document.addEventListener("click", (event) => {
+      const target = event.target.closest("[data-target-view]");
+      if (!target) return;
+      event.preventDefault();
+      setActiveView(target.dataset.targetView);
     });
 
     document.querySelector("#exportCsvButton").addEventListener("click", () => {
@@ -5747,10 +6102,36 @@
       return /[",\n]/.test(text) ? `"${text}"` : text;
     }
 
+    async function refreshAppCache() {
+      const button = document.querySelector("#refreshAppCacheButton");
+      if (button) {
+        button.disabled = true;
+        button.textContent = "更新中...";
+      }
+
+      try {
+        if ("serviceWorker" in navigator) {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          await Promise.all(registrations.map((registration) => registration.unregister()));
+        }
+
+        if ("caches" in window) {
+          const keys = await caches.keys();
+          await Promise.all(keys.map((key) => caches.delete(key)));
+        }
+      } finally {
+        const url = new URL(window.location.href);
+        url.searchParams.set("refresh", Date.now().toString());
+        window.location.replace(url.toString());
+      }
+    }
+
     function registerServiceWorker() {
       if (!("serviceWorker" in navigator)) return;
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./sw.js").catch((error) => {
+        navigator.serviceWorker.register("./sw.js").then((registration) => {
+          registration.update();
+        }).catch((error) => {
           console.warn("Service Worker registration failed:", error);
         });
       });
