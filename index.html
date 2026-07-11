@@ -2233,6 +2233,244 @@
       .mission-head { grid-template-columns: 1fr; }
     }
 
+    /* v4.6.7 mobile home refinement */
+    .brand {
+      min-height: 118px;
+      padding: clamp(12px, 2vw, 18px) 64px clamp(12px, 2vw, 18px) clamp(12px, 2vw, 18px);
+      align-content: center;
+      gap: 10px;
+    }
+
+    .brand h1 {
+      margin-top: 4px;
+      font-size: clamp(1.55rem, 4vw, 3.2rem);
+      line-height: 1;
+    }
+
+    .brand .subtitle {
+      margin-top: 6px;
+      font-size: clamp(0.86rem, 1.4vw, 1.05rem);
+    }
+
+    .brand .badge-row {
+      margin-top: 10px;
+    }
+
+    .brand-settings-button {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 2;
+      width: 42px;
+      height: 42px;
+      min-height: 42px;
+      box-shadow: none;
+    }
+
+    .coach {
+      padding: 14px;
+      gap: 10px;
+    }
+
+    .coach-message {
+      font-size: 0.96rem;
+      line-height: 1.55;
+    }
+
+    .coach-actions {
+      grid-template-columns: 1fr;
+      margin-top: 4px;
+    }
+
+    .schedule-tab {
+      position: fixed;
+      left: 0;
+      top: 38%;
+      z-index: 80;
+      writing-mode: vertical-rl;
+      border: 1px solid var(--line);
+      border-left: 0;
+      border-radius: 0 14px 14px 0;
+      background: rgba(96, 165, 250, 0.94);
+      color: #ffffff;
+      padding: 12px 7px;
+      font-weight: 900;
+      letter-spacing: 0;
+      box-shadow: 0 10px 28px rgba(37, 99, 235, 0.18);
+      cursor: pointer;
+    }
+
+    .schedule-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 89;
+      background: rgba(15, 23, 42, 0.28);
+      opacity: 0;
+      visibility: hidden;
+      transition: 0.2s ease;
+    }
+
+    .schedule-backdrop.open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .schedule-drawer {
+      position: fixed;
+      inset: 0 auto 0 0;
+      z-index: 90;
+      width: min(390px, calc(100vw - 38px));
+      padding: 18px;
+      overflow: auto;
+      border-radius: 0 18px 18px 0;
+      background: rgba(248, 250, 252, 0.98);
+      transform: translateX(-105%);
+      transition: transform 0.22s ease;
+    }
+
+    .schedule-drawer.open {
+      transform: translateX(0);
+    }
+
+    .schedule-drawer .topline {
+      margin-bottom: 12px;
+    }
+
+    .schedule-countdown-list {
+      display: grid;
+      gap: 8px;
+      margin: 14px 0;
+    }
+
+    .schedule-countdown-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #ffffff;
+      color: #334155;
+      font-weight: 850;
+    }
+
+    .schedule-countdown-item strong {
+      color: var(--primary);
+      white-space: nowrap;
+    }
+
+    .calendar-card {
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      background: #ffffff;
+    }
+
+    .calendar-card h3 {
+      margin: 0;
+      color: #334155;
+    }
+
+    .calendar-grid {
+      display: grid;
+      grid-template-columns: repeat(7, minmax(0, 1fr));
+      gap: 4px;
+    }
+
+    .calendar-day {
+      min-height: 42px;
+      padding: 5px 3px;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      background: #f8fafc;
+      color: #475569;
+      font-size: 0.8rem;
+      font-weight: 850;
+      text-align: center;
+    }
+
+    .calendar-day.is-heading {
+      min-height: auto;
+      border: 0;
+      background: transparent;
+      color: var(--primary);
+    }
+
+    .calendar-day.is-empty {
+      border-color: transparent;
+      background: transparent;
+    }
+
+    .calendar-day.is-today {
+      border-color: var(--primary);
+      background: rgba(96, 165, 250, 0.12);
+      color: #1d4ed8;
+    }
+
+    .calendar-day.has-target {
+      background: rgba(34, 197, 94, 0.12);
+      border-color: rgba(34, 197, 94, 0.32);
+    }
+
+    .calendar-day small {
+      display: block;
+      margin-top: 2px;
+      color: #64748b;
+      font-size: 0.62rem;
+      line-height: 1.1;
+    }
+
+    .calendar-sync-note {
+      margin: 12px 0;
+      color: #64748b;
+      font-size: 0.84rem;
+      font-weight: 760;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 560px) {
+      .hero {
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+
+      .brand {
+        min-height: 96px;
+        padding: 12px 56px 12px 14px;
+      }
+
+      .brand h1 {
+        font-size: clamp(1.35rem, 8vw, 2.1rem);
+      }
+
+      .brand .subtitle {
+        font-size: 0.84rem;
+      }
+
+      .brand .subtitle br {
+        display: none;
+      }
+
+      .brand .badge-row {
+        gap: 6px;
+        margin-top: 8px;
+      }
+
+      .brand .badge {
+        padding: 6px 8px;
+        font-size: 0.72rem;
+      }
+
+      .coach {
+        padding: 12px 14px;
+      }
+
+      .schedule-tab {
+        top: 34%;
+      }
+    }
+
     @media (max-width: 560px) {
       .shell { width: min(100% - 18px, 1320px); padding-top: 10px; }
       section, aside, .brand, .coach, .countdown-card { border-radius: 16px; }
@@ -2282,6 +2520,7 @@
   <div class="shell">
     <header class="hero">
       <section class="brand glass" aria-labelledby="brand-title">
+        <button class="secondary view-link settings-gear brand-settings-button" type="button" data-target-view="admin" aria-label="設定">⚙</button>
         <div>
           <div class="system-label">AI学習ナビ</div>
           <h1 id="brand-title">CORTEX Limit Break</h1>
@@ -2300,12 +2539,36 @@
         <p class="coach-message" id="coachMessage">今日は英語構文を3つ覚えましょう。</p>
         <div class="coach-actions" aria-label="よく使う画面">
           <button class="secondary view-link" type="button" data-target-view="evidence">提出画像を見る</button>
-          <button class="secondary view-link settings-gear" type="button" data-target-view="admin" aria-label="設定">⚙</button>
         </div>
       </aside>
     </header>
 
     <section class="countdown-grid" aria-label="入試カウントダウン" id="countdownGrid"></section>
+
+    <button class="schedule-tab" type="button" id="scheduleDrawerOpen" aria-controls="scheduleDrawer" aria-expanded="false">
+      <span>カウントダウン<br>予定</span>
+    </button>
+    <div class="schedule-backdrop" id="scheduleDrawerBackdrop" hidden></div>
+    <aside class="schedule-drawer glass" id="scheduleDrawer" aria-labelledby="scheduleDrawerTitle" aria-hidden="true" hidden>
+      <div class="topline">
+        <div>
+          <div class="system-label">予定管理</div>
+          <h2 id="scheduleDrawerTitle">カウントダウン・スケジュール</h2>
+        </div>
+        <button class="secondary" type="button" id="scheduleDrawerClose">閉じる</button>
+      </div>
+      <p class="button-note">個人予定と受験予定をここに集約します。Google / Apple カレンダー同期はPhase2で接続します。</p>
+      <div class="schedule-countdown-list" id="scheduleDrawerCountdowns"></div>
+      <div class="calendar-card">
+        <div class="topline">
+          <h3>今月の予定</h3>
+          <span class="badge">同期準備中</span>
+        </div>
+        <div class="calendar-grid" id="scheduleCalendar"></div>
+      </div>
+      <div class="calendar-sync-note">Google Calendar / Apple Calendar / 外部カレンダー同期は認証連携後に追加します。</div>
+      <button class="secondary view-link" type="button" data-target-view="admin">予定を設定する</button>
+    </aside>
 
     <nav class="app-nav" aria-label="画面切替" id="appNav"></nav>
 
@@ -2651,8 +2914,20 @@
     const STUDY_START_DATE_KEY = "limitBreakProjectStudyStartDateV465";
     const DEFAULT_STUDY_START_DATE = "2026-07-08";
     const FIREBASE_CONFIG_PATH = "data/firebase_config.json";
-    const APP_VERSION = "v4.6.6-dev";
+    const APP_VERSION = "v4.6.7-dev";
     const RELEASE_NOTES = [
+      {
+        version: "v4.6.7-dev",
+        date: "2026-07-11",
+        title: "スマホHome整理と予定タブ",
+        items: [
+          "スマホ表示でブランドカードをコンパクト化し、上部の圧迫感を軽減",
+          "設定ボタンをAIユイ先生カードからブランドカード右上へ移動",
+          "AIユイ先生の一言を本人・保護者・サポーター・塾講師向けに出し分け",
+          "左端にカウントダウン・予定タブを追加し、予定とカレンダーを集約",
+          "保護者・サポーター・塾講師向けに本日の提出状況が一目で分かる表示へ調整"
+        ]
+      },
       {
         version: "v4.6.6-dev",
         date: "2026-07-10",
@@ -3220,6 +3495,12 @@
     const devVersionBadge = document.querySelector("#devVersionBadge");
     const devVersionList = document.querySelector("#devVersionList");
     const countdownGrid = document.querySelector("#countdownGrid");
+    const scheduleDrawer = document.querySelector("#scheduleDrawer");
+    const scheduleDrawerBackdrop = document.querySelector("#scheduleDrawerBackdrop");
+    const scheduleDrawerOpen = document.querySelector("#scheduleDrawerOpen");
+    const scheduleDrawerClose = document.querySelector("#scheduleDrawerClose");
+    const scheduleDrawerCountdowns = document.querySelector("#scheduleDrawerCountdowns");
+    const scheduleCalendar = document.querySelector("#scheduleCalendar");
     const missionList = document.querySelector("#missionList");
     const journeyMap = document.querySelector("#journeyMap");
     const routeSummary = document.querySelector("#routeSummary");
@@ -3946,13 +4227,14 @@
       document.querySelector("#dayBadge").textContent = `開始 ${studyStartDate} / ${studyElapsedDays()}日目`;
       document.querySelector("#levelLabel").textContent = levelLabelJa(dailyPlan.level);
       document.querySelector("#phaseDateLabel").textContent = dailyPlan.date;
-      document.querySelector("#coachMessage").textContent = dailyPlan.coach_message;
+      document.querySelector("#coachMessage").textContent = roleCoachMessage();
       document.querySelector("#loginName").value = localStorage.getItem(LOGIN_EMAIL_KEY) || loginName;
       loginStatus.textContent = firebaseBridge.message;
       renderRoleOptions();
       if (isLoggedIn) renderAccountPanel();
       renderAppNav();
       renderCountdowns();
+      renderScheduleDrawer();
       renderRouteSummary();
       renderRoleDashboard();
       renderPhase();
@@ -4005,6 +4287,117 @@
       if (exam.exam_type === "private_general") return "私立一般入試まで";
       if (exam.exam_type === "custom_goal") return `${exam.exam_name}まで`;
       return `${exam.exam_name.replace("本試験", "").replace("開始", "")}まで`;
+    }
+
+    function todayOutcomeSummary() {
+      const todayRecords = records.filter((record) => record.date === todayKey());
+      const evidenceRecords = todayRecords.filter(hasEvidence);
+      const total = dailyPlan.missions?.length || courseRoute.today?.blocks?.length || 0;
+      const scores = todayRecords
+        .map((record) => Number(record.score))
+        .filter((score) => Number.isFinite(score) && score > 0);
+      const averageScore = scores.length
+        ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length)
+        : null;
+      return { todayRecords, evidenceRecords, total, averageScore };
+    }
+
+    function roleCoachMessage() {
+      const summary = todayOutcomeSummary();
+      const submitted = summary.evidenceRecords.length;
+      const totalText = summary.total ? `${submitted}/${summary.total}件` : `${submitted}件`;
+
+      if (currentRole === "parent") {
+        return `今日は提出 ${totalText}。学習の有無と提出状況を中心に見守れます。声かけは結果より継続をほめる形が安心です。`;
+      }
+
+      if (currentRole === "supporter") {
+        return `今日は提出 ${totalText}。細かい点数より、続けた事実と次の一歩を応援してください。`;
+      }
+
+      if (currentRole === "teacher") {
+        const scoreText = summary.averageScore === null ? "正答率は提出後に確認" : `平均 ${summary.averageScore}点`;
+        return `提出 ${totalText}。${scoreText}。未提出カードと画像を見て、戻る単元と次の講義を判断できます。`;
+      }
+
+      if (currentRole === "admin") {
+        return "検証中の画面です。提出画像、通知、予定、権限の動作をロール別に確認できます。";
+      }
+
+      return dailyPlan.coach_message || "今日は次の一手だけ見て進めましょう。";
+    }
+
+    function renderScheduleDrawer() {
+      if (!scheduleDrawerCountdowns || !scheduleCalendar) return;
+      const targets = allCountdownTargets()
+        .sort((a, b) => dateDaysUntil(a.countdown_target) - dateDaysUntil(b.countdown_target));
+
+      scheduleDrawerCountdowns.innerHTML = targets.slice(0, 6).map((exam) => {
+        const days = dateDaysUntil(exam.countdown_target);
+        return `
+          <div class="schedule-countdown-item">
+            <span>${escapeHtml(countdownLabel(exam))}</span>
+            <strong>あと${days}日</strong>
+          </div>
+        `;
+      }).join("");
+
+      renderScheduleCalendar(targets);
+    }
+
+    function renderScheduleCalendar(targets) {
+      const today = todayJapanKey();
+      const [year, month] = today.split("-").map(Number);
+      const firstDay = new Date(year, month - 1, 1);
+      const lastDay = new Date(year, month, 0);
+      const targetMap = new Map();
+      targets.forEach((target) => {
+        if (!target.countdown_target) return;
+        const names = targetMap.get(target.countdown_target) || [];
+        names.push(countdownLabel(target).replace("まで", ""));
+        targetMap.set(target.countdown_target, names);
+      });
+
+      const headings = ["日", "月", "火", "水", "木", "金", "土"].map((day) => `<div class="calendar-day is-heading">${day}</div>`);
+      const blanks = Array.from({ length: firstDay.getDay() }, () => `<div class="calendar-day is-empty"></div>`);
+      const days = Array.from({ length: lastDay.getDate() }, (_, index) => {
+        const day = index + 1;
+        const key = `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+        const labels = targetMap.get(key) || [];
+        const classes = [
+          "calendar-day",
+          key === today ? "is-today" : "",
+          labels.length ? "has-target" : ""
+        ].filter(Boolean).join(" ");
+        return `<div class="${classes}">${day}${labels.slice(0, 1).map((label) => `<small>${escapeHtml(label)}</small>`).join("")}</div>`;
+      });
+
+      scheduleCalendar.innerHTML = [...headings, ...blanks, ...days].join("");
+    }
+
+    function openScheduleDrawer() {
+      if (!scheduleDrawer || !scheduleDrawerBackdrop) return;
+      renderScheduleDrawer();
+      scheduleDrawer.hidden = false;
+      scheduleDrawerBackdrop.hidden = false;
+      scheduleDrawerOpen?.setAttribute("aria-expanded", "true");
+      requestAnimationFrame(() => {
+        scheduleDrawer.classList.add("open");
+        scheduleDrawerBackdrop.classList.add("open");
+        scheduleDrawer.setAttribute("aria-hidden", "false");
+      });
+    }
+
+    function closeScheduleDrawer() {
+      if (!scheduleDrawer || !scheduleDrawerBackdrop) return;
+      scheduleDrawer.classList.remove("open");
+      scheduleDrawerBackdrop.classList.remove("open");
+      scheduleDrawerOpen?.setAttribute("aria-expanded", "false");
+      scheduleDrawer.setAttribute("aria-hidden", "true");
+      window.setTimeout(() => {
+        scheduleDrawer.hidden = true;
+        scheduleDrawerBackdrop.hidden = true;
+      }, 230);
     }
 
     function levelLabelJa(level) {
@@ -6052,8 +6445,14 @@
     document.querySelector("#closeDevDrawerButton").addEventListener("click", closeDevDrawer);
     document.querySelector("#refreshAppCacheButton").addEventListener("click", refreshAppCache);
     devDrawerBackdrop.addEventListener("click", closeDevDrawer);
+    scheduleDrawerOpen?.addEventListener("click", openScheduleDrawer);
+    scheduleDrawerClose?.addEventListener("click", closeScheduleDrawer);
+    scheduleDrawerBackdrop?.addEventListener("click", closeScheduleDrawer);
     document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape") closeDevDrawer();
+      if (event.key === "Escape") {
+        closeDevDrawer();
+        closeScheduleDrawer();
+      }
     });
     evidencePreviewDialog.addEventListener("close", () => {
       evidencePreviewImage.removeAttribute("src");
@@ -6082,6 +6481,7 @@
       if (!target) return;
       event.preventDefault();
       setActiveView(target.dataset.targetView);
+      if (scheduleDrawer?.contains(target)) closeScheduleDrawer();
     });
 
     document.querySelector("#exportCsvButton").addEventListener("click", () => {
