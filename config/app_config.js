@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.7.1-dev";
-export const APP_RELEASE_NAME = "app.js Phase 1分離";
+export const APP_VERSION = "v4.7.2-dev";
+export const APP_RELEASE_NAME = "fallback data分離";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -40,6 +40,16 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.7.2-dev",
+    date: "2026-07-11",
+    title: "fallback data分離",
+    items: [
+      "app.js内の固定データをassets/js/data/fallbacks.jsへ分離",
+      "UI変更やFirebase仕様変更は行わず、現状動作を維持",
+      "次回以降、提出画像・認証・画面UIを修正するときに読むコード量を削減"
+    ]
+  },
   {
     version: "v4.7.1-dev",
     date: "2026-07-11",

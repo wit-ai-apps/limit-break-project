@@ -1,10 +1,11 @@
-const CACHE_NAME = "cortex-limit-break-v4-7-1-dev";
+const CACHE_NAME = "cortex-limit-break-v4-7-2-dev";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./config/app_config.js",
   "./assets/css/style.css",
   "./assets/js/app.js",
+  "./assets/js/data/fallbacks.js",
   "./assets/js/auth/roles.js",
   "./assets/js/utils/countdown.js",
   "./assets/js/utils/helpers.js",
