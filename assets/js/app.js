@@ -1,235 +1,38 @@
-const STORAGE_KEY = "limitBreakProjectRecordsV120";
-    const LOGIN_KEY = "limitBreakProjectLoggedInV390";
-    const LOGIN_NAME_KEY = "limitBreakProjectLoginNameV390";
-    const LOGIN_EMAIL_KEY = "limitBreakProjectLoginEmailV460";
-    const AUTH_UID_KEY = "limitBreakProjectAuthUidV460";
-    const ROLE_KEY = "limitBreakProjectRole";
-    const NAV_STEP_KEY = "limitBreakProjectNavigationStepV340";
-    const SUPPORT_TYPE_KEY = "limitBreakProjectSupportTypeV380";
-    const MEMORY_RESULT_KEY = "limitBreakProjectMemoryResultsV170";
-    const EXTERNAL_PROGRESS_KEY = "limitBreakProjectExternalProgressV170";
-    const AI_TEACHER_LOG_KEY = "limitBreakProjectAiTeacherLogV180";
-    const COUNSELOR_NOTES_KEY = "limitBreakProjectCounselorNotesV200";
-    const VIEW_KEY = "limitBreakProjectActiveViewV330";
-    const NOTICE_CONTACTS_KEY = "limitBreakProjectNoticeContactsV370";
-    const NOTICE_QUEUE_KEY = "limitBreakProjectNoticeQueueV370";
-    const CUSTOM_COUNTDOWNS_KEY = "limitBreakProjectCustomCountdownsV464";
-    const STUDY_START_DATE_KEY = "limitBreakProjectStudyStartDateV465";
-    const DEFAULT_STUDY_START_DATE = "2026-07-08";
-    const FIREBASE_CONFIG_PATH = "data/firebase_config.json";
-    const APP_VERSION = "v4.7.0-dev";
-    const RELEASE_NOTES = [
-      {
-        version: "v4.7.0-dev",
-        date: "2026-07-11",
-        title: "Project Rebuild: Preparing for CORTEX Core",
-        items: [
-          "index.htmlからCSSとJavaScriptを分離し、画面の骨格だけを残す構成へ変更",
-          "assets/jsをES Modulesとして読み込む構成へ変更",
-          "auth、ui、learning、teacher、evidence、firebase、utils、configの分離先を新設",
-          "CORTEX Coreへ発展できるディレクトリ構造を準備",
-          "PWAキャッシュ対象に分離後のCSS/JSを追加"
-        ]
-      },
-      {
-        version: "v4.6.7-dev",
-        date: "2026-07-11",
-        title: "スマホHome整理と予定タブ",
-        items: [
-          "スマホ表示でブランドカードをコンパクト化し、上部の圧迫感を軽減",
-          "設定ボタンをAIユイ先生カードからブランドカード右上へ移動",
-          "AIユイ先生の一言を本人・保護者・サポーター・塾講師向けに出し分け",
-          "左端にカウントダウン・予定タブを追加し、予定とカレンダーを集約",
-          "保護者・サポーター・塾講師向けに本日の提出状況が一目で分かる表示へ調整"
-        ]
-      },
-      {
-        version: "v4.6.6-dev",
-        date: "2026-07-10",
-        title: "PWAキャッシュ更新",
-        items: [
-          "リロードしても古いバージョンが表示される時のためにキャッシュ更新ボタンを追加",
-          "Service WorkerとPWAキャッシュだけを削除し、学習記録は残す復旧導線を追加",
-          "ナビゲーション時に最新HTMLを取得しやすい設定へ調整"
-        ]
-      },
-      {
-        version: "v4.6.5-dev",
-        date: "2026-07-10",
-        title: "通知設定の個人化と学習開始日管理",
-        items: [
-          "通知設定でログイン中ユーザー本人の連絡先だけを表示",
-          "メール、LINE、携帯/SMS、その他の通知チャネル入力を追加",
-          "Homeの提出画像・設定ボタンを押せる導線へ修正",
-          "学習開始日を2026-07-08既定にし、開始日からの経過日数を表示",
-          "カウントダウンと学習管理の設定を設定画面へ集約"
-        ]
-      },
-      {
-        version: "v4.6.4-dev",
-        date: "2026-07-10",
-        title: "短期目標カウントダウンと教材連携設計",
-        items: [
-          "定期テスト、模試、提出期限などをユーザーが追加できる短期目標カウントダウンを追加",
-          "近い目標3件を上部カウントダウンへ表示",
-          "英文300選の文法分析と映像授業リンクの管理方針を設定へ追加",
-          "確認テスト合格後に一段上の類題へ進むAI Teacher設計を追加"
-        ]
-      },
-      {
-        version: "v4.6.3-dev",
-        date: "2026-07-09",
-        title: "ホーム整理と提出画像確認",
-        items: [
-          "Homeからアカウント詳細を外し、設定・アカウントへ移動",
-          "Homeに提出画像確認への短い導線を追加",
-          "提出画像タブを新設し、保護者・サポーター・講師が確認しやすい画面に変更",
-          "提出画像がない場合も状態が分かる案内を表示"
-        ]
-      },
-      {
-        version: "v4.6.2-dev",
-        date: "2026-07-09",
-        title: "ログイン案内とランダム確認テスト提出",
-        items: [
-          "ログイン画面を「はじめて使う人」と「登録済みの人」に分けて案内",
-          "新規登録ボタンの表記を分かりやすく変更",
-          "予定カードに紐づかないランダム確認テスト画像の提出口を追加",
-          "提出日時、教科、教材、講座、単元、画像を一覧で整理できるように変更"
-        ]
-      },
-      {
-        version: "v4.6.1-dev",
-        date: "2026-07-09",
-        title: "公開検証用アカウント登録",
-        items: [
-          "ログイン画面に検証用アカウント登録ボタンを追加",
-          "メールアドレスとパスワードでFirebase Authへ登録",
-          "選択中の役割でFirestore usersに検証用プロフィールを作成",
-          "登録後は自動でログインしてHomeへ移動"
-        ]
-      },
-      {
-        version: "v4.6.0-dev",
-        date: "2026-07-09",
-        title: "スマホ検証UIとFirebase提出準備",
-        items: [
-          "「ユイ先生」を「AIユイ先生」に変更",
-          "スマホの画面切替タブを横スクロール対応",
-          "バージョン表示と開発中の更新内容タブを追加",
-          "ログイン種別ごとにHomeのダッシュボード表示を変更",
-          "Firebase Auth、Firestore、Storageで提出画像を扱う準備を追加",
-          "本人、保護者、サポーター、講師で検証しやすい表示へ整理"
-        ]
-      },
-      {
-        version: "v4.5.x",
-        date: "2026-07-08",
-        title: "提出画像の共有設計",
-        items: [
-          "確認テスト結果スクショのアップロード口を設計",
-          "提出画像一覧と拡大確認の画面を追加",
-          "保護者、サポーター、講師が学習履歴を確認できる権限設計を追加"
-        ]
-      },
-      {
-        version: "v4.4.x",
-        date: "2026-07-07",
-        title: "学習ルートと全教科計画",
-        items: [
-          "映像授業、テキスト、確認テスト、復習をつなぐ学習ルートへ整理",
-          "英語、数学、理科、古文の8月末プラン作成に対応",
-          "到達度テストから受講推奨コースを作る方針を追加"
-        ]
-      }
-    ];
-    const BASELINE_DATE = "2026-06-30";
-    const APP_VIEWS = [
-      { id: "home", label: "ホーム" },
-      { id: "long", label: "長期計画" },
-      { id: "week", label: "今週" },
-      { id: "today", label: "今日の手順" },
-      { id: "memory", label: "暗記" },
-      { id: "review", label: "復習" },
-      { id: "evidence", label: "提出画像" },
-      { id: "progress", label: "進み具合" },
-      { id: "ai", label: "AI先生" },
-      { id: "support", label: "見守り" },
-      { id: "admin", label: "設定" }
-    ];
-
-    const PUBLIC_ROLE_KEYS = ["student", "parent", "supporter", "teacher"];
-    const SUPPORTER_TYPES = [
-      { value: "family", label: "家族・親戚", note: "応援コメントと努力量を中心に確認" },
-      { value: "mentor", label: "メンター", note: "継続状況と今週の努力を確認" },
-      { value: "school_teacher", label: "学校の先生", note: "学習状況と負荷の要約を確認" },
-      { value: "psychological_counselor", label: "心理カウンセラー", note: "疲労傾向と声かけ注意点を確認" }
-    ];
-
-    const ROLES = {
-      student: {
-        label: "本人",
-        headline: "今日やること、残日数、終わった実感を一番大きく表示します。",
-        canEditRecord: true,
-        showScore: true,
-        showFatigue: true,
-        showMistake: true,
-        showPrivateNote: true,
-        showMentalState: true,
-        showMissionDetail: true
-      },
-      parent: {
-        label: "保護者",
-        headline: "達成率と努力量を見守る画面です。内省メモは表示しません。",
-        canEditRecord: false,
-        showScore: "summary",
-        showFatigue: "summary",
-        showMistake: false,
-        showPrivateNote: false,
-        showMentalState: "summary",
-        showMissionDetail: true
-      },
-      supporter: {
-        label: "サポーター",
-        headline: "応援に必要な努力量だけを見る画面です。詳細な成績や疲労度は表示しません。",
-        canEditRecord: false,
-        showScore: false,
-        showFatigue: false,
-        showMistake: false,
-        showPrivateNote: false,
-        showMentalState: false,
-        showMissionDetail: false
-      },
-      counselor: {
-        label: "心理カウンセラー",
-        headline: "学習継続、疲労度、自己申告メンタル状態、学習負荷を確認し、心理的安全性を支援する画面です。",
-        canEditRecord: false,
-        canPostCounselorNote: true,
-        showScore: "summary",
-        showFatigue: true,
-        showMistake: false,
-        showPrivateNote: false,
-        showMentalState: true,
-        showMissionDetail: true
-      },
-      teacher: {
-        label: "塾講師",
-        headline: "理解度、弱点、確認テスト、疲労度、復習漏れ、次週提案を確認する画面です。",
-        canEditRecord: true,
-        showScore: true,
-        showFatigue: true,
-        showMistake: true,
-        showPrivateNote: true,
-        showMentalState: true,
-        showMissionDetail: true
-      }
-    };
-
-    const FALLBACK_EXAMS = [
-      { exam_name: "共通テスト本試験", exam_type: "common_test", date_start: "2027-01-16", date_end: "2027-01-17", countdown_target: "2027-01-16", priority: 1, notes: "2026-06-30時点であと200日" },
-      { exam_name: "国公立前期・二次試験", exam_type: "national_secondary", date_start: "2027-02-25", date_end: "2027-02-25", countdown_target: "2027-02-25", priority: 2, notes: "国公立前期日程開始" },
-      { exam_name: "私立一般入試開始", exam_type: "private_general", date_start: "2027-02-01", date_end: "2027-03-25", countdown_target: "2027-02-01", priority: 3, notes: "Phase1では仮データ。候補校は後で入力可能にする" }
-    ];
+import {
+  APP_VERSION,
+  RELEASE_NOTES,
+  STORAGE_KEY,
+  LOGIN_KEY,
+  LOGIN_NAME_KEY,
+  LOGIN_EMAIL_KEY,
+  AUTH_UID_KEY,
+  ROLE_KEY,
+  NAV_STEP_KEY,
+  SUPPORT_TYPE_KEY,
+  MEMORY_RESULT_KEY,
+  EXTERNAL_PROGRESS_KEY,
+  AI_TEACHER_LOG_KEY,
+  COUNSELOR_NOTES_KEY,
+  VIEW_KEY,
+  NOTICE_CONTACTS_KEY,
+  NOTICE_QUEUE_KEY,
+  CUSTOM_COUNTDOWNS_KEY,
+  STUDY_START_DATE_KEY,
+  DEFAULT_STUDY_START_DATE,
+  FIREBASE_CONFIG_PATH,
+  BASELINE_DATE,
+  APP_VIEWS
+} from "../../config/app_config.js";
+import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
+import {
+  FALLBACK_EXAMS,
+  countdownLabel,
+  dateDaysBetween,
+  dateDaysUntil,
+  formatDateTimeInput,
+  todayJapanKey
+} from "./utils/countdown.js";
+import { escapeHtml } from "./utils/helpers.js";
 
     const FALLBACK_DAILY = {
       plan_version: "1.6.0",
@@ -1122,29 +925,6 @@ const STORAGE_KEY = "limitBreakProjectRecordsV120";
       return dailyPlan.date || BASELINE_DATE;
     }
 
-    function todayJapanKey() {
-      const parts = new Intl.DateTimeFormat("en-CA", {
-        timeZone: "Asia/Tokyo",
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit"
-      }).formatToParts(new Date());
-      const map = Object.fromEntries(parts.map((part) => [part.type, part.value]));
-      return `${map.year}-${map.month}-${map.day}`;
-    }
-
-    function dateDaysUntil(targetDate) {
-      const start = new Date(`${todayJapanKey()}T00:00:00+09:00`);
-      const end = new Date(`${targetDate}T00:00:00+09:00`);
-      return Math.ceil((end - start) / 86400000);
-    }
-
-    function dateDaysBetween(startDate, endDate) {
-      const start = new Date(`${startDate}T00:00:00+09:00`);
-      const end = new Date(`${endDate}T00:00:00+09:00`);
-      return Math.floor((end - start) / 86400000);
-    }
-
     function studyElapsedDays() {
       return Math.max(1, dateDaysBetween(studyStartDate, todayJapanKey()) + 1);
     }
@@ -1394,14 +1174,6 @@ const STORAGE_KEY = "limitBreakProjectRecordsV120";
         `;
         countdownGrid.appendChild(card);
       });
-    }
-
-    function countdownLabel(exam) {
-      if (exam.exam_type === "common_test") return "共通テストまで";
-      if (exam.exam_type === "national_secondary") return "国公立二次まで";
-      if (exam.exam_type === "private_general") return "私立一般入試まで";
-      if (exam.exam_type === "custom_goal") return `${exam.exam_name}まで`;
-      return `${exam.exam_name.replace("本試験", "").replace("開始", "")}まで`;
     }
 
     function todayOutcomeSummary() {
@@ -2828,15 +2600,6 @@ const STORAGE_KEY = "limitBreakProjectRecordsV120";
       renderCounselorSupport();
     }
 
-    function escapeHtml(value) {
-      return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
-    }
-
     function renderExamList() {
       examList.innerHTML = "";
       allCountdownTargets().forEach((exam) => {
@@ -3133,15 +2896,6 @@ const STORAGE_KEY = "limitBreakProjectRecordsV120";
       noticeQueue = noticeQueue.map((notice) => notice.noticeId === noticeId ? { ...notice, sentAt: new Date().toISOString() } : notice);
       saveNoticeQueue();
       renderNotificationPanel();
-    }
-
-    function formatDateTimeInput(date = new Date()) {
-      const pad = (value) => String(value).padStart(2, "0");
-      return [
-        date.getFullYear(),
-        pad(date.getMonth() + 1),
-        pad(date.getDate())
-      ].join("-") + `T${pad(date.getHours())}:${pad(date.getMinutes())}`;
     }
 
     function renderRandomEvidenceUploader(container, role) {
