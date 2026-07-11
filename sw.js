@@ -1,7 +1,9 @@
-const CACHE_NAME = "cortex-limit-break-v4-6-7-dev";
+const CACHE_NAME = "cortex-limit-break-v4-7-0-dev";
 const APP_SHELL = [
   "./",
   "./index.html",
+  "./assets/css/style.css",
+  "./assets/js/app.js",
   "./manifest.webmanifest",
   "./icons/icon-192.svg",
   "./icons/icon-512.svg"
