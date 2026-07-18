@@ -38,6 +38,7 @@ import {
   saveEvidenceRecordRemote,
   saveEvidenceRecords
 } from "./evidence/evidence-store.js";
+import { renderAppNavigation } from "./ui/navigation.js";
 import { fileToDataUrl } from "./evidence/evidence-upload.js";
 import {
   bindEvidencePreviewDialog,
@@ -667,22 +668,13 @@ import {
     }
 
     function renderAppNav() {
-      appNav.innerHTML = "";
-      APP_VIEWS.forEach((view) => {
-        const button = document.createElement("button");
-        button.type = "button";
-        button.className = `nav-button${view.id === activeView ? " active" : ""}`;
-        button.textContent = view.label;
-        button.addEventListener("click", () => setActiveView(view.id));
-        appNav.appendChild(button);
+      renderAppNavigation({
+        container: appNav,
+        views: APP_VIEWS,
+        activeView,
+        onSelect: setActiveView,
+        onOpenDevDrawer: openDevDrawer
       });
-      const devButton = document.createElement("button");
-      devButton.type = "button";
-      devButton.className = "nav-button";
-      devButton.textContent = "更新内容";
-      devButton.setAttribute("aria-controls", "devDrawer");
-      devButton.addEventListener("click", openDevDrawer);
-      appNav.appendChild(devButton);
     }
 
     function setActiveView(viewId) {

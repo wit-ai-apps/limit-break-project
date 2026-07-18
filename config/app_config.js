@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.7.3-dev";
-export const APP_RELEASE_NAME = "evidence機能分離";
+export const APP_VERSION = "v4.7.4-dev";
+export const APP_RELEASE_NAME = "UI navigation分離";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -40,6 +40,16 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.7.4-dev",
+    date: "2026-07-18",
+    title: "UI navigation分離",
+    items: [
+      "ホーム下部のタブ描画をui/navigation.jsへ分離",
+      "app.jsはナビゲーション描画の呼び出しだけを担当",
+      "PWAキャッシュ対象にnavigationモジュールを追加"
+    ]
+  },
   {
     version: "v4.7.3-dev",
     date: "2026-07-17",
