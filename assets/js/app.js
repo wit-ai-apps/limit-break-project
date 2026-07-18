@@ -29,10 +29,22 @@ import {
   countdownLabel,
   dateDaysBetween,
   dateDaysUntil,
-  formatDateTimeInput,
   todayJapanKey
 } from "./utils/countdown.js";
 import { escapeHtml } from "./utils/helpers.js";
+import {
+  loadEvidenceRecords,
+  recordIdentity,
+  saveEvidenceRecordRemote,
+  saveEvidenceRecords
+} from "./evidence/evidence-store.js";
+import { fileToDataUrl } from "./evidence/evidence-upload.js";
+import {
+  bindEvidencePreviewDialog,
+  openEvidencePreviewRecord
+} from "./evidence/evidence-preview.js";
+import { evidenceTypeForUnit, hasEvidence } from "./evidence/evidence-policy.js";
+import { renderEvidenceLogs } from "./evidence/evidence-render.js";
 
 import {
   FALLBACK_DAILY,
@@ -86,7 +98,7 @@ import {
     let currentSupportType = localStorage.getItem(SUPPORT_TYPE_KEY) || "family";
     let activeView = localStorage.getItem(VIEW_KEY) || "home";
     let navigationStepIndex = Number(localStorage.getItem(NAV_STEP_KEY) || 0);
-    let records = loadRecords();
+    let records = loadEvidenceRecords(STORAGE_KEY);
     let memoryResults = loadMemoryResults();
     let aiTeacherLog = loadAiTeacherLog();
 
@@ -201,20 +213,6 @@ import {
       }
       await initFirebaseBridge();
       render();
-    }
-
-    function loadRecords() {
-      try {
-        const modern = localStorage.getItem(STORAGE_KEY);
-        if (modern) return JSON.parse(modern);
-        return JSON.parse(localStorage.getItem("limitBreakProjectRecordsV110") || "[]");
-      } catch (_) {
-        return [];
-      }
-    }
-
-    function saveRecords() {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
     }
 
     async function initFirebaseBridge() {
@@ -372,81 +370,10 @@ import {
           });
         });
         records = [...merged.values()].sort((a, b) => String(b.savedAt || "").localeCompare(String(a.savedAt || "")));
-        saveRecords();
+        saveEvidenceRecords(STORAGE_KEY, records);
       } catch (error) {
         firebaseBridge.status = "read_error";
         firebaseBridge.message = `Firestore読込に失敗しました。localStorage表示を継続します。${error.message || error}`;
-      }
-    }
-
-    function recordIdentity(record) {
-      return `${record.date || ""}_${record.missionId || ""}`;
-    }
-
-    function sanitizeFileName(value) {
-      return String(value || "evidence-image")
-        .replace(/[\\/:*?"<>|#%{}^~[\]`]/g, "_")
-        .replace(/\s+/g, "_")
-        .slice(0, 120);
-    }
-
-    function firebaseSafeId(value) {
-      return String(value || "record")
-        .replace(/[\/#?[\]]/g, "_")
-        .replace(/\s+/g, "_")
-        .slice(0, 180);
-    }
-
-    function recordForFirestore(record) {
-      const copy = { ...record };
-      delete copy.evidenceImageData;
-      Object.keys(copy).forEach((key) => {
-        if (copy[key] === undefined) delete copy[key];
-      });
-      return copy;
-    }
-
-    async function saveEvidenceRecordRemote(record, evidenceFile) {
-      if (!firebaseBridge.enabled || !firebaseBridge.currentUser) return record;
-      const recordId = firebaseSafeId(recordIdentity(record));
-      let remoteRecord = { ...record };
-      try {
-        if (evidenceFile) {
-          const storagePath = `students/${firebaseBridge.studentId}/evidence/${record.date}/${recordId}-${Date.now()}-${sanitizeFileName(evidenceFile.name)}`;
-          const imageRef = firebaseBridge.storageRef(firebaseBridge.storage, storagePath);
-          await firebaseBridge.uploadBytes(imageRef, evidenceFile, {
-            contentType: evidenceFile.type || "image/jpeg",
-            customMetadata: {
-              student_id: firebaseBridge.studentId,
-              mission_id: record.missionId || "",
-              subject: record.subject || "",
-              test_type: record.testType || ""
-            }
-          });
-          remoteRecord.evidenceImageUrl = await firebaseBridge.getDownloadURL(imageRef);
-          remoteRecord.evidenceStoragePath = storagePath;
-        }
-        const docRef = firebaseBridge.doc(firebaseBridge.db, "students", firebaseBridge.studentId, "evidence_records", recordId);
-        const firestoreRecord = {
-          ...recordForFirestore(remoteRecord),
-          student_id: firebaseBridge.studentId,
-          visible_to: ["student", "parent", "supporter", "teacher"],
-          firebaseSyncStatus: "synced",
-          updated_at: firebaseBridge.serverTimestamp()
-        };
-        await firebaseBridge.setDoc(docRef, firestoreRecord, { merge: true });
-        return {
-          ...remoteRecord,
-          firebaseDocumentId: recordId,
-          firebaseSyncStatus: "synced",
-          firebaseSyncError: ""
-        };
-      } catch (error) {
-        return {
-          ...remoteRecord,
-          firebaseSyncStatus: "error",
-          firebaseSyncError: error.message || String(error)
-        };
       }
     }
 
@@ -2587,76 +2514,6 @@ import {
       renderNotificationPanel();
     }
 
-    function renderRandomEvidenceUploader(container, role) {
-      if (!role.canEditRecord) return;
-      const card = document.createElement("div");
-      card.className = "log-card random-evidence-card";
-      card.innerHTML = `
-        <strong>ランダム確認テスト提出</strong>
-        <span>時間短縮のため、指定された教科・講座の確認テスト画像を提出します。できている単元は飛ばす判定に使い、分析機能は次の段階で追加します。</span>
-        <form id="randomEvidenceForm" class="login-form">
-          <div class="form-grid">
-            <div class="field">
-              <label for="randomSubmittedAt">提出日時</label>
-              <input id="randomSubmittedAt" type="datetime-local" value="${formatDateTimeInput()}">
-            </div>
-            <div class="field">
-              <label for="randomSubject">教科</label>
-              <select id="randomSubject" required>
-                <option value="">選択してください</option>
-                <option>数学</option>
-                <option>英語</option>
-                <option>物理</option>
-                <option>化学</option>
-                <option>古文</option>
-                <option>国語</option>
-                <option>世界史</option>
-                <option>情報</option>
-                <option>その他</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="randomCourse">教材名</label>
-              <input id="randomCourse" type="text" placeholder="例: ベーシックレベル数学I">
-            </div>
-            <div class="field">
-              <label for="randomLesson">講座 / Chapter</label>
-              <input id="randomLesson" type="text" placeholder="例: 第3講 PART2">
-            </div>
-            <div class="field">
-              <label for="randomUnit">単元名</label>
-              <input id="randomUnit" type="text" placeholder="例: 三角形の外心・内心">
-            </div>
-            <div class="field">
-              <label for="randomTestType">テスト種別</label>
-              <input id="randomTestType" type="text" value="ランダム確認テスト">
-            </div>
-            <div class="field">
-              <label for="randomAnsweredCount">回答数（任意）</label>
-              <input id="randomAnsweredCount" type="number" min="0" placeholder="例: 10">
-            </div>
-            <div class="field">
-              <label for="randomCorrectRate">正答率（任意）</label>
-              <input id="randomCorrectRate" type="number" min="0" max="100" placeholder="例: 80">
-            </div>
-          </div>
-          <div class="field">
-            <label for="randomEvidenceImage">確認テスト画像</label>
-            <input id="randomEvidenceImage" type="file" accept="image/*" required>
-            <span class="button-note">結果画面、答案、自己採点済み画像などをアップしてください。</span>
-          </div>
-          <div class="field">
-            <label for="randomNote">メモ（任意）</label>
-            <textarea id="randomNote" placeholder="例: ここは飛ばせそう / 公式だけ再確認が必要"></textarea>
-          </div>
-          <button type="submit">画像を提出して記録する</button>
-          <p class="button-note" id="randomEvidenceStatus">提出後、下の一覧に日時・教科・教材・画像が整理されます。</p>
-        </form>
-      `;
-      card.querySelector("#randomEvidenceForm").addEventListener("submit", handleRandomEvidenceSubmit);
-      container.appendChild(card);
-    }
-
     async function handleRandomEvidenceSubmit(event) {
       event.preventDefault();
       const form = event.currentTarget;
@@ -2712,9 +2569,9 @@ import {
       };
 
       status.textContent = "提出画像を保存中です...";
-      submittedRecord = await saveEvidenceRecordRemote(submittedRecord, evidenceFile);
+      submittedRecord = await saveEvidenceRecordRemote(submittedRecord, evidenceFile, firebaseBridge);
       records.push(submittedRecord);
-      saveRecords();
+      saveEvidenceRecords(STORAGE_KEY, records);
       createSubmissionNotice(submittedRecord);
       form.reset();
       status.textContent = "提出しました。下の一覧に追加されています。";
@@ -2722,98 +2579,13 @@ import {
     }
 
     function renderLogs() {
-      const role = activeRoleConfig();
-      logList.innerHTML = "";
-      const evidenceGuide = role.canEditRecord
-        ? "予定にない確認テストも、ここから教科・教材・講座を選んで画像提出できます。提出後は保護者・サポーター・講師の確認画面に並びます。"
-        : "生徒が提出した確認テスト画像をここで確認します。画像名を押すと拡大表示できます。表示されない場合は、生徒側でFirebase同期済みの提出になっているか確認してください。";
-      logList.insertAdjacentHTML("beforeend", `
-        <div class="log-card">
-          <strong>${role.canEditRecord ? "確認テスト画像の提出" : "提出画像の確認"}</strong>
-          <span>${evidenceGuide}</span>
-        </div>
-      `);
-      renderRandomEvidenceUploader(logList, role);
-      if (!records.length) {
-        logList.insertAdjacentHTML("beforeend", `<div class="empty">まだ提出画像・記録がありません。</div>`);
-        return;
-      }
-      const evidenceRecords = [...records]
-        .filter((record) => record.evidenceImageName && (record.evidenceImageData || record.evidenceImageUrl))
-        .sort((a, b) => b.savedAt.localeCompare(a.savedAt));
-      if (evidenceRecords.length) {
-        const tableCard = document.createElement("div");
-        tableCard.className = "log-card";
-        tableCard.innerHTML = `
-          <strong>確認テスト提出画像一覧</strong>
-          <span>提出済みのスクショを一覧で確認できます。画像ボタンを押すと拡大表示します。</span>
-          <div class="evidence-table-wrap" style="margin-top: 10px;">
-            <table class="evidence-table">
-              <thead>
-                <tr>
-                  <th>提出日時</th>
-                  <th>教科</th>
-                  <th>教材</th>
-                  <th>講座 / 単元</th>
-                  <th>テスト</th>
-                  <th>回答数</th>
-                  <th>正答率</th>
-                  <th>保存先</th>
-                  <th>画像</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${evidenceRecords.map((record) => `
-                  <tr>
-                    <td>${formatSavedAt(record.submittedAt || record.savedAt)}</td>
-                    <td>${escapeHtml(record.subject || "-")}</td>
-                    <td>${escapeHtml(record.course || "-")}</td>
-                    <td>${escapeHtml(record.lesson || "")} ${escapeHtml(record.part || "")}</td>
-                    <td>${escapeHtml(record.testType || "-")}</td>
-                    <td>${role.showScore === true ? escapeHtml(record.answeredCount || "-") : "提出あり"}</td>
-                    <td>${role.showScore === true ? `${escapeHtml(record.score || "-")}%` : "提出あり"}</td>
-                    <td>${record.firebaseSyncStatus === "synced" ? "Firebase" : "端末内"}</td>
-                    <td><button type="button" class="evidence-open-button" data-evidence-key="${recordKey(record)}">${escapeHtml(record.evidenceImageName)}</button></td>
-                  </tr>
-                `).join("")}
-              </tbody>
-            </table>
-          </div>
-        `;
-        tableCard.querySelectorAll("[data-evidence-key]").forEach((button) => {
-          button.addEventListener("click", () => openEvidencePreview(button.dataset.evidenceKey));
-        });
-        logList.appendChild(tableCard);
-      } else {
-        logList.insertAdjacentHTML("beforeend", `<div class="empty">提出画像はまだありません。生徒が確認テスト結果を提出すると、ここに日時・教科・教材ごとに表示されます。</div>`);
-      }
-      [...records].sort((a, b) => b.savedAt.localeCompare(a.savedAt)).slice(0, 10).forEach((record) => {
-        const card = document.createElement("div");
-        card.className = "log-card";
-        const scoreLine = role.showScore === true
-          ? `回答数 ${record.answeredCount || "-"} / 正答率 ${record.score}% / 理解度 ${record.understanding}`
-          : role.showScore === "summary"
-            ? `確認テスト: 記録あり`
-            : `努力記録: 完了`;
-        const fatigueLine = role.showFatigue === true ? `疲労度 ${record.fatigue}` : "";
-        const mentalLine = role.showMentalState === true && record.mentalState ? `<div>メンタル状態: ${record.mentalState}</div>` : "";
-        const mistakeLine = role.showMistake && record.mistakeReason ? `<div>間違い理由: ${record.mistakeReason}</div>` : "";
-        const privateLine = role.showPrivateNote && record.privateNote ? `<div>内省メモ: ${record.privateNote}</div>` : "";
-        const evidenceLine = record.evidenceImageName
-          ? `<div>結果スクショ: <button type="button" class="evidence-open-button" data-evidence-key="${recordKey(record)}">${escapeHtml(record.evidenceImageName)}</button> / OCR読取: 正式版で実装</div>`
-          : `<div>結果スクショ: 未提出 / 後日へ繰り越し</div>`;
-        card.innerHTML = `
-          <strong>${record.date} / ${record.missionTitle}</strong>
-          <span>${record.testType} / ${scoreLine}${fatigueLine ? " / " + fatigueLine : ""}</span>
-          ${evidenceLine}
-          ${mentalLine}
-          ${mistakeLine}
-          ${privateLine}
-        `;
-        card.querySelectorAll("[data-evidence-key]").forEach((button) => {
-          button.addEventListener("click", () => openEvidencePreview(button.dataset.evidenceKey));
-        });
-        logList.appendChild(card);
+      renderEvidenceLogs({
+        logList,
+        role: activeRoleConfig(),
+        records,
+        recordKey,
+        openEvidencePreview,
+        onRandomEvidenceSubmit: handleRandomEvidenceSubmit
       });
     }
 
@@ -2821,30 +2593,18 @@ import {
       return `${record.date}_${record.missionId}_${record.savedAt}`;
     }
 
-    function findRecordByKey(key) {
-      return records.find((record) => recordKey(record) === key);
-    }
-
-    function formatSavedAt(value) {
-      if (!value) return "-";
-      const date = new Date(value);
-      if (Number.isNaN(date.getTime())) return value;
-      return date.toLocaleString("ja-JP", {
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit"
-      });
-    }
-
     function openEvidencePreview(key) {
-      const record = findRecordByKey(key);
-      const src = record?.evidenceImageData || record?.evidenceImageUrl;
-      if (!src) return;
-      evidencePreviewTitle.textContent = record.evidenceImageName || "提出画像";
-      evidencePreviewMeta.textContent = `${record.subject || ""} ${record.course || ""} ${record.lesson || ""} ${record.part || ""} / ${record.testType || ""} / 回答数 ${record.answeredCount || "-"} / 正答率 ${record.score ? `${record.score}%` : "-"} / 保存先 ${record.firebaseSyncStatus === "synced" ? "Firebase" : "端末内"}`;
-      evidencePreviewImage.src = src;
-      evidencePreviewDialog.showModal();
+      openEvidencePreviewRecord(
+        key,
+        records,
+        {
+          dialog: evidencePreviewDialog,
+          title: evidencePreviewTitle,
+          meta: evidencePreviewMeta,
+          image: evidencePreviewImage
+        },
+        recordKey
+      );
     }
 
     function openRecordDialog(mission, record) {
@@ -2975,9 +2735,9 @@ import {
         notificationStatus: "queued",
         savedAt: new Date().toISOString()
       };
-      submittedRecord = await saveEvidenceRecordRemote(submittedRecord, evidenceFile);
+      submittedRecord = await saveEvidenceRecordRemote(submittedRecord, evidenceFile, firebaseBridge);
       records.push(submittedRecord);
-      saveRecords();
+      saveEvidenceRecords(STORAGE_KEY, records);
       createSubmissionNotice(submittedRecord);
       const navItems = navigationItems();
       const nextIndex = navItems.findIndex((item) => item.type !== "complete");
@@ -2989,18 +2749,8 @@ import {
       render();
     });
 
-    function fileToDataUrl(file) {
-      return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = () => reject(reader.error);
-        reader.readAsDataURL(file);
-      });
-    }
-
     document.querySelector("#closeDialogButton").addEventListener("click", () => recordDialog.close());
-    document.querySelector("#closeEvidencePreviewButton").addEventListener("click", () => evidencePreviewDialog.close());
-    document.querySelector("#closeDevDrawerButton").addEventListener("click", closeDevDrawer);
+        document.querySelector("#closeDevDrawerButton").addEventListener("click", closeDevDrawer);
     document.querySelector("#refreshAppCacheButton").addEventListener("click", refreshAppCache);
     devDrawerBackdrop.addEventListener("click", closeDevDrawer);
     scheduleDrawerOpen?.addEventListener("click", openScheduleDrawer);
@@ -3012,14 +2762,15 @@ import {
         closeScheduleDrawer();
       }
     });
-    evidencePreviewDialog.addEventListener("close", () => {
-      evidencePreviewImage.removeAttribute("src");
-    });
+    bindEvidencePreviewDialog({
+      dialog: evidencePreviewDialog,
+      image: evidencePreviewImage,
+      closeButton: document.querySelector(\
     document.querySelector("#deleteRecordButton").addEventListener("click", () => {
       const missionId = document.querySelector("#missionId").value;
       records = records.filter((record) => !(record.date === todayKey() && record.missionId === missionId));
       noticeQueue = noticeQueue.filter((notice) => notice.recordKey !== `${todayKey()}_${missionId}`);
-      saveRecords();
+      saveEvidenceRecords(STORAGE_KEY, records);
       saveNoticeQueue();
       recordDialog.close();
       render();
@@ -3029,7 +2780,7 @@ import {
       if (!confirm("検証データをリセットしますか？")) return;
       records = [];
       noticeQueue = [];
-      saveRecords();
+      saveEvidenceRecords(STORAGE_KEY, records);
       saveNoticeQueue();
       render();
     });

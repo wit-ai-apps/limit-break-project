@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.7.2-dev";
-export const APP_RELEASE_NAME = "fallback data分離";
+export const APP_VERSION = "v4.7.3-dev";
+export const APP_RELEASE_NAME = "evidence機能分離";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -40,6 +40,16 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.7.3-dev",
+    date: "2026-07-17",
+    title: "evidence機能分離",
+    items: [
+      "提出画像の保存・表示・プレビュー処理をevidenceモジュールへ分離",
+      "localStorageとFirebase Storage / Firestore切替の責任境界を整理",
+      "PWAキャッシュ対象にevidenceモジュールを追加"
+    ]
+  },
   {
     version: "v4.7.2-dev",
     date: "2026-07-11",
