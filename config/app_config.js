@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.7.4-dev";
-export const APP_RELEASE_NAME = "UI navigation分離";
+export const APP_VERSION = "v4.7.5-dev";
+export const APP_RELEASE_NAME = "dev drawer分離";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -40,6 +40,16 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.7.5-dev",
+    date: "2026-07-18",
+    title: "dev drawer分離",
+    items: [
+      "開発中の変更履歴タブ描画をui/dev-drawer.jsへ分離",
+      "提出画像ポリシー関数の重複定義を削除し、evidence-policy.jsを参照",
+      "PWAキャッシュ対象にdev drawerモジュールを追加"
+    ]
+  },
   {
     version: "v4.7.4-dev",
     date: "2026-07-18",

@@ -39,6 +39,7 @@ import {
   saveEvidenceRecords
 } from "./evidence/evidence-store.js";
 import { renderAppNavigation } from "./ui/navigation.js";
+import { renderDevDrawerVersions } from "./ui/dev-drawer.js";
 import { fileToDataUrl } from "./evidence/evidence-upload.js";
 import {
   bindEvidencePreviewDialog,
@@ -684,15 +685,11 @@ import {
     }
 
     function renderDevDrawer() {
-      if (!devVersionList) return;
-      devVersionList.innerHTML = RELEASE_NOTES.map((note) => `
-        <section class="dev-version-item">
-          <strong>${escapeHtml(note.version)} / ${escapeHtml(note.date)} / ${escapeHtml(note.title)}</strong>
-          <ul>
-            ${note.items.map((item) => `<li>${escapeHtml(item)}</li>`).join("")}
-          </ul>
-        </section>
-      `).join("");
+      renderDevDrawerVersions({
+        devVersionList,
+        releaseNotes: RELEASE_NOTES,
+        escapeHtml
+      });
     }
 
     function openDevDrawer() {
@@ -968,18 +965,6 @@ import {
         if (unit) return missionFromUnit(unit);
       }
       return null;
-    }
-
-    function evidenceTypeForUnit(unit) {
-      const labels = (unit.segments || []).map((segment) => segment.label).join(" ");
-      if (labels.includes("復習テスト")) return "復習テスト";
-      if (labels.includes("基本文テスト")) return "基本文テスト";
-      if (labels.includes("AI Check Test") || labels.includes("AI確認")) return "AI確認テスト";
-      return "確認問題";
-    }
-
-    function hasEvidence(record) {
-      return Boolean(record && record.evidenceImageName);
     }
 
     function visibleMissionTitle(mission) {
