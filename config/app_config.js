@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.7.5-dev";
-export const APP_RELEASE_NAME = "dev drawer分離";
+export const APP_VERSION = "v4.7.6-dev";
+export const APP_RELEASE_NAME = "schedule drawer分離";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -40,6 +40,16 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.7.6-dev",
+    date: "2026-07-18",
+    title: "schedule drawer分離",
+    items: [
+      "カウントダウンカードとスケジュール引き出しの描画をui/schedule-drawer.jsへ分離",
+      "app.jsは対象データの受け渡しだけを担当",
+      "PWAキャッシュ対象にschedule drawerモジュールを追加"
+    ]
+  },
   {
     version: "v4.7.5-dev",
     date: "2026-07-18",
