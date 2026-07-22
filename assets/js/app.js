@@ -22,7 +22,7 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.7.10";
+} from "../../config/app_config.js?v=4.7.11";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -122,6 +122,7 @@ import {
     const loginRoleOptions = document.querySelector("#loginRoleOptions");
     const loginSupportTypePanel = document.querySelector("#loginSupportTypePanel");
     const accountPanel = document.querySelector("#accountPanel");
+    const headerLogoutButton = document.querySelector("#headerLogoutButton");
     const appNav = document.querySelector("#appNav");
     const versionBadge = document.querySelector("#versionBadge");
     const devDrawer = document.querySelector("#devDrawer");
@@ -628,24 +629,35 @@ import {
         <span>${escapeHtml(authLabel)}</span>
         <button class="secondary" type="button" id="logoutButton">ログアウト</button>
       `;
-      accountPanel.querySelector("#logoutButton").addEventListener("click", async () => {
-        if (firebaseBridge.enabled && firebaseBridge.currentUser && firebaseBridge.signOut) {
-          try {
-            await firebaseBridge.signOut(firebaseBridge.auth);
-          } catch (_) {
-            // Local logout still proceeds so the user is not trapped on this screen.
-          }
-        }
-        firebaseBridge.currentUser = null;
-        firebaseBridge.userDoc = null;
-        isLoggedIn = false;
-        localStorage.setItem(LOGIN_KEY, "false");
-        localStorage.removeItem(AUTH_UID_KEY);
-        activeView = "home";
-        localStorage.setItem(VIEW_KEY, activeView);
-        render();
-      });
+      accountPanel.querySelector("#logoutButton").addEventListener("click", logoutUser);
     }
+
+    async function logoutUser() {
+      if (firebaseBridge.enabled && firebaseBridge.currentUser && firebaseBridge.signOut) {
+        try {
+          await firebaseBridge.signOut(firebaseBridge.auth);
+        } catch (_) {
+          // Local logout still proceeds so the user is not trapped on this screen.
+        }
+      }
+      firebaseBridge.currentUser = null;
+      firebaseBridge.userDoc = null;
+      isLoggedIn = false;
+      loginName = "";
+      loginNameInput.value = "";
+      loginPasscodeInput.value = "";
+      localStorage.setItem(LOGIN_KEY, "false");
+      localStorage.removeItem(LOGIN_NAME_KEY);
+      localStorage.removeItem(LOGIN_EMAIL_KEY);
+      localStorage.removeItem(AUTH_UID_KEY);
+      activeView = "home";
+      localStorage.setItem(VIEW_KEY, activeView);
+      loginStatus.textContent = "ログアウトしました。切り替える利用者でログインしてください。";
+      render();
+      loginNameInput.focus();
+    }
+
+    headerLogoutButton?.addEventListener("click", logoutUser);
 
     function activeRoleConfig() {
       const base = ROLES[currentRole] || ROLES.student;
