@@ -70,6 +70,7 @@ export async function saveEvidenceRecordRemote(record, evidenceFile, firebaseBri
 
     return {
       ...remoteRecord,
+      evidenceImageData: "",
       firebaseDocumentId: recordId,
       firebaseSyncStatus: "synced",
       firebaseSyncError: ""

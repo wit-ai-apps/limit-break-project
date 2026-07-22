@@ -122,7 +122,7 @@ function renderRandomEvidenceUploader(container, role, onRandomEvidenceSubmit) {
   card.innerHTML = `
     <strong>ランダム確認テスト提出</strong>
     <span>時間短縮のため、指定された教科・講座の確認テスト画像を提出します。できている単元は飛ばす判定に使い、分析機能は次の段階で追加します。</span>
-    <form id="randomEvidenceForm" class="login-form">
+    <form id="randomEvidenceForm" class="login-form" novalidate>
       <div class="form-grid">
         <div class="field">
           <label for="randomSubmittedAt">提出日時</label>
@@ -177,8 +177,8 @@ function renderRandomEvidenceUploader(container, role, onRandomEvidenceSubmit) {
         <label for="randomNote">メモ（任意）</label>
         <textarea id="randomNote" placeholder="例: ここは飛ばせそう / 公式だけ再確認が必要"></textarea>
       </div>
-      <button type="submit">画像を提出して記録する</button>
-      <p class="button-note" id="randomEvidenceStatus">提出後、下の一覧に日時・教科・教材・画像が整理されます。</p>
+      <button type="submit" id="randomEvidenceSubmitButton">画像を提出して記録する</button>
+      <p class="button-note" id="randomEvidenceStatus" role="status" aria-live="polite">提出後、下の一覧に日時・教科・教材・画像が整理されます。</p>
     </form>
   `;
   card.querySelector("#randomEvidenceForm").addEventListener("submit", onRandomEvidenceSubmit);
