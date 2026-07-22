@@ -22,7 +22,7 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.7.12";
+} from "../../config/app_config.js?v=4.8.1";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -2437,13 +2437,7 @@ function renderScheduleDrawer() {
       const form = event.currentTarget;
       const status = form.querySelector("#randomEvidenceStatus");
       const submitButton = form.querySelector("#randomEvidenceSubmitButton");
-      const subject = form.querySelector("#randomSubject").value;
       const evidenceFile = form.querySelector("#randomEvidenceImage").files[0];
-      if (!subject) {
-        status.textContent = "教科を選んでください。";
-        form.querySelector("#randomSubject").focus();
-        return;
-      }
       if (!evidenceFile) {
         status.textContent = "確認テスト画像を選んでください。";
         form.querySelector("#randomEvidenceImage").focus();
@@ -2455,14 +2449,14 @@ function renderScheduleDrawer() {
       status.textContent = "画像を読み込んでいます...";
 
       try {
-        const submittedAtInput = form.querySelector("#randomSubmittedAt").value;
-        const submittedAt = submittedAtInput ? new Date(submittedAtInput).toISOString() : new Date().toISOString();
-        const dateKey = submittedAtInput ? submittedAtInput.slice(0, 10) : todayKey();
-        const course = form.querySelector("#randomCourse").value.trim();
-        const lesson = form.querySelector("#randomLesson").value.trim();
-        const unit = form.querySelector("#randomUnit").value.trim();
-        const testType = form.querySelector("#randomTestType").value.trim() || "ランダム確認テスト";
-        const missionTitle = [subject, lesson, unit].filter(Boolean).join(" ") || `${subject} ランダム確認テスト`;
+        const submittedAt = new Date().toISOString();
+        const dateKey = todayJapanKey();
+        const subject = "AI解析待ち";
+        const course = "AI解析待ち";
+        const lesson = "";
+        const unit = "";
+        const testType = "AI画像確認テスト";
+        const missionTitle = `AI画像解析 ${evidenceFile.name}`;
         const evidenceImageData = await fileToDataUrl(evidenceFile);
 
         let submittedRecord = {
@@ -2477,11 +2471,11 @@ function renderScheduleDrawer() {
           testType,
           checkItem: "ランダム確認テスト",
           levelTask: "到達度判定",
-          answeredCount: form.querySelector("#randomAnsweredCount").value,
-          score: form.querySelector("#randomCorrectRate").value,
+          answeredCount: "",
+          score: "",
           understanding: "",
           fatigue: "",
-          mistakeReason: form.querySelector("#randomNote").value.trim(),
+          mistakeReason: "",
           mentalState: "",
           privateNote: "",
           evidenceStatus: "submitted",
@@ -2492,7 +2486,8 @@ function renderScheduleDrawer() {
           evidenceStoragePath: "",
           rescheduleStatus: "random_diagnostic",
           autoGradingStatus: "phase1_random_evidence",
-          autoGradingSummary: "ランダム確認テスト画像を受領。自動分析と飛ばす判定は次の段階で追加。",
+          autoGradingSummary: "画像を受領。サーバー側AI解析で教科・教材・講座・単元・正答率を自動分類します。",
+          aiAnalysisStatus: firebaseBridge.enabled && firebaseBridge.currentUser ? "queued" : "needs_review",
           notificationStatus: "queued",
           submittedAt,
           savedAt: new Date().toISOString()
@@ -2505,11 +2500,11 @@ function renderScheduleDrawer() {
         createSubmissionNotice(submittedRecord);
         form.reset();
         render();
-        window.alert("画像を提出しました。提出画像一覧に追加されています。");
+        window.alert("画像を提出しました。AI解析が完了すると教科・教材・単元ごとに自動整理されます。");
       } catch (error) {
         status.textContent = `画像を提出できませんでした: ${error.message || error}`;
         submitButton.disabled = false;
-        submitButton.textContent = "画像を提出して記録する";
+        submitButton.textContent = "画像を提出してAI解析する";
       }
     }
 
@@ -2517,6 +2512,7 @@ function renderScheduleDrawer() {
       renderEvidenceLogs({
         logList,
         role: activeRoleConfig(),
+        roleKey: currentRole,
         records,
         recordKey,
         openEvidencePreview,

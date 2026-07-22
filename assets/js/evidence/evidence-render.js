@@ -1,4 +1,3 @@
-import { formatDateTimeInput } from "../utils/countdown.js";
 import { escapeHtml } from "../utils/helpers.js";
 import {
   canRenderEvidenceRecord,
@@ -9,6 +8,7 @@ import {
 export function renderEvidenceLogs({
   logList,
   role,
+  roleKey,
   records,
   recordKey,
   openEvidencePreview,
@@ -34,9 +34,10 @@ export function renderEvidenceLogs({
     return;
   }
 
-  const evidenceRecords = [...records]
-    .filter(canRenderEvidenceRecord)
-    .sort(sortBySavedAtDesc);
+  const evidenceRecords = sortEvidenceRecords(
+    [...records].filter(canRenderEvidenceRecord),
+    roleKey
+  );
 
   if (evidenceRecords.length) {
     const tableCard = document.createElement("div");
@@ -55,6 +56,7 @@ export function renderEvidenceLogs({
               <th>テスト</th>
               <th>回答数</th>
               <th>正答率</th>
+              <th>AI解析</th>
               <th>保存先</th>
               <th>画像</th>
             </tr>
@@ -69,6 +71,7 @@ export function renderEvidenceLogs({
                 <td>${escapeHtml(record.testType || "-")}</td>
                 <td>${canViewEvidenceScore(role) ? escapeHtml(record.answeredCount || "-") : "提出あり"}</td>
                 <td>${canViewEvidenceScore(role) ? `${escapeHtml(record.score || "-")}%` : "提出あり"}</td>
+                <td>${analysisStatusLabel(record)}</td>
                 <td>${record.firebaseSyncStatus === "synced" ? "Firebase" : "端末内"}</td>
                 <td><button type="button" class="evidence-open-button" data-evidence-key="${recordKey(record)}">${escapeHtml(record.evidenceImageName)}</button></td>
               </tr>
@@ -120,65 +123,16 @@ function renderRandomEvidenceUploader(container, role, onRandomEvidenceSubmit) {
   const card = document.createElement("div");
   card.className = "log-card random-evidence-card";
   card.innerHTML = `
-    <strong>ランダム確認テスト提出</strong>
-    <span>時間短縮のため、指定された教科・講座の確認テスト画像を提出します。できている単元は飛ばす判定に使い、分析機能は次の段階で追加します。</span>
+    <strong>AI確認テスト画像提出</strong>
+    <span>画像を選ぶだけで提出できます。AIが教科・教材・講座・単元・回答数・正答率を読み取り、保護者・先生の画面へ自動整理します。</span>
     <form id="randomEvidenceForm" class="login-form" novalidate>
-      <div class="form-grid">
-        <div class="field">
-          <label for="randomSubmittedAt">提出日時</label>
-          <input id="randomSubmittedAt" type="datetime-local" value="${formatDateTimeInput()}">
-        </div>
-        <div class="field">
-          <label for="randomSubject">教科</label>
-          <select id="randomSubject" required>
-            <option value="">選択してください</option>
-            <option>数学</option>
-            <option>英語</option>
-            <option>物理</option>
-            <option>化学</option>
-            <option>古文</option>
-            <option>国語</option>
-            <option>世界史</option>
-            <option>情報</option>
-            <option>その他</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="randomCourse">教材名</label>
-          <input id="randomCourse" type="text" placeholder="例: ベーシックレベル数学I">
-        </div>
-        <div class="field">
-          <label for="randomLesson">講座 / Chapter</label>
-          <input id="randomLesson" type="text" placeholder="例: 第3講 PART2">
-        </div>
-        <div class="field">
-          <label for="randomUnit">単元名</label>
-          <input id="randomUnit" type="text" placeholder="例: 三角形の外心・内心">
-        </div>
-        <div class="field">
-          <label for="randomTestType">テスト種別</label>
-          <input id="randomTestType" type="text" value="ランダム確認テスト">
-        </div>
-        <div class="field">
-          <label for="randomAnsweredCount">回答数（任意）</label>
-          <input id="randomAnsweredCount" type="number" min="0" placeholder="例: 10">
-        </div>
-        <div class="field">
-          <label for="randomCorrectRate">正答率（任意）</label>
-          <input id="randomCorrectRate" type="number" min="0" max="100" placeholder="例: 80">
-        </div>
-      </div>
       <div class="field">
         <label for="randomEvidenceImage">確認テスト画像</label>
         <input id="randomEvidenceImage" type="file" accept="image/*" required>
         <span class="button-note">結果画面、答案、自己採点済み画像などをアップしてください。</span>
       </div>
-      <div class="field">
-        <label for="randomNote">メモ（任意）</label>
-        <textarea id="randomNote" placeholder="例: ここは飛ばせそう / 公式だけ再確認が必要"></textarea>
-      </div>
-      <button type="submit" id="randomEvidenceSubmitButton">画像を提出して記録する</button>
-      <p class="button-note" id="randomEvidenceStatus" role="status" aria-live="polite">提出後、下の一覧に日時・教科・教材・画像が整理されます。</p>
+      <button type="submit" id="randomEvidenceSubmitButton">画像を提出してAI解析する</button>
+      <p class="button-note" id="randomEvidenceStatus" role="status" aria-live="polite">提出後はAI解析待ちとして保存され、完了すると自動分類されます。</p>
     </form>
   `;
   card.querySelector("#randomEvidenceForm").addEventListener("submit", onRandomEvidenceSubmit);
@@ -187,6 +141,29 @@ function renderRandomEvidenceUploader(container, role, onRandomEvidenceSubmit) {
 
 function sortBySavedAtDesc(a, b) {
   return String(b.savedAt || "").localeCompare(String(a.savedAt || ""));
+}
+
+function sortEvidenceRecords(records, roleKey) {
+  if (roleKey === "student") return records.sort(sortBySavedAtDesc);
+  return records.sort((a, b) =>
+    String(a.subject || "未分類").localeCompare(String(b.subject || "未分類"), "ja") ||
+    String(a.course || "").localeCompare(String(b.course || ""), "ja") ||
+    sortBySavedAtDesc(a, b)
+  );
+}
+
+function analysisStatusLabel(record) {
+  const labels = {
+    queued: "解析待ち",
+    processing: "解析中",
+    completed: "自動分類済み",
+    needs_review: "要確認",
+    error: "解析エラー"
+  };
+  const status = record.aiAnalysisStatus || (record.firebaseSyncStatus === "synced" ? "queued" : "");
+  const confidence = Number(record.aiAnalysis?.confidence);
+  const confidenceText = Number.isFinite(confidence) ? ` ${Math.round(confidence * 100)}%` : "";
+  return escapeHtml(`${labels[status] || "未解析"}${confidenceText}`);
 }
 
 function formatSavedAt(value) {

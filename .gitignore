@@ -1,3 +1,8 @@
 node_modules/
 outputs/
 *.zip
+functions/node_modules/
+functions/.env
+functions/.env.*
+.firebase/
+firebase-debug.log
