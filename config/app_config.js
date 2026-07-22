@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.7.9-dev";
-export const APP_RELEASE_NAME = "ログイン修正キャッシュ反映";
+export const APP_VERSION = "v4.7.10-dev";
+export const APP_RELEASE_NAME = "アプリ起動構文修復";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -40,6 +40,15 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.7.10-dev",
+    date: "2026-07-22",
+    title: "アプリ起動構文修復",
+    items: [
+      "提出画像プレビューのイベント登録で途切れていた構文を修復",
+      "JavaScript停止により動かなかったバージョン表示・ログイン種別・認証ボタンを復旧"
+    ]
+  },
   {
     version: "v4.7.9-dev",
     date: "2026-07-22",
