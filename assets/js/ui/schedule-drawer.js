@@ -43,6 +43,33 @@ export function renderScheduleDrawerPanel({ countdownsElement, calendarElement, 
   renderScheduleCalendar(calendarElement, sortedTargets);
 }
 
+export function openScheduleDrawerPanel({ drawer, backdrop, opener, onBeforeOpen }) {
+  if (!drawer || !backdrop) return;
+  onBeforeOpen?.();
+  drawer.hidden = false;
+  backdrop.hidden = false;
+  opener?.setAttribute("aria-expanded", "true");
+  requestAnimationFrame(() => {
+    drawer.classList.add("open");
+    backdrop.classList.add("open");
+    drawer.setAttribute("aria-hidden", "false");
+  });
+}
+
+export function closeScheduleDrawerPanel({ drawer, backdrop, opener }) {
+  if (!drawer || !backdrop) return;
+  drawer.classList.remove("open");
+  backdrop.classList.remove("open");
+  opener?.setAttribute("aria-expanded", "false");
+  drawer.setAttribute("aria-hidden", "true");
+  window.setTimeout(() => {
+    if (!drawer.classList.contains("open")) {
+      drawer.hidden = true;
+      backdrop.hidden = true;
+    }
+  }, 230);
+}
+
 function renderScheduleCalendar(calendarElement, targets) {
   const today = todayJapanKey();
   const [year, month] = today.split("-").map(Number);

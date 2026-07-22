@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.7.6-dev";
-export const APP_RELEASE_NAME = "schedule drawer分離";
+export const APP_VERSION = "v4.7.8-dev";
+export const APP_RELEASE_NAME = "ログインフォーム安定化";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -40,6 +40,26 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.7.8-dev",
+    date: "2026-07-22",
+    title: "ログインフォーム安定化",
+    items: [
+      "ログイン画面に現在のバージョン番号を表示",
+      "保存済みメールの初期表示を起動直後の一度だけに限定",
+      "非同期初期化後の再描画ではメールとパスワードに一切触れない"
+    ]
+  },
+  {
+    version: "v4.7.7-dev",
+    date: "2026-07-22",
+    title: "ログイン入力保持修正",
+    items: [
+      "起動時の非同期再描画でメールアドレスを上書きしないよう修正",
+      "ブラウザのパスワード自動入力をログイン完了まで保持",
+      "ドロワー開閉とカウントダウン生成のモジュール分離を完了"
+    ]
+  },
   {
     version: "v4.7.6-dev",
     date: "2026-07-18",
