@@ -4,5 +4,10 @@ outputs/
 functions/node_modules/
 functions/.env
 functions/.env.*
+secret/
+secrets/
+*-secrets.php
+*-secret.php
+api-key.txt
 .firebase/
 firebase-debug.log
