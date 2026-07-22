@@ -22,7 +22,7 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.7.9";
+} from "../../config/app_config.js?v=4.7.10";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -2671,7 +2671,9 @@ function renderScheduleDrawer() {
     bindEvidencePreviewDialog({
       dialog: evidencePreviewDialog,
       image: evidencePreviewImage,
-      closeButton: document.querySelector(\
+      closeButton: document.querySelector("#closeEvidencePreviewButton")
+    });
+
     document.querySelector("#deleteRecordButton").addEventListener("click", () => {
       const missionId = document.querySelector("#missionId").value;
       records = records.filter((record) => !(record.date === todayKey() && record.missionId === missionId));

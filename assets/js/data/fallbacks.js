@@ -330,38 +330,3 @@ export const FALLBACK_COURSE_ROUTE = {
   ]
 };
 
-let dailyPlan = FALLBACK_DAILY;
-let examSchedule = FALLBACK_EXAMS;
-let summerPlan = FALLBACK_SUMMER;
-let levelTasks = FALLBACK_LEVELS;
-let materialsCatalog = FALLBACK_MATERIALS;
-let materialsOutline = FALLBACK_MATERIALS_OUTLINE;
-let subjectBalance = FALLBACK_SUBJECT_BALANCE;
-let reverseProgress = FALLBACK_REVERSE_PROGRESS;
-let reviewSchedule = FALLBACK_REVIEW_SCHEDULE;
-let memoryData = FALLBACK_MEMORY;
-let externalProgress = loadExternalProgress();
-let aiTeacherConfig = FALLBACK_AI_TEACHER;
-let coursePacing = FALLBACK_COURSE_PACING;
-let courseRoute = FALLBACK_COURSE_ROUTE;
-let counselorNotes = loadCounselorNotes();
-let noticeContacts = loadNoticeContacts();
-let noticeQueue = loadNoticeQueue();
-let customCountdowns = loadCustomCountdowns();
-let studyStartDate = localStorage.getItem(STUDY_START_DATE_KEY) || DEFAULT_STUDY_START_DATE;
-let firebaseBridge = {
-  enabled: false,
-  status: "not_configured",
-  message: "公開検証では、メールアドレスとパスワードで新規登録またはログインできます。",
-  studentId: "STU_0001",
-  currentUser: null,
-  userDoc: null
-};
-let isLoggedIn = localStorage.getItem(LOGIN_KEY) === "true";
-let loginName = localStorage.getItem(LOGIN_NAME_KEY) || "";
-let currentRole = localStorage.getItem(ROLE_KEY) || "student";
-if (currentRole === "counselor") currentRole = "supporter";
-let currentSupportType = localStorage.getItem(SUPPORT_TYPE_KEY) || "family";
-let activeView = localStorage.getItem(VIEW_KEY) || "home";
-let navigationStepIndex = Number(localStorage.getItem(NAV_STEP_KEY) || 0);
-
