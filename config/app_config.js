@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.7.12-dev";
-export const APP_RELEASE_NAME = "提出画像フィードバック修正";
+export const APP_VERSION = "v4.8.1-dev";
+export const APP_RELEASE_NAME = "OpenRouter画像解析";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -40,6 +40,26 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.8.1-dev",
+    date: "2026-07-22",
+    title: "OpenRouter画像解析",
+    items: [
+      "AI提出画像解析の接続先をOpenRouterへ変更",
+      "画像入力とJSON Schema構造化出力に対応するモデルをFirebase側で切替可能"
+    ]
+  },
+  {
+    version: "v4.8.0-dev",
+    date: "2026-07-22",
+    title: "AI提出画像自動分類",
+    items: [
+      "生徒は確認テスト画像を選ぶだけで提出可能",
+      "Firebase FunctionsからAI画像モデルへ安全に接続する解析基盤を追加",
+      "教科・教材・講座・単元・回答数・正答率を自動抽出",
+      "保護者・先生画面では教科・教材順に自動整理しAI解析状態を表示"
+    ]
+  },
   {
     version: "v4.7.12-dev",
     date: "2026-07-22",
