@@ -151,7 +151,7 @@ export const analyzeEvidenceImage = onObjectFinalized(
     } catch (error) {
       await recordRef.set({
         aiAnalysisStatus: "error",
-        aiAnalysisError: String(error?.message || error).slice(0, 500),
+        aiAnalysisError: "AI_ANALYSIS_FAILED",
         aiAnalysisUpdatedAt: FieldValue.serverTimestamp()
       }, { merge: true });
       throw error;

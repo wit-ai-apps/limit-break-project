@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.8.1-dev";
-export const APP_RELEASE_NAME = "OpenRouter画像解析";
+export const APP_VERSION = "v4.8.2-dev";
+export const APP_RELEASE_NAME = "AI提出の安定化";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -40,6 +40,16 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.8.2-dev",
+    date: "2026-07-23",
+    title: "AI提出の安定化と実動作検証",
+    items: [
+      "画像アップロード前に提出記録を作成し、AI解析結果を上書きする競合を解消",
+      "AI解析状態と抽出結果をFirestoreから画面へリアルタイム反映",
+      "生徒・保護者・サポーター・講師の認証と共有表示を実ブラウザで検証"
+    ]
+  },
   {
     version: "v4.8.1-dev",
     date: "2026-07-22",

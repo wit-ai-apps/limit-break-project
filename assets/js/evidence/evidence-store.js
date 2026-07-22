@@ -40,8 +40,17 @@ export async function saveEvidenceRecordRemote(record, evidenceFile, firebaseBri
   if (!firebaseBridge?.enabled || !firebaseBridge.currentUser) return record;
   const recordId = firebaseSafeId(recordIdentity(record));
   let remoteRecord = { ...record };
+  const docRef = firebaseBridge.doc(firebaseBridge.db, "students", firebaseBridge.studentId, "evidence_records", recordId);
 
   try {
+    await firebaseBridge.setDoc(docRef, {
+      ...recordForFirestore(remoteRecord),
+      student_id: firebaseBridge.studentId,
+      visible_to: ["student", "parent", "supporter", "teacher"],
+      firebaseSyncStatus: "syncing",
+      updated_at: firebaseBridge.serverTimestamp()
+    }, { merge: true });
+
     if (evidenceFile) {
       const storagePath = `students/${firebaseBridge.studentId}/evidence/${record.date}/${recordId}-${Date.now()}-${sanitizeFileName(evidenceFile.name)}`;
       const imageRef = firebaseBridge.storageRef(firebaseBridge.storage, storagePath);
@@ -58,15 +67,13 @@ export async function saveEvidenceRecordRemote(record, evidenceFile, firebaseBri
       remoteRecord.evidenceStoragePath = storagePath;
     }
 
-    const docRef = firebaseBridge.doc(firebaseBridge.db, "students", firebaseBridge.studentId, "evidence_records", recordId);
-    const firestoreRecord = {
-      ...recordForFirestore(remoteRecord),
-      student_id: firebaseBridge.studentId,
-      visible_to: ["student", "parent", "supporter", "teacher"],
+    const uploadResult = {
+      evidenceImageUrl: remoteRecord.evidenceImageUrl || "",
+      evidenceStoragePath: remoteRecord.evidenceStoragePath || "",
       firebaseSyncStatus: "synced",
       updated_at: firebaseBridge.serverTimestamp()
     };
-    await firebaseBridge.setDoc(docRef, firestoreRecord, { merge: true });
+    await firebaseBridge.setDoc(docRef, uploadResult, { merge: true });
 
     return {
       ...remoteRecord,
@@ -76,6 +83,14 @@ export async function saveEvidenceRecordRemote(record, evidenceFile, firebaseBri
       firebaseSyncError: ""
     };
   } catch (error) {
+    try {
+      await firebaseBridge.setDoc(docRef, {
+        firebaseSyncStatus: "error",
+        updated_at: firebaseBridge.serverTimestamp()
+      }, { merge: true });
+    } catch (_) {
+      // Keep the local error state below when Firestore is unreachable.
+    }
     return {
       ...remoteRecord,
       firebaseSyncStatus: "error",

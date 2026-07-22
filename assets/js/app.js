@@ -103,6 +103,7 @@ import {
       currentUser: null,
       userDoc: null
     };
+    let evidenceUnsubscribe = null;
     let isLoggedIn = localStorage.getItem(LOGIN_KEY) === "true";
     let loginName = localStorage.getItem(LOGIN_NAME_KEY) || "";
     let currentRole = localStorage.getItem(ROLE_KEY) || "student";
@@ -274,6 +275,7 @@ import {
           doc: firebaseFirestore.doc,
           getDoc: firebaseFirestore.getDoc,
           getDocs: firebaseFirestore.getDocs,
+          onSnapshot: firebaseFirestore.onSnapshot,
           addDoc: firebaseFirestore.addDoc,
           setDoc: firebaseFirestore.setDoc,
           serverTimestamp: firebaseFirestore.serverTimestamp,
@@ -317,7 +319,7 @@ import {
         ? "Firebaseログイン済み。提出画像はStorage、記録はFirestoreへ保存します。"
         : "Firebaseログイン済みですが、users/{uid} が未作成です。管理者に確認してください。";
       await writeLoginLog(user, userData);
-      await syncFirebaseRecords();
+      subscribeFirebaseRecords();
     }
 
     function defaultUserProfile(user) {
@@ -395,6 +397,40 @@ import {
         firebaseBridge.status = "read_error";
         firebaseBridge.message = `Firestore読込に失敗しました。localStorage表示を継続します。${error.message || error}`;
       }
+    }
+
+    function mergeFirebaseRecords(snapshot) {
+      const remoteRecords = snapshot.docs.map((docSnap) => ({
+        ...docSnap.data(),
+        firebaseDocumentId: docSnap.id,
+        firebaseSyncStatus: docSnap.data().firebaseSyncStatus || "synced"
+      }));
+      const merged = new Map(records.map((record) => [recordIdentity(record), record]));
+      remoteRecords.forEach((record) => {
+        merged.set(recordIdentity(record), {
+          ...merged.get(recordIdentity(record)),
+          ...record
+        });
+      });
+      records = [...merged.values()].sort((a, b) => String(b.savedAt || "").localeCompare(String(a.savedAt || "")));
+      saveEvidenceRecords(STORAGE_KEY, records);
+    }
+
+    function subscribeFirebaseRecords() {
+      if (evidenceUnsubscribe) {
+        evidenceUnsubscribe();
+        evidenceUnsubscribe = null;
+      }
+      if (!firebaseBridge.enabled || !firebaseBridge.currentUser || !firebaseBridge.onSnapshot) return;
+      const collectionRef = firebaseBridge.collection(firebaseBridge.db, "students", firebaseBridge.studentId, "evidence_records");
+      evidenceUnsubscribe = firebaseBridge.onSnapshot(collectionRef, (snapshot) => {
+        mergeFirebaseRecords(snapshot);
+        if (isLoggedIn) render();
+      }, () => {
+        firebaseBridge.status = "read_error";
+        firebaseBridge.message = "提出記録の自動更新に失敗しました。再ログインしてお試しください。";
+        if (isLoggedIn) render();
+      });
     }
 
     function loadMemoryResults() {
@@ -633,6 +669,10 @@ import {
     }
 
     async function logoutUser() {
+      if (evidenceUnsubscribe) {
+        evidenceUnsubscribe();
+        evidenceUnsubscribe = null;
+      }
       if (firebaseBridge.enabled && firebaseBridge.currentUser && firebaseBridge.signOut) {
         try {
           await firebaseBridge.signOut(firebaseBridge.auth);
