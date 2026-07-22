@@ -26,6 +26,7 @@ import {
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
+  buildCountdownTargets,
   dateDaysBetween,
   dateDaysUntil,
   todayJapanKey
@@ -38,8 +39,17 @@ import {
   saveEvidenceRecords
 } from "./evidence/evidence-store.js";
 import { renderAppNavigation } from "./ui/navigation.js";
-import { renderDevDrawerVersions } from "./ui/dev-drawer.js";
-import { renderCountdownCards, renderScheduleDrawerPanel } from "./ui/schedule-drawer.js";
+import {
+  closeDevDrawerPanel,
+  openDevDrawerPanel,
+  renderDevDrawerPanel
+} from "./ui/dev-drawer.js";
+import {
+  closeScheduleDrawerPanel,
+  openScheduleDrawerPanel,
+  renderCountdownCards,
+  renderScheduleDrawerPanel
+} from "./ui/schedule-drawer.js";
 import { fileToDataUrl } from "./evidence/evidence-upload.js";
 import {
   bindEvidencePreviewDialog,
@@ -105,6 +115,9 @@ import {
     let aiTeacherLog = loadAiTeacherLog();
 
     const loginForm = document.querySelector("#loginForm");
+    const loginNameInput = document.querySelector("#loginName");
+    const loginPasscodeInput = document.querySelector("#loginPasscode");
+    const loginVersionBadge = document.querySelector("#loginVersionBadge");
     const loginStatus = document.querySelector("#loginStatus");
     const loginRoleOptions = document.querySelector("#loginRoleOptions");
     const loginSupportTypePanel = document.querySelector("#loginSupportTypePanel");
@@ -153,6 +166,10 @@ import {
     const evidencePreviewTitle = document.querySelector("#evidencePreviewTitle");
     const evidencePreviewMeta = document.querySelector("#evidencePreviewMeta");
     const evidencePreviewImage = document.querySelector("#evidencePreviewImage");
+    if (loginNameInput && !loginNameInput.value) {
+      loginNameInput.value = localStorage.getItem(LOGIN_EMAIL_KEY) || loginName;
+    }
+    if (loginVersionBadge) loginVersionBadge.textContent = APP_VERSION;
 
     async function init() {
       renderRoleOptions();
@@ -496,19 +513,7 @@ import {
     }
 
     function allCountdownTargets() {
-      const fixed = (examSchedule || []).map((exam) => ({ ...exam, source: "fixed" }));
-      const custom = customCountdowns.map((item, index) => ({
-        exam_name: item.exam_name || "短期目標",
-        exam_type: "custom_goal",
-        date_start: item.date_start || item.countdown_target,
-        date_end: item.date_end || item.date_start || item.countdown_target,
-        countdown_target: item.countdown_target || item.date_start,
-        priority: item.priority || 20 + index,
-        notes: item.notes || "ユーザー追加の短期目標",
-        source: "custom",
-        custom_id: item.id
-      }));
-      return [...fixed, ...custom].filter((item) => item.countdown_target);
+      return buildCountdownTargets(examSchedule, customCountdowns);
     }
 
     function addCustomCountdown(event) {
@@ -685,35 +690,22 @@ import {
     }
 
     function renderDevDrawer() {
-      renderDevDrawerVersions({
+      renderDevDrawerPanel({
+        versionBadge,
+        devVersionBadge,
         devVersionList,
+        appVersion: APP_VERSION,
         releaseNotes: RELEASE_NOTES,
         escapeHtml
       });
     }
 
     function openDevDrawer() {
-      if (!devDrawer || !devDrawerBackdrop) return;
-      devDrawer.hidden = false;
-      devDrawerBackdrop.hidden = false;
-      requestAnimationFrame(() => {
-        devDrawer.classList.add("open");
-        devDrawerBackdrop.classList.add("open");
-        devDrawer.setAttribute("aria-hidden", "false");
-      });
+      openDevDrawerPanel({ drawer: devDrawer, backdrop: devDrawerBackdrop });
     }
 
     function closeDevDrawer() {
-      if (!devDrawer || !devDrawerBackdrop) return;
-      devDrawer.classList.remove("open");
-      devDrawerBackdrop.classList.remove("open");
-      devDrawer.setAttribute("aria-hidden", "true");
-      setTimeout(() => {
-        if (!devDrawer.classList.contains("open")) {
-          devDrawer.hidden = true;
-          devDrawerBackdrop.hidden = true;
-        }
-      }, 230);
+      closeDevDrawerPanel({ drawer: devDrawer, backdrop: devDrawerBackdrop });
     }
 
     function render() {
@@ -728,7 +720,7 @@ import {
       document.querySelector("#levelLabel").textContent = levelLabelJa(dailyPlan.level);
       document.querySelector("#phaseDateLabel").textContent = dailyPlan.date;
       document.querySelector("#coachMessage").textContent = roleCoachMessage();
-      document.querySelector("#loginName").value = localStorage.getItem(LOGIN_EMAIL_KEY) || loginName;
+      if (loginVersionBadge) loginVersionBadge.textContent = APP_VERSION;
       loginStatus.textContent = firebaseBridge.message;
       renderRoleOptions();
       if (isLoggedIn) renderAccountPanel();
@@ -813,28 +805,20 @@ function renderScheduleDrawer() {
 }
 
     function openScheduleDrawer() {
-      if (!scheduleDrawer || !scheduleDrawerBackdrop) return;
-      renderScheduleDrawer();
-      scheduleDrawer.hidden = false;
-      scheduleDrawerBackdrop.hidden = false;
-      scheduleDrawerOpen?.setAttribute("aria-expanded", "true");
-      requestAnimationFrame(() => {
-        scheduleDrawer.classList.add("open");
-        scheduleDrawerBackdrop.classList.add("open");
-        scheduleDrawer.setAttribute("aria-hidden", "false");
+      openScheduleDrawerPanel({
+        drawer: scheduleDrawer,
+        backdrop: scheduleDrawerBackdrop,
+        opener: scheduleDrawerOpen,
+        onBeforeOpen: renderScheduleDrawer
       });
     }
 
     function closeScheduleDrawer() {
-      if (!scheduleDrawer || !scheduleDrawerBackdrop) return;
-      scheduleDrawer.classList.remove("open");
-      scheduleDrawerBackdrop.classList.remove("open");
-      scheduleDrawerOpen?.setAttribute("aria-expanded", "false");
-      scheduleDrawer.setAttribute("aria-hidden", "true");
-      window.setTimeout(() => {
-        scheduleDrawer.hidden = true;
-        scheduleDrawerBackdrop.hidden = true;
-      }, 230);
+      closeScheduleDrawerPanel({
+        drawer: scheduleDrawer,
+        backdrop: scheduleDrawerBackdrop,
+        opener: scheduleDrawerOpen
+      });
     }
 
     function levelLabelJa(level) {
@@ -2552,8 +2536,8 @@ function renderScheduleDrawer() {
 
     loginForm.addEventListener("submit", async (event) => {
       event.preventDefault();
-      const email = document.querySelector("#loginName").value.trim();
-      const password = document.querySelector("#loginPasscode").value;
+      const email = loginNameInput.value.trim();
+      const password = loginPasscodeInput.value;
       if (firebaseBridge.enabled && firebaseBridge.signInWithEmailAndPassword) {
         if (!email || !password) {
           loginStatus.textContent = "ログインするには、登録済みのメールアドレスとパスワードを入力してください。";
@@ -2581,8 +2565,8 @@ function renderScheduleDrawer() {
     });
 
     document.querySelector("#registerAccountButton").addEventListener("click", async () => {
-      const email = document.querySelector("#loginName").value.trim();
-      const password = document.querySelector("#loginPasscode").value;
+      const email = loginNameInput.value.trim();
+      const password = loginPasscodeInput.value;
       if (!email || !password) {
         loginStatus.textContent = "新規登録するには、メールアドレスとパスワードを入力してください。";
         return;

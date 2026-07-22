@@ -28,6 +28,27 @@ export const FALLBACK_EXAMS = [
   }
 ];
 
+export function buildCountdownTargets(examSchedule = [], customCountdowns = []) {
+  const fixed = (Array.isArray(examSchedule) ? examSchedule : []).map((exam) => ({
+    ...exam,
+    source: "fixed"
+  }));
+
+  const custom = (Array.isArray(customCountdowns) ? customCountdowns : []).map((item, index) => ({
+    exam_name: item.exam_name || "短期目標",
+    exam_type: "custom_goal",
+    date_start: item.date_start || item.countdown_target,
+    date_end: item.date_end || item.date_start || item.countdown_target,
+    countdown_target: item.countdown_target || item.date_start,
+    priority: item.priority || 20 + index,
+    notes: item.notes || "ユーザー追加の短期目標",
+    source: "custom",
+    custom_id: item.id
+  }));
+
+  return [...fixed, ...custom].filter((item) => item.countdown_target);
+}
+
 export function todayJapanKey() {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Tokyo",
