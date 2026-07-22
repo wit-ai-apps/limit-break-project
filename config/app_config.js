@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.7.11-dev";
-export const APP_RELEASE_NAME = "常設ログアウト導線";
+export const APP_VERSION = "v4.7.12-dev";
+export const APP_RELEASE_NAME = "提出画像フィードバック修正";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -40,6 +40,15 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.7.12-dev",
+    date: "2026-07-22",
+    title: "提出画像フィードバック修正",
+    items: [
+      "画像提出時に処理中・入力不足・保存失敗・保存成功を明示",
+      "二重送信を防止し、Firebase保存後は端末側のBase64画像を除去"
+    ]
+  },
   {
     version: "v4.7.11-dev",
     date: "2026-07-22",

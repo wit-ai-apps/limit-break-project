@@ -22,7 +22,7 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.7.11";
+} from "../../config/app_config.js?v=4.7.12";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -2436,64 +2436,81 @@ function renderScheduleDrawer() {
       event.preventDefault();
       const form = event.currentTarget;
       const status = form.querySelector("#randomEvidenceStatus");
+      const submitButton = form.querySelector("#randomEvidenceSubmitButton");
+      const subject = form.querySelector("#randomSubject").value;
       const evidenceFile = form.querySelector("#randomEvidenceImage").files[0];
+      if (!subject) {
+        status.textContent = "教科を選んでください。";
+        form.querySelector("#randomSubject").focus();
+        return;
+      }
       if (!evidenceFile) {
         status.textContent = "確認テスト画像を選んでください。";
+        form.querySelector("#randomEvidenceImage").focus();
         return;
       }
 
-      const submittedAtInput = form.querySelector("#randomSubmittedAt").value;
-      const submittedAt = submittedAtInput ? new Date(submittedAtInput).toISOString() : new Date().toISOString();
-      const dateKey = submittedAtInput ? submittedAtInput.slice(0, 10) : todayKey();
-      const subject = form.querySelector("#randomSubject").value;
-      const course = form.querySelector("#randomCourse").value.trim();
-      const lesson = form.querySelector("#randomLesson").value.trim();
-      const unit = form.querySelector("#randomUnit").value.trim();
-      const testType = form.querySelector("#randomTestType").value.trim() || "ランダム確認テスト";
-      const missionTitle = [subject, lesson, unit].filter(Boolean).join(" ") || `${subject} ランダム確認テスト`;
-      const evidenceImageData = await fileToDataUrl(evidenceFile);
+      submitButton.disabled = true;
+      submitButton.textContent = "画像を処理中...";
+      status.textContent = "画像を読み込んでいます...";
 
-      let submittedRecord = {
-        date: dateKey,
-        day: dailyPlan.day,
-        missionId: `random_${Date.now()}`,
-        missionTitle,
-        subject,
-        course,
-        lesson,
-        part: unit,
-        testType,
-        checkItem: "ランダム確認テスト",
-        levelTask: "到達度判定",
-        answeredCount: form.querySelector("#randomAnsweredCount").value,
-        score: form.querySelector("#randomCorrectRate").value,
-        understanding: "",
-        fatigue: "",
-        mistakeReason: form.querySelector("#randomNote").value.trim(),
-        mentalState: "",
-        privateNote: "",
-        evidenceStatus: "submitted",
-        evidenceImageName: evidenceFile.name,
-        evidenceImageType: evidenceFile.type,
-        evidenceImageData,
-        evidenceImageUrl: "",
-        evidenceStoragePath: "",
-        rescheduleStatus: "random_diagnostic",
-        autoGradingStatus: "phase1_random_evidence",
-        autoGradingSummary: "ランダム確認テスト画像を受領。自動分析と飛ばす判定は次の段階で追加。",
-        notificationStatus: "queued",
-        submittedAt,
-        savedAt: new Date().toISOString()
-      };
+      try {
+        const submittedAtInput = form.querySelector("#randomSubmittedAt").value;
+        const submittedAt = submittedAtInput ? new Date(submittedAtInput).toISOString() : new Date().toISOString();
+        const dateKey = submittedAtInput ? submittedAtInput.slice(0, 10) : todayKey();
+        const course = form.querySelector("#randomCourse").value.trim();
+        const lesson = form.querySelector("#randomLesson").value.trim();
+        const unit = form.querySelector("#randomUnit").value.trim();
+        const testType = form.querySelector("#randomTestType").value.trim() || "ランダム確認テスト";
+        const missionTitle = [subject, lesson, unit].filter(Boolean).join(" ") || `${subject} ランダム確認テスト`;
+        const evidenceImageData = await fileToDataUrl(evidenceFile);
 
-      status.textContent = "提出画像を保存中です...";
-      submittedRecord = await saveEvidenceRecordRemote(submittedRecord, evidenceFile, firebaseBridge);
-      records.push(submittedRecord);
-      saveEvidenceRecords(STORAGE_KEY, records);
-      createSubmissionNotice(submittedRecord);
-      form.reset();
-      status.textContent = "提出しました。下の一覧に追加されています。";
-      render();
+        let submittedRecord = {
+          date: dateKey,
+          day: dailyPlan.day,
+          missionId: `random_${Date.now()}`,
+          missionTitle,
+          subject,
+          course,
+          lesson,
+          part: unit,
+          testType,
+          checkItem: "ランダム確認テスト",
+          levelTask: "到達度判定",
+          answeredCount: form.querySelector("#randomAnsweredCount").value,
+          score: form.querySelector("#randomCorrectRate").value,
+          understanding: "",
+          fatigue: "",
+          mistakeReason: form.querySelector("#randomNote").value.trim(),
+          mentalState: "",
+          privateNote: "",
+          evidenceStatus: "submitted",
+          evidenceImageName: evidenceFile.name,
+          evidenceImageType: evidenceFile.type,
+          evidenceImageData,
+          evidenceImageUrl: "",
+          evidenceStoragePath: "",
+          rescheduleStatus: "random_diagnostic",
+          autoGradingStatus: "phase1_random_evidence",
+          autoGradingSummary: "ランダム確認テスト画像を受領。自動分析と飛ばす判定は次の段階で追加。",
+          notificationStatus: "queued",
+          submittedAt,
+          savedAt: new Date().toISOString()
+        };
+
+        status.textContent = "提出画像を保存中です...";
+        submittedRecord = await saveEvidenceRecordRemote(submittedRecord, evidenceFile, firebaseBridge);
+        records.push(submittedRecord);
+        saveEvidenceRecords(STORAGE_KEY, records);
+        createSubmissionNotice(submittedRecord);
+        form.reset();
+        render();
+        window.alert("画像を提出しました。提出画像一覧に追加されています。");
+      } catch (error) {
+        status.textContent = `画像を提出できませんでした: ${error.message || error}`;
+        submitButton.disabled = false;
+        submitButton.textContent = "画像を提出して記録する";
+      }
     }
 
     function renderLogs() {
