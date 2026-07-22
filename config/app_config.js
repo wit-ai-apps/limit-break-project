@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.7.8-dev";
-export const APP_RELEASE_NAME = "ログインフォーム安定化";
+export const APP_VERSION = "v4.7.9-dev";
+export const APP_RELEASE_NAME = "ログイン修正キャッシュ反映";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -40,6 +40,15 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.7.9-dev",
+    date: "2026-07-22",
+    title: "ログイン修正キャッシュ反映",
+    items: [
+      "起動スクリプトにバージョン識別子を付け、端末の旧PWAキャッシュを迂回",
+      "ログイン入力保持修正を初回再読み込みから確実に適用"
+    ]
+  },
   {
     version: "v4.7.8-dev",
     date: "2026-07-22",
