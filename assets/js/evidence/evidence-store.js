@@ -2,6 +2,21 @@ import { sanitizeFileName } from "./evidence-upload.js";
 
 const LEGACY_RECORDS_KEY = "limitBreakProjectRecordsV110";
 
+async function withRetry(operation, attempts = 3) {
+  let lastError;
+  for (let attempt = 1; attempt <= attempts; attempt += 1) {
+    try {
+      return await operation();
+    } catch (error) {
+      lastError = error;
+      if (attempt < attempts) {
+        await new Promise((resolve) => setTimeout(resolve, attempt * 500));
+      }
+    }
+  }
+  throw lastError;
+}
+
 export function loadEvidenceRecords(storageKey, storage = localStorage) {
   try {
     const currentRecords = storage.getItem(storageKey);
@@ -43,18 +58,18 @@ export async function saveEvidenceRecordRemote(record, evidenceFile, firebaseBri
   const docRef = firebaseBridge.doc(firebaseBridge.db, "students", firebaseBridge.studentId, "evidence_records", recordId);
 
   try {
-    await firebaseBridge.setDoc(docRef, {
+    await withRetry(() => firebaseBridge.setDoc(docRef, {
       ...recordForFirestore(remoteRecord),
       student_id: firebaseBridge.studentId,
       visible_to: ["student", "parent", "supporter", "teacher"],
       firebaseSyncStatus: "syncing",
       updated_at: firebaseBridge.serverTimestamp()
-    }, { merge: true });
+    }, { merge: true }));
 
     if (evidenceFile) {
       const storagePath = `students/${firebaseBridge.studentId}/evidence/${record.date}/${recordId}-${Date.now()}-${sanitizeFileName(evidenceFile.name)}`;
       const imageRef = firebaseBridge.storageRef(firebaseBridge.storage, storagePath);
-      await firebaseBridge.uploadBytes(imageRef, evidenceFile, {
+      await withRetry(() => firebaseBridge.uploadBytes(imageRef, evidenceFile, {
         contentType: evidenceFile.type || "image/jpeg",
         customMetadata: {
           student_id: firebaseBridge.studentId,
@@ -62,8 +77,8 @@ export async function saveEvidenceRecordRemote(record, evidenceFile, firebaseBri
           subject: record.subject || "",
           test_type: record.testType || ""
         }
-      });
-      remoteRecord.evidenceImageUrl = await firebaseBridge.getDownloadURL(imageRef);
+      }));
+      remoteRecord.evidenceImageUrl = await withRetry(() => firebaseBridge.getDownloadURL(imageRef));
       remoteRecord.evidenceStoragePath = storagePath;
     }
 
@@ -73,7 +88,7 @@ export async function saveEvidenceRecordRemote(record, evidenceFile, firebaseBri
       firebaseSyncStatus: "synced",
       updated_at: firebaseBridge.serverTimestamp()
     };
-    await firebaseBridge.setDoc(docRef, uploadResult, { merge: true });
+    await withRetry(() => firebaseBridge.setDoc(docRef, uploadResult, { merge: true }));
 
     return {
       ...remoteRecord,
@@ -94,7 +109,7 @@ export async function saveEvidenceRecordRemote(record, evidenceFile, firebaseBri
     return {
       ...remoteRecord,
       firebaseSyncStatus: "error",
-      firebaseSyncError: error.message || String(error)
+      firebaseSyncError: String(error?.code || "FIREBASE_SYNC_FAILED")
     };
   }
 }

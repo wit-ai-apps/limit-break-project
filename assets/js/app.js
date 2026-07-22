@@ -37,7 +37,7 @@ import {
   recordIdentity,
   saveEvidenceRecordRemote,
   saveEvidenceRecords
-} from "./evidence/evidence-store.js";
+} from "./evidence/evidence-store.js?v=4.8.3";
 import { renderAppNavigation } from "./ui/navigation.js";
 import {
   closeDevDrawerPanel,
@@ -2537,6 +2537,13 @@ function renderScheduleDrawer() {
         submittedRecord = await saveEvidenceRecordRemote(submittedRecord, evidenceFile, firebaseBridge);
         records.push(submittedRecord);
         saveEvidenceRecords(STORAGE_KEY, records);
+        if (submittedRecord.firebaseSyncStatus === "error") {
+          status.textContent = "Firebaseへの送信に失敗しました。記録は端末内に保持しました。通信を確認して、もう一度提出してください。";
+          submitButton.disabled = false;
+          submitButton.textContent = "画像を提出してAI解析する";
+          render();
+          return;
+        }
         createSubmissionNotice(submittedRecord);
         form.reset();
         render();
@@ -2709,6 +2716,11 @@ function renderScheduleDrawer() {
       submittedRecord = await saveEvidenceRecordRemote(submittedRecord, evidenceFile, firebaseBridge);
       records.push(submittedRecord);
       saveEvidenceRecords(STORAGE_KEY, records);
+      if (submittedRecord.firebaseSyncStatus === "error") {
+        render();
+        alert("Firebaseへの送信に失敗しました。記録は端末内に保持しました。通信を確認して、もう一度提出してください。");
+        return;
+      }
       createSubmissionNotice(submittedRecord);
       const navItems = navigationItems();
       const nextIndex = navItems.findIndex((item) => item.type !== "complete");

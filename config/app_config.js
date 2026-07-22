@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.8.2-dev";
-export const APP_RELEASE_NAME = "AI提出の安定化";
+export const APP_VERSION = "v4.8.3-dev";
+export const APP_RELEASE_NAME = "AI提出の通信安定化";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -40,6 +40,16 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.8.3-dev",
+    date: "2026-07-23",
+    title: "AI提出の通信安定化",
+    items: [
+      "Firebaseへの一時的な通信失敗を自動再試行",
+      "同期失敗時に成功通知を出さず、端末内保持と再提出を案内",
+      "重要な提出保存モジュールへバージョン識別子を付け、旧PWAキャッシュを回避"
+    ]
+  },
   {
     version: "v4.8.2-dev",
     date: "2026-07-23",

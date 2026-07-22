@@ -54,6 +54,22 @@ const baseUrl = process.env.LB_BASE_URL || "http://127.0.0.1:5500/?e2e=ai";
   }, path.basename(fixturePath), { timeout: 180000 });
   const rowText = (await row.textContent()).replace(/\s+/g, " ").trim();
   if (rowText.includes("解析エラー")) throw new Error(`AI analysis failed: ${rowText}`);
+  if (!rowText.includes("Firebase")) {
+    const diagnostic = await page.evaluate((fileName) => {
+      for (let index = 0; index < localStorage.length; index += 1) {
+        const key = localStorage.key(index);
+        if (!key || !key.startsWith("limitBreakProjectRecords")) continue;
+        try {
+          const records = JSON.parse(localStorage.getItem(key) || "[]");
+          const record = records.find((item) => item.evidenceImageName === fileName);
+          if (record) return String(record.firebaseSyncError || record.firebaseSyncStatus || "unknown").slice(0, 300);
+        } catch (_) {}
+      }
+      return "record_not_found";
+    }, path.basename(fixturePath));
+    throw new Error(`Firebase sync failed (${diagnostic}): ${rowText}`);
+  }
+  if (rowText.includes("AI解析待ち")) throw new Error(`AI fields were not updated: ${rowText}`);
   if (errors.length) throw new Error(`browser errors: ${errors.join(" | ")}`);
   console.log(`PASS AI_UPLOAD ${rowText}`);
   await context.close();
