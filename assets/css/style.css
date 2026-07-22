@@ -2251,6 +2251,16 @@
       box-shadow: none;
     }
 
+    .brand-logout-button {
+      position: absolute;
+      top: 12px;
+      right: 64px;
+      z-index: 2;
+      min-height: 42px;
+      padding: 0 14px;
+      box-shadow: none;
+    }
+
     .coach {
       padding: 14px;
       gap: 10px;
