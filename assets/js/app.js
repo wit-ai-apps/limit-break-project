@@ -22,7 +22,7 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.9.1";
+} from "../../config/app_config.js?v=4.10.0";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -98,6 +98,7 @@ import {
     let noticeContacts = loadNoticeContacts();
     let noticeQueue = loadNoticeQueue();
     let customCountdowns = loadCustomCountdowns();
+    let adaptivePlan = null;
     let studyStartDate = localStorage.getItem(STUDY_START_DATE_KEY) || DEFAULT_STUDY_START_DATE;
     let firebaseBridge = {
       enabled: false,
@@ -109,6 +110,7 @@ import {
     };
     let evidenceUnsubscribe = null;
     let scheduleUnsubscribe = null;
+    let adaptivePlanUnsubscribe = null;
     let isLoggedIn = localStorage.getItem(LOGIN_KEY) === "true";
     let loginName = localStorage.getItem(LOGIN_NAME_KEY) || "";
     let currentRole = localStorage.getItem(ROLE_KEY) || "student";
@@ -138,6 +140,7 @@ import {
     const devVersionBadge = document.querySelector("#devVersionBadge");
     const devVersionList = document.querySelector("#devVersionList");
     const countdownGrid = document.querySelector("#countdownGrid");
+    const adaptivePlanPanel = document.querySelector("#adaptivePlanPanel");
     const scheduleDrawer = document.querySelector("#scheduleDrawer");
     const scheduleDrawerBackdrop = document.querySelector("#scheduleDrawerBackdrop");
     const scheduleDrawerOpen = document.querySelector("#scheduleDrawerOpen");
@@ -334,6 +337,7 @@ import {
       await writeLoginLog(user, userData);
       subscribeFirebaseRecords();
       subscribeFirebaseSchedules();
+      subscribeAdaptivePlan();
     }
 
     function defaultUserProfile(user) {
@@ -430,6 +434,18 @@ import {
       saveEvidenceRecords(STORAGE_KEY, records);
     }
 
+    async function resolveEvidenceImageUrl(record) {
+      if (record?.evidenceImageUrl) return record.evidenceImageUrl;
+      if (!record?.evidenceStoragePath || !firebaseBridge.storageRef || !firebaseBridge.getDownloadURL) {
+        throw new Error("EVIDENCE_IMAGE_LOCATION_MISSING");
+      }
+      const imageRef = firebaseBridge.storageRef(firebaseBridge.storage, record.evidenceStoragePath);
+      const imageUrl = await firebaseBridge.getDownloadURL(imageRef);
+      record.evidenceImageUrl = imageUrl;
+      saveEvidenceRecords(STORAGE_KEY, records);
+      return imageUrl;
+    }
+
     function subscribeFirebaseRecords() {
       if (evidenceUnsubscribe) {
         evidenceUnsubscribe();
@@ -470,6 +486,22 @@ import {
         if (isLoggedIn) render();
       }, () => {
         if (scheduleQuickStatus) scheduleQuickStatus.textContent = "共有予定を読み込めませんでした。再ログインしてください。";
+      });
+    }
+
+    function subscribeAdaptivePlan() {
+      if (adaptivePlanUnsubscribe) {
+        adaptivePlanUnsubscribe();
+        adaptivePlanUnsubscribe = null;
+      }
+      if (!firebaseBridge.enabled || !firebaseBridge.currentUser || !firebaseBridge.onSnapshot) return;
+      const planRef = firebaseBridge.doc(firebaseBridge.db, "students", firebaseBridge.studentId, "adaptive_state", "current");
+      adaptivePlanUnsubscribe = firebaseBridge.onSnapshot(planRef, (snapshot) => {
+        adaptivePlan = snapshot.exists() ? snapshot.data() : null;
+        if (isLoggedIn) render();
+      }, () => {
+        adaptivePlan = null;
+        if (isLoggedIn) render();
       });
     }
 
@@ -761,6 +793,11 @@ import {
         scheduleUnsubscribe();
         scheduleUnsubscribe = null;
       }
+      if (adaptivePlanUnsubscribe) {
+        adaptivePlanUnsubscribe();
+        adaptivePlanUnsubscribe = null;
+      }
+      adaptivePlan = null;
       if (firebaseBridge.enabled && firebaseBridge.currentUser && firebaseBridge.signOut) {
         try {
           await firebaseBridge.signOut(firebaseBridge.auth);
@@ -874,6 +911,7 @@ import {
       if (isLoggedIn) renderAccountPanel();
       renderAppNav();
       renderCountdowns();
+      renderAdaptivePlan();
       renderScheduleDrawer();
       renderRouteSummary();
       renderRoleDashboard();
@@ -904,6 +942,48 @@ import {
 
 function renderCountdowns() {
   renderCountdownCards(countdownGrid, allCountdownTargets());
+}
+
+function renderAdaptivePlan() {
+  if (!adaptivePlanPanel) return;
+  if (!isLoggedIn) {
+    adaptivePlanPanel.hidden = true;
+    adaptivePlanPanel.innerHTML = "";
+    return;
+  }
+  adaptivePlanPanel.hidden = false;
+  if (!adaptivePlan) {
+    adaptivePlanPanel.innerHTML = `
+      <strong>8月31日までの自動再スケジュール</strong>
+      <span>確認テスト提出後、または毎朝8:55の再構築後に表示します。</span>
+    `;
+    return;
+  }
+  const riskLabels = {
+    on_track: "現在のペースで進行",
+    compressed: "残日数に合わせて圧縮",
+    no_recent_submission: "直近の提出なし・診断優先",
+    deadline: "期限当日"
+  };
+  const actions = Array.isArray(adaptivePlan.dailyActions) ? adaptivePlan.dailyActions : [];
+  adaptivePlanPanel.innerHTML = `
+    <div class="adaptive-plan-summary">
+      <strong>8月31日までの自動再スケジュール</strong>
+      <span class="badge">残り${escapeHtml(adaptivePlan.daysRemaining ?? "-")}日</span>
+      <span class="badge">${escapeHtml(riskLabels[adaptivePlan.risk] || adaptivePlan.risk || "判定中")}</span>
+      <span class="badge">毎朝8:55更新</span>
+    </div>
+    <span>提出画像と確認テスト結果から、映像を見るか、要点だけにするか、確認テストだけで進むかを判定します。</span>
+    <div class="adaptive-action-grid">
+      ${actions.map((action) => `
+        <article class="adaptive-action-card">
+          <strong>${escapeHtml(action.subject)} / ${escapeHtml(action.course)}</strong>
+          <span>${escapeHtml(action.actionLabel)}・目安${escapeHtml(action.minutes)}分</span>
+          <small>${escapeHtml(action.reason)}</small>
+        </article>
+      `).join("")}
+    </div>
+  `;
 }
 
     function todayOutcomeSummary() {
@@ -2673,7 +2753,7 @@ function renderScheduleDrawer() {
     }
 
     function openEvidencePreview(key) {
-      openEvidencePreviewRecord(
+      return openEvidencePreviewRecord(
         key,
         records,
         {
@@ -2682,7 +2762,8 @@ function renderScheduleDrawer() {
           meta: evidencePreviewMeta,
           image: evidencePreviewImage
         },
-        recordKey
+        recordKey,
+        resolveEvidenceImageUrl
       );
     }
 

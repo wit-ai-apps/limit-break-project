@@ -93,6 +93,16 @@ service cloud.firestore {
           resource.data.created_by_uid == request.auth.uid
         );
       }
+
+      match /adaptive_plans/{planDate} {
+        allow read: if canReadStudent(studentId);
+        allow write: if false;
+      }
+
+      match /adaptive_state/{stateId} {
+        allow read: if canReadStudent(studentId);
+        allow write: if false;
+      }
     }
 
     match /classrooms/{classroomId} {

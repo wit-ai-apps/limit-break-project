@@ -11,7 +11,11 @@ export function hasEvidence(record) {
 }
 
 export function canRenderEvidenceRecord(record) {
-  return Boolean(record?.evidenceImageName && (record.evidenceImageData || record.evidenceImageUrl));
+  return Boolean(record?.evidenceImageName && (
+    record.evidenceImageData ||
+    record.evidenceImageUrl ||
+    record.evidenceStoragePath
+  ));
 }
 
 export function canSubmitEvidence(role) {

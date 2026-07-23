@@ -3,12 +3,16 @@ import { getFirestore, FieldValue } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import { defineSecret, defineString } from "firebase-functions/params";
 import { onObjectFinalized } from "firebase-functions/v2/storage";
+import { onDocumentWritten } from "firebase-functions/v2/firestore";
+import { onSchedule } from "firebase-functions/v2/scheduler";
 import OpenAI from "openai";
+import { buildAdaptivePlan, dateKeyJst, DEFAULT_DEADLINE } from "./adaptive-scheduler.js";
 
 initializeApp();
 
 const openRouterApiKey = defineSecret("OPENROUTER_API_KEY");
 const visionModel = defineString("OPENROUTER_VISION_MODEL", { default: "openai/gpt-4o-mini" });
+const adaptiveDeadline = defineString("ADAPTIVE_PLAN_DEADLINE", { default: DEFAULT_DEADLINE });
 
 const MATERIAL_HINTS = [
   ["数学", "中学総復習数学"],
@@ -66,6 +70,55 @@ function safeRecordId(date, missionId) {
     .replace(/\s+/g, "_")
     .slice(0, 180);
 }
+
+async function rebuildPlanForStudent(studentId) {
+  const db = getFirestore();
+  const evidenceSnapshot = await db.collection(`students/${studentId}/evidence_records`).get();
+  const records = evidenceSnapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+  const today = dateKeyJst();
+  const plan = buildAdaptivePlan({
+    studentId,
+    records,
+    today,
+    deadline: adaptiveDeadline.value()
+  });
+  const payload = { ...plan, generatedAt: FieldValue.serverTimestamp() };
+  await Promise.all([
+    db.doc(`students/${studentId}/adaptive_plans/${today}`).set(payload, { merge: true }),
+    db.doc(`students/${studentId}/adaptive_state/current`).set(payload, { merge: true })
+  ]);
+  return plan;
+}
+
+export const rebuildAdaptiveSchedules = onSchedule(
+  {
+    schedule: "55 8 * * *",
+    timeZone: "Asia/Tokyo",
+    region: "us-east1",
+    memory: "512MiB",
+    timeoutSeconds: 300,
+    retryCount: 1
+  },
+  async () => {
+    const usersSnapshot = await getFirestore().collection("users").get();
+    const studentIds = new Set();
+    usersSnapshot.docs.forEach((doc) => {
+      const linkedIds = doc.data().linked_student_ids;
+      if (Array.isArray(linkedIds)) linkedIds.forEach((id) => id && studentIds.add(String(id)));
+    });
+    await Promise.all([...studentIds].map((studentId) => rebuildPlanForStudent(studentId)));
+  }
+);
+
+export const rebuildAdaptiveScheduleOnEvidence = onDocumentWritten(
+  {
+    document: "students/{studentId}/evidence_records/{recordId}",
+    region: "us-east1",
+    memory: "512MiB",
+    timeoutSeconds: 120
+  },
+  async (event) => rebuildPlanForStudent(event.params.studentId)
+);
 
 export const analyzeEvidenceImage = onObjectFinalized(
   {

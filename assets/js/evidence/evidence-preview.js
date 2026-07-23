@@ -1,6 +1,18 @@
-export function openEvidencePreviewRecord(key, records, elements, recordKey) {
+export async function openEvidencePreviewRecord(key, records, elements, recordKey, resolveImageUrl) {
   const record = records.find((item) => recordKey(item) === key);
-  const src = record?.evidenceImageData || record?.evidenceImageUrl;
+  if (!record) return;
+  let src = record.evidenceImageData || record.evidenceImageUrl;
+  if (!src && record.evidenceStoragePath && resolveImageUrl) {
+    elements.title.textContent = record.evidenceImageName || "提出画像";
+    elements.meta.textContent = "画像をFirebase Storageから読み込んでいます...";
+    elements.dialog.showModal();
+    try {
+      src = await resolveImageUrl(record);
+    } catch (_) {
+      elements.meta.textContent = "画像を読み込めませんでした。生徒との連携設定またはStorage権限を確認してください。";
+      return;
+    }
+  }
   if (!src) return;
 
   elements.title.textContent = record.evidenceImageName || "提出画像";

@@ -2354,6 +2354,45 @@
       white-space: nowrap;
     }
 
+    .adaptive-plan-panel {
+      display: grid;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding: 16px;
+    }
+
+    .adaptive-plan-panel[hidden] {
+      display: none;
+    }
+
+    .adaptive-plan-summary {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      align-items: center;
+    }
+
+    .adaptive-action-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 8px;
+    }
+
+    .adaptive-action-card {
+      display: grid;
+      gap: 4px;
+      padding: 10px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.88);
+    }
+
+    .adaptive-action-card span,
+    .adaptive-action-card small {
+      color: #475569;
+      line-height: 1.45;
+    }
+
     .schedule-countdown-item span,
     .schedule-countdown-item small {
       display: block;

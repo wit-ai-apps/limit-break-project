@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.9.1-dev";
-export const APP_RELEASE_NAME = "予定入力収納・ログインモード表示";
+export const APP_VERSION = "v4.10.0-dev";
+export const APP_RELEASE_NAME = "映像視聴判定・毎朝自動再計画";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -40,6 +40,16 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.10.0-dev",
+    date: "2026-07-23",
+    title: "映像視聴判定・毎朝自動再計画",
+    items: [
+      "確認テストの正答率・回答数・新しさ・AI信頼度から映像視聴方法を判定",
+      "未提出単元は理解済みと推測せず、先に診断テストを配置",
+      "毎朝8:55 JSTに8月31日から逆算して残り計画を再構築"
+    ]
+  },
   {
     version: "v4.9.1-dev",
     date: "2026-07-23",
