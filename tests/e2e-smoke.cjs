@@ -14,14 +14,14 @@ const accounts = [
   ["student", "lb.student.20260722@example.com"],
   ["parent", "lb.parent.20260722@example.com"],
   ["supporter", "lb.supporter.20260722@example.com"],
-  ["teacher", "lb.teacher.20260722@example.com"]
+  ["lead_teacher", "lb.teacher.20260722@example.com"]
 ].filter(([, email]) => !process.env.LB_ACCOUNT_FILTER || email.includes(process.env.LB_ACCOUNT_FILTER));
 
 const roleLabels = {
   student: "本人",
   parent: "保護者",
   supporter: "サポーター",
-  teacher: "塾講師"
+  lead_teacher: "統括教師"
 };
 
 (async () => {

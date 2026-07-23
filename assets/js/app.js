@@ -22,7 +22,7 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.11.0";
+} from "../../config/app_config.js?v=4.11.1";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -301,6 +301,7 @@ import {
           deleteDoc: firebaseFirestore.deleteDoc,
           serverTimestamp: firebaseFirestore.serverTimestamp,
           signInWithEmailAndPassword: firebaseAuth.signInWithEmailAndPassword,
+          sendPasswordResetEmail: firebaseAuth.sendPasswordResetEmail,
           createUserWithEmailAndPassword: firebaseAuth.createUserWithEmailAndPassword,
           signOut: firebaseAuth.signOut,
           storageRef: firebaseStorage.ref,
@@ -2938,6 +2939,32 @@ function renderScheduleDrawer() {
           return;
         }
         loginStatus.textContent = `登録に失敗しました。${message}`;
+      }
+    });
+
+    document.querySelector("#resetPasswordButton").addEventListener("click", async () => {
+      const email = loginNameInput.value.trim();
+      if (!email) {
+        loginStatus.textContent = "先に、再設定したい登録メールアドレスを入力してください。";
+        loginNameInput.focus();
+        return;
+      }
+      if (!firebaseBridge.enabled || !firebaseBridge.sendPasswordResetEmail) {
+        loginStatus.textContent = "Firebaseへ接続できません。通信を確認してページを再読み込みしてください。";
+        return;
+      }
+      loginStatus.textContent = "パスワード再設定メールを送信しています...";
+      try {
+        await firebaseBridge.sendPasswordResetEmail(firebaseBridge.auth, email);
+        loginPasscodeInput.value = "";
+        loginStatus.textContent = "登録されているアドレスの場合、パスワード再設定メールを送信しました。受信箱と迷惑メールを確認してください。";
+      } catch (error) {
+        const code = String(error?.code || "");
+        loginStatus.textContent = code.includes("invalid-email")
+          ? "メールアドレスの形式を確認してください。"
+          : code.includes("too-many-requests")
+            ? "操作回数が多いため一時停止されています。時間を置いて再度お試しください。"
+            : "再設定メールを送信できませんでした。通信を確認して再度お試しください。";
       }
     });
 

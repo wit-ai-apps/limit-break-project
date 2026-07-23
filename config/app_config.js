@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.11.0-dev";
-export const APP_RELEASE_NAME = "Firebase同期統一・統括教師";
+export const APP_VERSION = "v4.11.1-dev";
+export const APP_RELEASE_NAME = "パスワード再設定";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -40,6 +40,16 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.11.1-dev",
+    date: "2026-07-24",
+    title: "パスワード再設定",
+    items: [
+      "ログイン画面へ「パスワードを忘れた方」ボタンを追加",
+      "登録メールアドレスへFirebaseの安全な再設定リンクを送信",
+      "パスワードをアプリ・Firestore・ブラウザ保存領域へ記録しない"
+    ]
+  },
   {
     version: "v4.11.0-dev",
     date: "2026-07-24",
