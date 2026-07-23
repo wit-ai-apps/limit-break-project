@@ -2337,9 +2337,9 @@
     }
 
     .schedule-countdown-item {
-      display: flex;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
       align-items: center;
-      justify-content: space-between;
       gap: 10px;
       padding: 10px 12px;
       border: 1px solid var(--line);
@@ -2352,6 +2352,46 @@
     .schedule-countdown-item strong {
       color: var(--primary);
       white-space: nowrap;
+    }
+
+    .schedule-countdown-item span,
+    .schedule-countdown-item small {
+      display: block;
+    }
+
+    .schedule-countdown-item small {
+      margin-top: 3px;
+      color: #64748b;
+      font-size: 0.72rem;
+    }
+
+    .schedule-countdown-actions {
+      display: grid;
+      justify-items: end;
+      gap: 5px;
+    }
+
+    .schedule-calendar-link,
+    .schedule-delete-button {
+      min-height: 30px;
+      padding: 5px 8px;
+      border-radius: 8px;
+      font-size: 0.72rem;
+      text-decoration: none;
+    }
+
+    .schedule-quick-form {
+      display: grid;
+      gap: 8px;
+      margin-top: 12px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #ffffff;
+    }
+
+    .schedule-quick-form input {
+      width: 100%;
     }
 
     .calendar-card {

@@ -93,16 +93,25 @@
         </div>
         <button class="secondary" type="button" id="scheduleDrawerClose">閉じる</button>
       </div>
-      <p class="button-note">個人予定と受験予定をここに集約します。Google / Apple カレンダー同期はPhase2で接続します。</p>
+      <p class="button-note">本人・保護者・サポーター・講師の予定を、登録者が分かる形で共有します。</p>
+      <form class="schedule-quick-form" id="scheduleQuickForm">
+        <strong>新しい予定・目標を追加</strong>
+        <input name="scheduleName" aria-label="予定名" placeholder="例: 7月英語到達度テスト" required>
+        <input name="scheduleDate" aria-label="予定日" type="date" required>
+        <input name="scheduleNotes" aria-label="予定メモ" placeholder="例: 英文300選 No.1-60">
+        <button type="submit">共有予定に追加</button>
+        <p class="button-note" id="scheduleQuickStatus" role="status" aria-live="polite"></p>
+      </form>
       <div class="schedule-countdown-list" id="scheduleDrawerCountdowns"></div>
       <div class="calendar-card">
         <div class="topline">
-          <h3>今月の予定</h3>
-          <span class="badge">同期準備中</span>
+          <h3 id="scheduleMonthTitle">年月を確認中</h3>
+          <span class="badge" id="scheduleSyncBadge">Firebase共有</span>
         </div>
         <div class="calendar-grid" id="scheduleCalendar"></div>
       </div>
-      <div class="calendar-sync-note">Google Calendar / Apple Calendar / 外部カレンダー同期は認証連携後に追加します。</div>
+      <div class="calendar-sync-note">Googleは予定ごとの「Googleへ追加」、Apple・OutlookはICSファイルで連携できます。</div>
+      <button class="secondary" type="button" id="downloadScheduleIcs">Apple / Outlook用ICSを書き出す</button>
       <button class="secondary view-link" type="button" data-target-view="admin">予定を設定する</button>
     </aside>
 
@@ -430,6 +439,6 @@
     </div>
   </dialog>
 
-  <script type="module" src="assets/js/app.js?v=4.8.3"></script>
+  <script type="module" src="assets/js/app.js?v=4.9.0"></script>
 </body>
 </html>

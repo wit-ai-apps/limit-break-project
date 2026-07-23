@@ -1,5 +1,6 @@
 import { countdownLabel, dateDaysUntil, todayJapanKey } from "../utils/countdown.js";
 import { escapeHtml } from "../utils/helpers.js";
+import { googleCalendarUrl, scheduleCreatorLabel } from "../schedule/schedule-store.js?v=4.9.0";
 
 export function renderCountdownCards(countdownGrid, targets) {
   if (!countdownGrid) return;
@@ -23,7 +24,7 @@ export function renderCountdownCards(countdownGrid, targets) {
   });
 }
 
-export function renderScheduleDrawerPanel({ countdownsElement, calendarElement, targets }) {
+export function renderScheduleDrawerPanel({ countdownsElement, calendarElement, monthTitleElement, targets, canDeleteTarget }) {
   if (!countdownsElement || !calendarElement) return;
 
   const sortedTargets = [...targets]
@@ -32,15 +33,26 @@ export function renderScheduleDrawerPanel({ countdownsElement, calendarElement, 
 
   countdownsElement.innerHTML = sortedTargets.slice(0, 6).map((exam) => {
     const days = dateDaysUntil(exam.countdown_target);
+    const googleUrl = googleCalendarUrl(exam);
+    const deleteButton = canDeleteTarget?.(exam)
+      ? `<button type="button" class="warning schedule-delete-button" data-delete-schedule="${escapeHtml(exam.custom_id || exam.id)}">削除</button>`
+      : "";
     return `
       <div class="schedule-countdown-item">
-        <span>${escapeHtml(countdownLabel(exam))}</span>
-        <strong>あと${days}日</strong>
+        <div>
+          <span>${escapeHtml(countdownLabel(exam))}</span>
+          <small>${escapeHtml(exam.date_start || exam.countdown_target)} / 登録者: ${escapeHtml(scheduleCreatorLabel(exam))}</small>
+        </div>
+        <div class="schedule-countdown-actions">
+          <strong>あと${days}日</strong>
+          ${googleUrl ? `<a class="secondary schedule-calendar-link" href="${escapeHtml(googleUrl)}" target="_blank" rel="noopener">Googleへ追加</a>` : ""}
+          ${deleteButton}
+        </div>
       </div>
     `;
   }).join("");
 
-  renderScheduleCalendar(calendarElement, sortedTargets);
+  renderScheduleCalendar(calendarElement, monthTitleElement, sortedTargets);
 }
 
 export function openScheduleDrawerPanel({ drawer, backdrop, opener, onBeforeOpen }) {
@@ -70,17 +82,18 @@ export function closeScheduleDrawerPanel({ drawer, backdrop, opener }) {
   }, 230);
 }
 
-function renderScheduleCalendar(calendarElement, targets) {
+function renderScheduleCalendar(calendarElement, monthTitleElement, targets) {
   const today = todayJapanKey();
   const [year, month] = today.split("-").map(Number);
   const firstDay = new Date(year, month - 1, 1);
   const lastDay = new Date(year, month, 0);
+  if (monthTitleElement) monthTitleElement.textContent = `${year}年${month}月の予定`;
   const targetMap = new Map();
 
   targets.forEach((target) => {
     if (!target.countdown_target) return;
     const names = targetMap.get(target.countdown_target) || [];
-    names.push(countdownLabel(target).replace("まで", ""));
+    names.push(`${countdownLabel(target).replace("まで", "")}・${scheduleCreatorLabel(target)}`);
     targetMap.set(target.countdown_target, names);
   });
 

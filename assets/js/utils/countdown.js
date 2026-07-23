@@ -35,6 +35,7 @@ export function buildCountdownTargets(examSchedule = [], customCountdowns = []) 
   }));
 
   const custom = (Array.isArray(customCountdowns) ? customCountdowns : []).map((item, index) => ({
+    ...item,
     exam_name: item.exam_name || "短期目標",
     exam_type: "custom_goal",
     date_start: item.date_start || item.countdown_target,

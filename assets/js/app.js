@@ -22,7 +22,7 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.8.1";
+} from "../../config/app_config.js?v=4.9.0";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -57,6 +57,10 @@ import {
 } from "./evidence/evidence-preview.js";
 import { evidenceTypeForUnit, hasEvidence } from "./evidence/evidence-policy.js";
 import { renderEvidenceLogs } from "./evidence/evidence-render.js";
+import {
+  canDeleteSchedule,
+  downloadSchedulesIcs
+} from "./schedule/schedule-store.js?v=4.9.0";
 
 import {
   FALLBACK_DAILY,
@@ -104,6 +108,7 @@ import {
       userDoc: null
     };
     let evidenceUnsubscribe = null;
+    let scheduleUnsubscribe = null;
     let isLoggedIn = localStorage.getItem(LOGIN_KEY) === "true";
     let loginName = localStorage.getItem(LOGIN_NAME_KEY) || "";
     let currentRole = localStorage.getItem(ROLE_KEY) || "student";
@@ -137,6 +142,10 @@ import {
     const scheduleDrawerClose = document.querySelector("#scheduleDrawerClose");
     const scheduleDrawerCountdowns = document.querySelector("#scheduleDrawerCountdowns");
     const scheduleCalendar = document.querySelector("#scheduleCalendar");
+    const scheduleMonthTitle = document.querySelector("#scheduleMonthTitle");
+    const scheduleQuickForm = document.querySelector("#scheduleQuickForm");
+    const scheduleQuickStatus = document.querySelector("#scheduleQuickStatus");
+    const downloadScheduleIcsButton = document.querySelector("#downloadScheduleIcs");
     const missionList = document.querySelector("#missionList");
     const journeyMap = document.querySelector("#journeyMap");
     const routeSummary = document.querySelector("#routeSummary");
@@ -278,6 +287,7 @@ import {
           onSnapshot: firebaseFirestore.onSnapshot,
           addDoc: firebaseFirestore.addDoc,
           setDoc: firebaseFirestore.setDoc,
+          deleteDoc: firebaseFirestore.deleteDoc,
           serverTimestamp: firebaseFirestore.serverTimestamp,
           signInWithEmailAndPassword: firebaseAuth.signInWithEmailAndPassword,
           createUserWithEmailAndPassword: firebaseAuth.createUserWithEmailAndPassword,
@@ -320,6 +330,7 @@ import {
         : "Firebaseログイン済みですが、users/{uid} が未作成です。管理者に確認してください。";
       await writeLoginLog(user, userData);
       subscribeFirebaseRecords();
+      subscribeFirebaseSchedules();
     }
 
     function defaultUserProfile(user) {
@@ -430,6 +441,32 @@ import {
         firebaseBridge.status = "read_error";
         firebaseBridge.message = "提出記録の自動更新に失敗しました。再ログインしてお試しください。";
         if (isLoggedIn) render();
+      });
+    }
+
+    function subscribeFirebaseSchedules() {
+      if (scheduleUnsubscribe) {
+        scheduleUnsubscribe();
+        scheduleUnsubscribe = null;
+      }
+      if (!firebaseBridge.enabled || !firebaseBridge.currentUser || !firebaseBridge.onSnapshot) return;
+      const collectionRef = firebaseBridge.collection(firebaseBridge.db, "students", firebaseBridge.studentId, "schedules");
+      scheduleUnsubscribe = firebaseBridge.onSnapshot(collectionRef, (snapshot) => {
+        const remoteSchedules = snapshot.docs.map((docSnap) => ({
+          ...docSnap.data(),
+          id: docSnap.id,
+          custom_id: docSnap.id,
+          source: "custom",
+          firebaseSyncStatus: "synced"
+        }));
+        const unsyncedLocal = customCountdowns.filter((item) => item.firebaseSyncStatus !== "synced");
+        const merged = new Map(unsyncedLocal.map((item) => [item.id, item]));
+        remoteSchedules.forEach((item) => merged.set(item.id, item));
+        customCountdowns = [...merged.values()];
+        saveCustomCountdowns();
+        if (isLoggedIn) render();
+      }, () => {
+        if (scheduleQuickStatus) scheduleQuickStatus.textContent = "共有予定を読み込めませんでした。再ログインしてください。";
       });
     }
 
@@ -553,15 +590,16 @@ import {
       return buildCountdownTargets(examSchedule, customCountdowns);
     }
 
-    function addCustomCountdown(event) {
+    async function addCustomCountdown(event) {
       event.preventDefault();
-      const nameInput = document.querySelector("#customCountdownName");
-      const dateInput = document.querySelector("#customCountdownDate");
-      const notesInput = document.querySelector("#customCountdownNotes");
+      const form = event.currentTarget;
+      const nameInput = form.querySelector('[name="scheduleName"]');
+      const dateInput = form.querySelector('[name="scheduleDate"]');
+      const notesInput = form.querySelector('[name="scheduleNotes"]');
       const name = nameInput?.value.trim();
       const targetDate = dateInput?.value;
       if (!name || !targetDate) return;
-      customCountdowns.push({
+      const item = {
         id: `goal_${Date.now()}`,
         exam_name: name,
         exam_type: "custom_goal",
@@ -569,13 +607,54 @@ import {
         date_end: targetDate,
         countdown_target: targetDate,
         priority: 20 + customCountdowns.length,
-        notes: notesInput?.value.trim() || "短期目標"
-      });
+        notes: notesInput?.value.trim() || "短期目標",
+        source: "custom",
+        created_by_uid: firebaseBridge.currentUser?.uid || "local",
+        created_by_role: currentRole,
+        created_by_name: loginName || ROLES[currentRole]?.label || "利用者",
+        student_id: firebaseBridge.studentId,
+        visibility: "shared",
+        firebaseSyncStatus: firebaseBridge.currentUser ? "syncing" : "local"
+      };
+      customCountdowns.push(item);
+      saveCustomCountdowns();
+      form.reset();
+      if (scheduleQuickStatus) scheduleQuickStatus.textContent = firebaseBridge.currentUser
+        ? "共有予定へ保存中です..."
+        : "この端末内へ保存しました。ログインするとFirebase共有を利用できます。";
+      if (firebaseBridge.enabled && firebaseBridge.currentUser) {
+        try {
+          const scheduleRef = firebaseBridge.doc(firebaseBridge.db, "students", firebaseBridge.studentId, "schedules", item.id);
+          await firebaseBridge.setDoc(scheduleRef, {
+            ...item,
+            firebaseSyncStatus: "synced",
+            created_at: firebaseBridge.serverTimestamp(),
+            updated_at: firebaseBridge.serverTimestamp()
+          }, { merge: true });
+          item.firebaseSyncStatus = "synced";
+          if (scheduleQuickStatus) scheduleQuickStatus.textContent = `${ROLES[currentRole]?.label || "利用者"}の共有予定として追加しました。`;
+        } catch (error) {
+          item.firebaseSyncStatus = "error";
+          const errorCode = String(error?.code || "schedule/save-failed");
+          if (scheduleQuickStatus) scheduleQuickStatus.textContent = `Firebase共有に失敗しました（${errorCode}）。予定は端末内に保持しています。`;
+        }
+      }
       saveCustomCountdowns();
       render();
     }
 
-    function deleteCustomCountdown(id) {
+    async function deleteCustomCountdown(id) {
+      const item = customCountdowns.find((candidate) => candidate.id === id || candidate.custom_id === id);
+      if (!item || !canDeleteSchedule(item, firebaseBridge.currentUser, currentRole)) return;
+      if (firebaseBridge.enabled && firebaseBridge.currentUser && item.firebaseSyncStatus === "synced") {
+        try {
+          const scheduleRef = firebaseBridge.doc(firebaseBridge.db, "students", firebaseBridge.studentId, "schedules", id);
+          await firebaseBridge.deleteDoc(scheduleRef);
+        } catch (_) {
+          if (scheduleQuickStatus) scheduleQuickStatus.textContent = "共有予定を削除できませんでした。通信を確認してください。";
+          return;
+        }
+      }
       customCountdowns = customCountdowns.filter((item) => item.id !== id);
       saveCustomCountdowns();
       render();
@@ -672,6 +751,10 @@ import {
       if (evidenceUnsubscribe) {
         evidenceUnsubscribe();
         evidenceUnsubscribe = null;
+      }
+      if (scheduleUnsubscribe) {
+        scheduleUnsubscribe();
+        scheduleUnsubscribe = null;
       }
       if (firebaseBridge.enabled && firebaseBridge.currentUser && firebaseBridge.signOut) {
         try {
@@ -852,7 +935,12 @@ function renderScheduleDrawer() {
   renderScheduleDrawerPanel({
     countdownsElement: scheduleDrawerCountdowns,
     calendarElement: scheduleCalendar,
-    targets: allCountdownTargets()
+    monthTitleElement: scheduleMonthTitle,
+    targets: allCountdownTargets(),
+    canDeleteTarget: (item) => canDeleteSchedule(item, firebaseBridge.currentUser, currentRole)
+  });
+  scheduleDrawerCountdowns?.querySelectorAll("[data-delete-schedule]").forEach((button) => {
+    button.addEventListener("click", () => deleteCustomCountdown(button.dataset.deleteSchedule));
   });
 }
 
@@ -1952,9 +2040,9 @@ function renderScheduleDrawer() {
                 <div class="custom-countdown-row">
                   <div>
                     <strong>${escapeHtml(item.exam_name || "短期目標")}</strong>
-                    <span>${escapeHtml(target)} / あと${dateDaysUntil(target)}日 / ${escapeHtml(item.notes || "短期目標")}</span>
+                    <span>${escapeHtml(target)} / あと${dateDaysUntil(target)}日 / 登録: ${escapeHtml(ROLES[item.created_by_role]?.label || "登録者不明")} / ${escapeHtml(item.notes || "短期目標")}</span>
                   </div>
-                  <button type="button" class="warning" data-delete-countdown="${escapeHtml(item.id)}">削除</button>
+                  ${canDeleteSchedule(item, firebaseBridge.currentUser, currentRole) ? `<button type="button" class="warning" data-delete-countdown="${escapeHtml(item.id)}">削除</button>` : ""}
                 </div>
               `;
             })
@@ -1964,9 +2052,9 @@ function renderScheduleDrawer() {
         <strong>短期目標カウントダウン</strong>
         <span>定期テスト、模試、到達度テスト、面談日などを自由に追加できます。近い3件は上部のカウントダウンに表示します。</span>
         <form class="external-form" id="customCountdownForm">
-          <input id="customCountdownName" aria-label="短期目標名" placeholder="例: 7月英語到達度テスト" required>
-          <input id="customCountdownDate" aria-label="目標日" type="date" required>
-          <input id="customCountdownNotes" aria-label="メモ" placeholder="例: 英文300選 No.1-60">
+          <input id="customCountdownName" name="scheduleName" aria-label="短期目標名" placeholder="例: 7月英語到達度テスト" required>
+          <input id="customCountdownDate" name="scheduleDate" aria-label="目標日" type="date" required>
+          <input id="customCountdownNotes" name="scheduleNotes" aria-label="メモ" placeholder="例: 英文300選 No.1-60">
           <button type="submit">追加</button>
         </form>
         <div class="custom-countdown-list">${customRows}</div>
@@ -2179,7 +2267,7 @@ function renderScheduleDrawer() {
       allCountdownTargets().forEach((exam) => {
         const card = document.createElement("div");
         card.className = "exam-card";
-        const customAction = exam.source === "custom"
+        const customAction = exam.source === "custom" && canDeleteSchedule(exam, firebaseBridge.currentUser, currentRole)
           ? `<button type="button" class="warning" data-delete-countdown="${escapeHtml(exam.custom_id)}">削除</button>`
           : "";
         card.innerHTML = `
@@ -2739,6 +2827,11 @@ function renderScheduleDrawer() {
     scheduleDrawerOpen?.addEventListener("click", openScheduleDrawer);
     scheduleDrawerClose?.addEventListener("click", closeScheduleDrawer);
     scheduleDrawerBackdrop?.addEventListener("click", closeScheduleDrawer);
+    scheduleQuickForm?.addEventListener("submit", addCustomCountdown);
+    downloadScheduleIcsButton?.addEventListener("click", () => {
+      downloadSchedulesIcs(allCountdownTargets(), `limit-break-${todayJapanKey()}.ics`);
+      if (scheduleQuickStatus) scheduleQuickStatus.textContent = "ICSファイルを書き出しました。AppleまたはOutlookカレンダーで読み込んでください。";
+    });
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape") {
         closeDevDrawer();

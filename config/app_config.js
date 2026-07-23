@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.8.3-dev";
-export const APP_RELEASE_NAME = "AI提出の通信安定化";
+export const APP_VERSION = "v4.9.0-dev";
+export const APP_RELEASE_NAME = "共有スケジュール・外部カレンダー";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -40,6 +40,16 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.9.0-dev",
+    date: "2026-07-23",
+    title: "共有スケジュール・外部カレンダー",
+    items: [
+      "カレンダーへ西暦・月を表示し、予定ドロワーから直接追加可能に変更",
+      "本人・保護者・サポーター・講師の登録者表示とFirebase共有を追加",
+      "Googleカレンダー追加リンクとApple・Outlook向けICS書き出しを追加"
+    ]
+  },
   {
     version: "v4.8.3-dev",
     date: "2026-07-23",

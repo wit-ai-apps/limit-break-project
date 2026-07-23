@@ -41,6 +41,18 @@ service cloud.firestore {
       );
     }
 
+    function canWriteStudentSchedule(studentId) {
+      return signedIn() && (
+        userRole() == "admin" ||
+        studentId in linkedStudentIds() && (
+          userRole() == "student" ||
+          userRole() == "parent" ||
+          userRole() == "supporter" ||
+          userRole() == "teacher"
+        )
+      );
+    }
+
     match /users/{uid} {
       allow read: if signedIn() && (request.auth.uid == uid || userRole() == "admin");
       allow create, update: if signedIn() && (request.auth.uid == uid || userRole() == "admin");
@@ -62,6 +74,24 @@ service cloud.firestore {
         allow read: if canReadStudent(studentId);
         allow create, update: if signedIn() && (userRole() == "admin" || userRole() == "teacher");
         allow delete: if signedIn() && userRole() == "admin";
+      }
+
+      match /schedules/{scheduleId} {
+        allow read: if canReadStudent(studentId);
+        allow create: if canWriteStudentSchedule(studentId)
+          && request.resource.data.created_by_uid == request.auth.uid
+          && request.resource.data.created_by_role == userRole();
+        allow update: if canWriteStudentSchedule(studentId) && (
+          userRole() == "admin" ||
+          userRole() == "teacher" ||
+          resource.data.created_by_uid == request.auth.uid
+        ) && request.resource.data.created_by_uid == resource.data.created_by_uid
+          && request.resource.data.created_by_role == resource.data.created_by_role;
+        allow delete: if canWriteStudentSchedule(studentId) && (
+          userRole() == "admin" ||
+          userRole() == "teacher" ||
+          resource.data.created_by_uid == request.auth.uid
+        );
       }
     }
 
