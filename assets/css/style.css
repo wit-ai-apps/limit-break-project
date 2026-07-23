@@ -2390,6 +2390,41 @@
       background: #ffffff;
     }
 
+    .schedule-quick-panel {
+      margin-top: 12px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #ffffff;
+      overflow: hidden;
+    }
+
+    .schedule-quick-panel summary {
+      padding: 12px;
+      color: var(--primary);
+      font-weight: 900;
+      cursor: pointer;
+      list-style-position: inside;
+    }
+
+    .schedule-quick-panel .schedule-quick-form {
+      margin: 0;
+      border: 0;
+      border-top: 1px solid var(--line);
+      border-radius: 0;
+    }
+
+    .session-role-badge {
+      border-color: rgba(37, 99, 235, 0.35);
+      background: rgba(219, 234, 254, 0.9);
+      color: #1d4ed8;
+    }
+
+    .session-student-badge {
+      border-color: rgba(14, 116, 144, 0.3);
+      background: rgba(207, 250, 254, 0.9);
+      color: #0e7490;
+    }
+
     .schedule-quick-form input {
       width: 100%;
     }

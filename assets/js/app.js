@@ -22,7 +22,7 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.9.0";
+} from "../../config/app_config.js?v=4.9.1";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -131,6 +131,8 @@ import {
     const headerLogoutButton = document.querySelector("#headerLogoutButton");
     const appNav = document.querySelector("#appNav");
     const versionBadge = document.querySelector("#versionBadge");
+    const sessionRoleBadge = document.querySelector("#sessionRoleBadge");
+    const sessionStudentBadge = document.querySelector("#sessionStudentBadge");
     const devDrawer = document.querySelector("#devDrawer");
     const devDrawerBackdrop = document.querySelector("#devDrawerBackdrop");
     const devVersionBadge = document.querySelector("#devVersionBadge");
@@ -144,6 +146,7 @@ import {
     const scheduleCalendar = document.querySelector("#scheduleCalendar");
     const scheduleMonthTitle = document.querySelector("#scheduleMonthTitle");
     const scheduleQuickForm = document.querySelector("#scheduleQuickForm");
+    const scheduleQuickPanel = document.querySelector("#scheduleQuickPanel");
     const scheduleQuickStatus = document.querySelector("#scheduleQuickStatus");
     const downloadScheduleIcsButton = document.querySelector("#downloadScheduleIcs");
     const missionList = document.querySelector("#missionList");
@@ -622,6 +625,7 @@ import {
       if (scheduleQuickStatus) scheduleQuickStatus.textContent = firebaseBridge.currentUser
         ? "共有予定へ保存中です..."
         : "この端末内へ保存しました。ログインするとFirebase共有を利用できます。";
+      if (!firebaseBridge.currentUser && scheduleQuickPanel) scheduleQuickPanel.open = false;
       if (firebaseBridge.enabled && firebaseBridge.currentUser) {
         try {
           const scheduleRef = firebaseBridge.doc(firebaseBridge.db, "students", firebaseBridge.studentId, "schedules", item.id);
@@ -633,6 +637,7 @@ import {
           }, { merge: true });
           item.firebaseSyncStatus = "synced";
           if (scheduleQuickStatus) scheduleQuickStatus.textContent = `${ROLES[currentRole]?.label || "利用者"}の共有予定として追加しました。`;
+          if (scheduleQuickPanel) scheduleQuickPanel.open = false;
         } catch (error) {
           item.firebaseSyncStatus = "error";
           const errorCode = String(error?.code || "schedule/save-failed");
@@ -849,6 +854,14 @@ import {
       document.body.dataset.supportType = currentSupportType;
       document.body.dataset.view = activeView;
       if (versionBadge) versionBadge.textContent = APP_VERSION;
+      if (sessionRoleBadge) {
+        const supportType = SUPPORTER_TYPES.find((type) => type.value === currentSupportType);
+        const roleName = ROLES[currentRole]?.label || currentRole;
+        sessionRoleBadge.textContent = currentRole === "supporter" && supportType
+          ? `ログイン中：${roleName}（${supportType.label}）`
+          : `ログイン中：${roleName}`;
+      }
+      if (sessionStudentBadge) sessionStudentBadge.textContent = `連携生徒：${firebaseBridge.studentId || "未設定"}`;
       if (devVersionBadge) devVersionBadge.textContent = APP_VERSION;
       document.querySelector("#baselineLabel").textContent = `今日 ${todayJapanKey()}`;
       document.querySelector("#dayBadge").textContent = `開始 ${studyStartDate} / ${studyElapsedDays()}日目`;

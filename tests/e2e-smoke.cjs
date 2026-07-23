@@ -17,6 +17,13 @@ const accounts = [
   ["teacher", "lb.teacher.20260722@example.com"]
 ].filter(([, email]) => !process.env.LB_ACCOUNT_FILTER || email.includes(process.env.LB_ACCOUNT_FILTER));
 
+const roleLabels = {
+  student: "本人",
+  parent: "保護者",
+  supporter: "サポーター",
+  teacher: "塾講師"
+};
+
 (async () => {
   const browser = await chromium.launch({
     headless: true,
@@ -42,6 +49,10 @@ const accounts = [
       await page.waitForFunction(() => document.body.dataset.auth === "in", null, { timeout: 30000 });
       const actualRole = await page.locator("body").getAttribute("data-role");
       if (actualRole !== expectedRole) throw new Error(`role ${actualRole}, expected ${expectedRole}`);
+      const roleBadge = await page.locator("#sessionRoleBadge").textContent();
+      if (!roleBadge.includes(roleLabels[expectedRole])) throw new Error(`role badge invalid: ${roleBadge}`);
+      const studentBadge = await page.locator("#sessionStudentBadge").textContent();
+      if (!studentBadge.includes("STU_TEST_20260722")) throw new Error(`student badge invalid: ${studentBadge}`);
       await page.locator("#headerLogoutButton").click();
       await page.waitForFunction(() => document.body.dataset.auth === "out", null, { timeout: 15000 });
       if (await page.locator("#loginName").inputValue()) throw new Error("email remained after logout");

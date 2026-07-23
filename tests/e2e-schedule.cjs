@@ -26,6 +26,8 @@ async function login(page, email) {
   await studentPage.locator("#scheduleDrawer").waitFor({ state: "visible" });
   const monthTitle = await studentPage.locator("#scheduleMonthTitle").textContent();
   if (!/^\d{4}年\d{1,2}月の予定$/.test(monthTitle || "")) throw new Error(`month title invalid: ${monthTitle}`);
+  if (await studentPage.locator("#scheduleQuickPanel").getAttribute("open") !== null) throw new Error("schedule form is open by default");
+  await studentPage.locator("#scheduleQuickPanel summary").click();
   await studentPage.locator('#scheduleQuickForm [name="scheduleName"]').fill(title);
   await studentPage.locator('#scheduleQuickForm [name="scheduleDate"]').fill("2026-07-31");
   await studentPage.locator('#scheduleQuickForm [name="scheduleNotes"]').fill("英文300選 No.1-60");
@@ -33,6 +35,7 @@ async function login(page, email) {
   const studentItem = studentPage.locator(".schedule-countdown-item").filter({ hasText: title });
   await studentItem.waitFor({ state: "visible", timeout: 30000 });
   console.log("STEP student item visible");
+  if (await studentPage.locator("#scheduleQuickPanel").getAttribute("open") !== null) throw new Error("schedule form did not close after save");
   if (!(await studentItem.textContent()).includes("登録者: 本人")) throw new Error("student creator label missing");
   if (process.env.LB_EXPECT_FIREBASE === "true") {
     await studentPage.waitForFunction(() => {

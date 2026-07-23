@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.9.0-dev";
-export const APP_RELEASE_NAME = "共有スケジュール・外部カレンダー";
+export const APP_VERSION = "v4.9.1-dev";
+export const APP_RELEASE_NAME = "予定入力収納・ログインモード表示";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -40,6 +40,16 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.9.1-dev",
+    date: "2026-07-23",
+    title: "予定入力収納・ログインモード表示",
+    items: [
+      "予定追加欄を必要なときだけ開く収納式へ変更",
+      "画面上部へ現在のログインモードと連携生徒IDを常時表示",
+      "本人・保護者・サポーター・講師のグループ連携設計を文書化"
+    ]
+  },
   {
     version: "v4.9.0-dev",
     date: "2026-07-23",
