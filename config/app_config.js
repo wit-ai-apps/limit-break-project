@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.10.0-dev";
-export const APP_RELEASE_NAME = "映像視聴判定・毎朝自動再計画";
+export const APP_VERSION = "v4.10.1-dev";
+export const APP_RELEASE_NAME = "成績通知から提出原画像を確認";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -40,6 +40,16 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.10.1-dev",
+    date: "2026-07-23",
+    title: "成績通知から提出原画像を確認",
+    items: [
+      "保護者・講師向けの成績通知カードへ「実際の提出画像を見る」ボタンを追加",
+      "AI分析結果と生徒が提出した元画像を同じ画面から照合",
+      "Storageパスだけ残った画像もFirebaseから再取得して表示"
+    ]
+  },
   {
     version: "v4.10.0-dev",
     date: "2026-07-23",

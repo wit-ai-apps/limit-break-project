@@ -22,7 +22,7 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.10.0";
+} from "../../config/app_config.js?v=4.10.1";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -2563,6 +2563,12 @@ function renderScheduleDrawer() {
       notificationPanel.querySelectorAll("[data-notice-id]").forEach((button) => {
         button.addEventListener("click", () => markNoticeSent(button.dataset.noticeId));
       });
+      notificationPanel.querySelectorAll("[data-notice-evidence-key]").forEach((button) => {
+        button.addEventListener("click", () => {
+          const record = records.find((item) => recordIdentity(item) === button.dataset.noticeEvidenceKey);
+          if (record) openEvidencePreview(recordKey(record));
+        });
+      });
     }
 
     function renderNoticeCard(notice) {
@@ -2582,6 +2588,7 @@ function renderScheduleDrawer() {
           <div>結果スクショ: ${notice.evidenceImageName} / 判定: ${notice.autoGradingStatusLabel}</div>
           <div>通知設定: ${noticeRecipientSummary(recipients)}</div>
           <div class="form-actions" style="margin-top: 10px;">
+            ${notice.evidenceImageName ? `<button class="secondary" type="button" data-notice-evidence-key="${escapeHtml(notice.recordKey)}">実際の提出画像を見る</button>` : ""}
             ${emailRecipients.length ? `<a class="secondary" href="${mailto}">メール作成</a>` : `<span class="limited">メール未設定</span>`}
             <button type="button" data-notice-id="${notice.noticeId}">${notice.sentAt ? "送信済み" : "送信済みにする"}</button>
           </div>
