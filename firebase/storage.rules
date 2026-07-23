@@ -27,6 +27,7 @@ service firebase.storage {
     function canReadStudent(studentId) {
       return signedIn() && (
         userRole() == "admin" ||
+        userRole() == "lead_teacher" ||
         studentId in linkedStudentIds()
       );
     }
@@ -34,6 +35,7 @@ service firebase.storage {
     function canWriteStudentEvidence(studentId) {
       return signedIn() && (
         userRole() == "admin" ||
+        userRole() == "lead_teacher" ||
         userRole() == "teacher" ||
         userRole() == "student" && studentId in linkedStudentIds()
       );

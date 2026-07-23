@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.10.1-dev";
-export const APP_RELEASE_NAME = "成績通知から提出原画像を確認";
+export const APP_VERSION = "v4.11.0-dev";
+export const APP_RELEASE_NAME = "Firebase同期統一・統括教師";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -40,6 +40,16 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.11.0-dev",
+    date: "2026-07-24",
+    title: "Firebase同期統一・統括教師",
+    items: [
+      "ログイン中はFirebaseの提出記録を正本とし、端末ごとの古い画像混入を防止",
+      "提出日を固定日ではなく現在の日本時間で記録",
+      "管理者付与専用の統括教師ロールで全連携一覧と対象生徒切替を表示"
+    ]
+  },
   {
     version: "v4.10.1-dev",
     date: "2026-07-23",

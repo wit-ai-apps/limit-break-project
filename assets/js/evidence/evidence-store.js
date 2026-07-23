@@ -35,6 +35,20 @@ export function recordIdentity(record) {
   return `${record.date || ""}_${record.missionId || ""}`;
 }
 
+export function mergeAuthoritativeEvidenceRecords(localRecords = [], remoteRecords = []) {
+  const localPending = localRecords.filter((record) =>
+    record.firebaseSyncStatus === "error" || record.firebaseSyncStatus === "syncing"
+  );
+  const merged = new Map(localPending.map((record) => [recordIdentity(record), record]));
+  remoteRecords.forEach((record) => {
+    merged.set(recordIdentity(record), {
+      ...merged.get(recordIdentity(record)),
+      ...record
+    });
+  });
+  return [...merged.values()].sort((a, b) => String(b.savedAt || "").localeCompare(String(a.savedAt || "")));
+}
+
 export function firebaseSafeId(value) {
   return String(value || "record")
     .replace(/[\/#?[\]]/g, "_")

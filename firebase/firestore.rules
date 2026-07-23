@@ -14,6 +14,10 @@ service cloud.firestore {
       return userDoc().data.role;
     }
 
+    function isPublicRole(role) {
+      return role == "student" || role == "parent" || role == "supporter" || role == "teacher";
+    }
+
     function linkedStudentIds() {
       return signedIn() && userDoc().data.linked_student_ids is list
         ? userDoc().data.linked_student_ids
@@ -29,6 +33,7 @@ service cloud.firestore {
     function canReadStudent(studentId) {
       return signedIn() && (
         userRole() == "admin" ||
+        userRole() == "lead_teacher" ||
         studentId in linkedStudentIds()
       );
     }
@@ -36,6 +41,7 @@ service cloud.firestore {
     function canWriteStudentEvidence(studentId) {
       return signedIn() && (
         userRole() == "admin" ||
+        userRole() == "lead_teacher" ||
         userRole() == "teacher" ||
         userRole() == "student" && studentId in linkedStudentIds()
       );
@@ -48,14 +54,32 @@ service cloud.firestore {
           userRole() == "student" ||
           userRole() == "parent" ||
           userRole() == "supporter" ||
-          userRole() == "teacher"
+          userRole() == "teacher" ||
+          userRole() == "lead_teacher"
         )
       );
     }
 
     match /users/{uid} {
-      allow read: if signedIn() && (request.auth.uid == uid || userRole() == "admin");
-      allow create, update: if signedIn() && (request.auth.uid == uid || userRole() == "admin");
+      allow read: if signedIn() && (
+        request.auth.uid == uid ||
+        userRole() == "admin" ||
+        userRole() == "lead_teacher" ||
+        resource.data.role == "student"
+          && resource.data.linked_student_ids is list
+          && resource.data.linked_student_ids.hasAny(linkedStudentIds())
+      );
+      allow create: if signedIn() && (
+        userRole() == "admin" ||
+        request.auth.uid == uid && isPublicRole(request.resource.data.role)
+      );
+      allow update: if signedIn() && (
+        userRole() == "admin" ||
+        request.auth.uid == uid
+          && request.resource.data.role == resource.data.role
+          && request.resource.data.linked_student_ids == resource.data.linked_student_ids
+          && request.resource.data.classroom_ids == resource.data.classroom_ids
+      );
       allow delete: if signedIn() && userRole() == "admin";
     }
 

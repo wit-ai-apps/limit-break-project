@@ -63,6 +63,18 @@ export const ROLES = {
     showPrivateNote: true,
     showMentalState: true,
     showMissionDetail: true
+  },
+  lead_teacher: {
+    label: "統括教師",
+    headline: "全生徒と関係者の連携状況を確認し、対象生徒を切り替える管理者付与専用画面です。",
+    canEditRecord: true,
+    canViewAllLinks: true,
+    showScore: true,
+    showFatigue: true,
+    showMistake: true,
+    showPrivateNote: true,
+    showMentalState: true,
+    showMissionDetail: true
   }
 };
 

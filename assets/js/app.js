@@ -22,7 +22,7 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.10.1";
+} from "../../config/app_config.js?v=4.11.0";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -34,10 +34,11 @@ import {
 import { escapeHtml } from "./utils/helpers.js";
 import {
   loadEvidenceRecords,
+  mergeAuthoritativeEvidenceRecords,
   recordIdentity,
   saveEvidenceRecordRemote,
   saveEvidenceRecords
-} from "./evidence/evidence-store.js?v=4.8.3";
+} from "./evidence/evidence-store.js?v=4.11.0";
 import { renderAppNavigation } from "./ui/navigation.js";
 import {
   closeDevDrawerPanel,
@@ -99,6 +100,8 @@ import {
     let noticeQueue = loadNoticeQueue();
     let customCountdowns = loadCustomCountdowns();
     let adaptivePlan = null;
+    let linkDirectory = [];
+    let linkedStudentIdentity = null;
     let studyStartDate = localStorage.getItem(STUDY_START_DATE_KEY) || DEFAULT_STUDY_START_DATE;
     let firebaseBridge = {
       enabled: false,
@@ -290,6 +293,8 @@ import {
           doc: firebaseFirestore.doc,
           getDoc: firebaseFirestore.getDoc,
           getDocs: firebaseFirestore.getDocs,
+          query: firebaseFirestore.query,
+          where: firebaseFirestore.where,
           onSnapshot: firebaseFirestore.onSnapshot,
           addDoc: firebaseFirestore.addDoc,
           setDoc: firebaseFirestore.setDoc,
@@ -338,6 +343,8 @@ import {
       subscribeFirebaseRecords();
       subscribeFirebaseSchedules();
       subscribeAdaptivePlan();
+      await loadLinkedStudentIdentity();
+      await loadLinkDirectory();
     }
 
     function defaultUserProfile(user) {
@@ -401,15 +408,7 @@ import {
           firebaseDocumentId: docSnap.id,
           firebaseSyncStatus: "synced"
         }));
-        if (!remoteRecords.length) return;
-        const merged = new Map(records.map((record) => [recordIdentity(record), record]));
-        remoteRecords.forEach((record) => {
-          merged.set(recordIdentity(record), {
-            ...merged.get(recordIdentity(record)),
-            ...record
-          });
-        });
-        records = [...merged.values()].sort((a, b) => String(b.savedAt || "").localeCompare(String(a.savedAt || "")));
+        records = mergeAuthoritativeEvidenceRecords(records, remoteRecords);
         saveEvidenceRecords(STORAGE_KEY, records);
       } catch (error) {
         firebaseBridge.status = "read_error";
@@ -423,15 +422,55 @@ import {
         firebaseDocumentId: docSnap.id,
         firebaseSyncStatus: docSnap.data().firebaseSyncStatus || "synced"
       }));
-      const merged = new Map(records.map((record) => [recordIdentity(record), record]));
-      remoteRecords.forEach((record) => {
-        merged.set(recordIdentity(record), {
-          ...merged.get(recordIdentity(record)),
-          ...record
-        });
-      });
-      records = [...merged.values()].sort((a, b) => String(b.savedAt || "").localeCompare(String(a.savedAt || "")));
+      records = mergeAuthoritativeEvidenceRecords(records, remoteRecords);
       saveEvidenceRecords(STORAGE_KEY, records);
+    }
+
+    async function loadLinkDirectory() {
+      linkDirectory = [];
+      if (currentRole !== "lead_teacher" || !firebaseBridge.currentUser || !firebaseBridge.getDocs) return;
+      try {
+        const snapshot = await firebaseBridge.getDocs(firebaseBridge.collection(firebaseBridge.db, "users"));
+        linkDirectory = snapshot.docs.map((docSnap) => ({ uid: docSnap.id, ...docSnap.data() }));
+      } catch (error) {
+        firebaseBridge.message = `連携一覧を読み込めませんでした。${error.code || error.message || error}`;
+      }
+    }
+
+    async function loadLinkedStudentIdentity() {
+      linkedStudentIdentity = null;
+      if (!firebaseBridge.currentUser || !firebaseBridge.getDocs || !firebaseBridge.query || !firebaseBridge.where) return;
+      try {
+        const usersRef = firebaseBridge.collection(firebaseBridge.db, "users");
+        const linkedStudentQuery = firebaseBridge.query(
+          usersRef,
+          firebaseBridge.where("role", "==", "student"),
+          firebaseBridge.where("linked_student_ids", "array-contains", firebaseBridge.studentId)
+        );
+        const snapshot = await firebaseBridge.getDocs(linkedStudentQuery);
+        const studentUser = snapshot.docs[0]?.data();
+        if (studentUser) {
+          linkedStudentIdentity = {
+            displayName: studentUser.displayName || "生徒名未設定",
+            email: studentUser.email || ""
+          };
+        }
+      } catch (_) {
+        linkedStudentIdentity = null;
+      }
+    }
+
+    async function selectLeadTeacherStudent(studentId) {
+      if (currentRole !== "lead_teacher" || !studentId) return;
+      firebaseBridge.studentId = studentId;
+      records = [];
+      customCountdowns = [];
+      adaptivePlan = null;
+      await loadLinkedStudentIdentity();
+      subscribeFirebaseRecords();
+      subscribeFirebaseSchedules();
+      subscribeAdaptivePlan();
+      render();
     }
 
     async function resolveEvidenceImageUrl(record) {
@@ -698,7 +737,7 @@ import {
     }
 
     function todayKey() {
-      return dailyPlan.date || BASELINE_DATE;
+      return todayJapanKey();
     }
 
     function studyElapsedDays() {
@@ -798,6 +837,8 @@ import {
         adaptivePlanUnsubscribe = null;
       }
       adaptivePlan = null;
+      linkDirectory = [];
+      linkedStudentIdentity = null;
       if (firebaseBridge.enabled && firebaseBridge.currentUser && firebaseBridge.signOut) {
         try {
           await firebaseBridge.signOut(firebaseBridge.auth);
@@ -898,7 +939,11 @@ import {
           ? `ログイン中：${roleName}（${supportType.label}）`
           : `ログイン中：${roleName}`;
       }
-      if (sessionStudentBadge) sessionStudentBadge.textContent = `連携生徒：${firebaseBridge.studentId || "未設定"}`;
+      if (sessionStudentBadge) {
+        const studentName = linkedStudentIdentity?.displayName || "生徒名未設定";
+        const studentEmail = linkedStudentIdentity?.email ? ` / ${linkedStudentIdentity.email}` : "";
+        sessionStudentBadge.textContent = `閲覧中：${studentName}${studentEmail} / ${firebaseBridge.studentId || "未設定"}`;
+      }
       if (devVersionBadge) devVersionBadge.textContent = APP_VERSION;
       document.querySelector("#baselineLabel").textContent = `今日 ${todayJapanKey()}`;
       document.querySelector("#dayBadge").textContent = `開始 ${studyStartDate} / ${studyElapsedDays()}日目`;
@@ -1012,7 +1057,7 @@ function renderAdaptivePlan() {
         return `今日は提出 ${totalText}。細かい点数より、続けた事実と次の一歩を応援してください。`;
       }
 
-      if (currentRole === "teacher") {
+      if (currentRole === "teacher" || currentRole === "lead_teacher") {
         const scoreText = summary.averageScore === null ? "正答率は提出後に確認" : `平均 ${summary.averageScore}点`;
         return `提出 ${totalText}。${scoreText}。未提出カードと画像を見て、戻る単元と次の講義を判断できます。`;
       }
@@ -1795,6 +1840,43 @@ function renderScheduleDrawer() {
     }
 
     function renderTeacherDashboard(todayRecords, evidenceRecords) {
+      if (currentRole === "lead_teacher") {
+        const groups = new Map();
+        linkDirectory.forEach((user) => {
+          const studentIds = Array.isArray(user.linked_student_ids) ? user.linked_student_ids : [];
+          studentIds.forEach((studentId) => {
+            if (!groups.has(studentId)) groups.set(studentId, []);
+            groups.get(studentId).push(user);
+          });
+        });
+        roleDashboard.innerHTML = `
+          <div class="role-dashboard-grid">
+            <article class="dashboard-card highlight">
+              <strong>全連携一覧</strong>
+              <span>${groups.size}生徒 / ${linkDirectory.length}利用者</span>
+            </article>
+            <article class="dashboard-card">
+              <strong>現在表示中</strong>
+              <span>${escapeHtml(firebaseBridge.studentId)} / 今日の提出 ${evidenceRecords.length}件</span>
+            </article>
+          </div>
+          <div class="student-status-list">
+            ${[...groups.entries()].map(([studentId, users]) => `
+              <div class="student-status-row">
+                <div>
+                  <strong>${escapeHtml(studentId)}</strong>
+                  <span>${users.map((user) => `${escapeHtml(ROLES[user.role]?.label || user.role || "未設定")}：${escapeHtml(user.displayName || user.email || user.uid)}`).join(" / ")}</span>
+                </div>
+                <button type="button" class="secondary" data-lead-student-id="${escapeHtml(studentId)}">この生徒を見る</button>
+              </div>
+            `).join("") || `<div class="empty">連携データがありません。</div>`}
+          </div>
+        `;
+        roleDashboard.querySelectorAll("[data-lead-student-id]").forEach((button) => {
+          button.addEventListener("click", () => selectLeadTeacherStudent(button.dataset.leadStudentId));
+        });
+        return;
+      }
       const demoStudents = [
         { name: "生徒", subject: "数学", status: evidenceRecords.length ? "提出済" : "未提出", tone: evidenceRecords.length ? "done" : "missing" },
         { name: "○○君", subject: "英語", status: "終了", tone: "done" },

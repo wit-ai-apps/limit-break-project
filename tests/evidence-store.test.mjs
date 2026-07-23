@@ -1,6 +1,22 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { saveEvidenceRecordRemote } from "../assets/js/evidence/evidence-store.js";
+import {
+  mergeAuthoritativeEvidenceRecords,
+  saveEvidenceRecordRemote
+} from "../assets/js/evidence/evidence-store.js";
+
+test("ログイン中はFirebase記録を正本にして別端末の古い画像を混ぜない", () => {
+  const records = mergeAuthoritativeEvidenceRecords(
+    [
+      { date: "2026-07-03", missionId: "M1", evidenceImageName: "端末だけの古い画像.png" },
+      { date: "2026-07-24", missionId: "M2", evidenceImageName: "再送待ち.png", firebaseSyncStatus: "error" }
+    ],
+    [
+      { date: "2026-07-24", missionId: "M1", evidenceImageName: "Firebaseの画像.png", firebaseSyncStatus: "synced" }
+    ]
+  );
+  assert.deepEqual(records.map((record) => record.evidenceImageName), ["再送待ち.png", "Firebaseの画像.png"]);
+});
 
 test("creates the queued record before upload and never overwrites AI fields afterward", async () => {
   const calls = [];
