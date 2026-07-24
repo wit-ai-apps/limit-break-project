@@ -23,7 +23,7 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.15.0";
+} from "../../config/app_config.js?v=4.15.2";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -363,7 +363,7 @@ import {
       await loadLinkDirectory();
       if (pendingInviteToken) await claimPendingInvite();
       if (currentRole === "parent" || currentRole === "lead_teacher") await loadGroupInvites();
-      if (currentRole === "student") await recoverStalledEvidenceAnalyses();
+      if (currentRole === "student" || currentRole === "parent") await recoverStalledEvidenceAnalyses();
     }
 
     async function recoverStalledEvidenceAnalyses() {
@@ -835,7 +835,7 @@ import {
     }
 
     function activePhase() {
-      const current = new Date(`${dailyPlan.date || BASELINE_DATE}T00:00:00+09:00`);
+      const current = new Date(`${todayJapanKey()}T00:00:00+09:00`);
       return (dailyPlan.phases || []).find((phase) => {
         const start = new Date(`${phase.date_start}T00:00:00+09:00`);
         const end = new Date(`${phase.date_end}T23:59:59+09:00`);
@@ -1066,7 +1066,7 @@ import {
       document.querySelector("#baselineLabel").textContent = `今日 ${todayJapanKey()}`;
       document.querySelector("#dayBadge").textContent = `開始 ${studyStartDate} / ${studyElapsedDays()}日目`;
       document.querySelector("#levelLabel").textContent = levelLabelJa(dailyPlan.level);
-      document.querySelector("#phaseDateLabel").textContent = dailyPlan.date;
+      document.querySelector("#phaseDateLabel").textContent = todayJapanKey();
       document.querySelector("#coachMessage").textContent = roleCoachMessage();
       if (loginVersionBadge) loginVersionBadge.textContent = APP_VERSION;
       loginStatus.textContent = firebaseBridge.message;
@@ -1871,7 +1871,12 @@ function renderScheduleDrawer() {
 
     function renderRouteSummary() {
       if (!routeSummary) return;
-      document.querySelector("#todayDateLabel").textContent = courseRoute.today?.date_label || todayJapanKey();
+      document.querySelector("#todayDateLabel").textContent = new Intl.DateTimeFormat("ja-JP", {
+        month: "numeric",
+        day: "numeric",
+        weekday: "short",
+        timeZone: "Asia/Tokyo"
+      }).format(new Date(`${todayJapanKey()}T00:00:00+09:00`));
       routeSummary.innerHTML = "";
       (courseRoute.today?.blocks || []).forEach((block) => {
         const card = document.createElement("article");

@@ -1,5 +1,5 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.15.0-dev";
+export const APP_VERSION = "v4.15.2-dev";
 export const APP_RELEASE_NAME = "複数ページ画像一括提出";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
@@ -41,6 +41,25 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.15.2-dev",
+    date: "2026-07-24",
+    title: "今日の日付同期・停止画像復旧",
+    items: [
+      "今日の学習カードの日付を固定の7月3日から日本時間の当日へ変更",
+      "学習フェーズ判定も固定データ日ではなく日本時間の当日を使用",
+      "連携済み保護者から停止中の画像解析を再開可能"
+    ]
+  },
+  {
+    version: "v4.15.1-dev",
+    date: "2026-07-24",
+    title: "保護者側からの停止解析復旧",
+    items: [
+      "連携済み保護者のログイン時にも10分以上停止した画像解析を再試行",
+      "生徒と保護者のどちらから開いても同一生徒IDの停止記録を復旧"
+    ]
+  },
   {
     version: "v4.15.0-dev",
     date: "2026-07-24",

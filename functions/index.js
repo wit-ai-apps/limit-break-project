@@ -305,7 +305,7 @@ export const recoverStalledEvidenceAnalyses = onCall(
     const uid = requireAuth(request);
     const { data: user } = await requireUser(uid);
     const studentId = String(request.data?.studentId || "").trim();
-    if (!studentId || !linkedToStudent(user, studentId) || !["student", "teacher", "lead_teacher", "admin"].includes(user.role)) {
+    if (!studentId || !linkedToStudent(user, studentId) || !["student", "parent", "teacher", "lead_teacher", "admin"].includes(user.role)) {
       throw new HttpsError("permission-denied", "RECOVERY_NOT_ALLOWED");
     }
     const snapshot = await getFirestore().collection(`students/${studentId}/evidence_records`)
