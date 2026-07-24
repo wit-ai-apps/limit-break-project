@@ -1,4 +1,4 @@
-const CACHE_NAME = "cortex-limit-break-v4-17-4-dev";
+const CACHE_NAME = "cortex-limit-break-v4-17-5-dev";
 const APP_SHELL = [
   "./",
   "./index.html",

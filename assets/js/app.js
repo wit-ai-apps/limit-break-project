@@ -23,7 +23,7 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.17.4";
+} from "../../config/app_config.js?v=4.17.5";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -39,8 +39,8 @@ import {
   recordIdentity,
   saveEvidenceRecordRemote,
   saveEvidenceRecords
-} from "./evidence/evidence-store.js?v=4.17.4";
-import { renderAppNavigation } from "./ui/navigation.js?v=4.17.4";
+} from "./evidence/evidence-store.js?v=4.17.5";
+import { renderAppNavigation } from "./ui/navigation.js?v=4.17.5";
 import {
   closeDevDrawerPanel,
   openDevDrawerPanel,
@@ -56,9 +56,9 @@ import { fileToDataUrl } from "./evidence/evidence-upload.js";
 import {
   bindEvidencePreviewDialog,
   openEvidencePreviewRecord
-} from "./evidence/evidence-preview.js?v=4.17.4";
+} from "./evidence/evidence-preview.js?v=4.17.5";
 import { evidenceTypeForUnit, hasEvidence } from "./evidence/evidence-policy.js";
-import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.17.4";
+import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.17.5";
 import {
   canDeleteSchedule,
   downloadSchedulesIcs
@@ -2584,7 +2584,7 @@ function renderScheduleDrawer() {
           <div class="group-invite-row">
             <div>
               <strong>${escapeHtml(inviteRoleLabel(invite.targetRole))}・${escapeHtml(invite.relationship || "関係未設定")}</strong>
-              <span>${escapeHtml(invite.targetEmail || invite.claimedEmail || "メール指定なし")} / ${escapeHtml(inviteStatusLabel(invite.status))}</span>
+              <span>${escapeHtml(invite.targetEmail || invite.claimedEmail || "送信先指定なし（保護者承認必須）")} / ${escapeHtml(inviteStatusLabel(invite.status))}</span>
             </div>
             <div class="group-invite-actions">
               ${invite.status === "pending_approval" ? `<button type="button" data-approve-invite="${escapeHtml(invite.id)}">承認する</button>` : ""}
@@ -2603,20 +2603,47 @@ function renderScheduleDrawer() {
             <option value="parent">別の保護者</option>
           </select>
           <input name="relationship" aria-label="関係" placeholder="例: 家庭教師、カウンセラー" required>
-          <input name="targetEmail" type="email" aria-label="招待先メール" placeholder="相手のメールアドレス">
+          <select name="deliveryMethod" aria-label="招待の送信方法">
+            <option value="line">LINEで送る</option>
+            <option value="sms">SMS（携帯電話）で送る</option>
+            <option value="share">メッセージ・その他のアプリで送る</option>
+            <option value="email">メールで送る</option>
+            <option value="copy">リンクをコピーする</option>
+          </select>
+          <input name="targetContact" class="invite-contact-field" aria-label="招待先" hidden>
           <select name="ttlHours" aria-label="有効期限">
             <option value="72">72時間</option>
             <option value="24">24時間</option>
             <option value="1">1時間（検証用）</option>
           </select>
           <button type="submit">一度限りの招待リンクを作る</button>
+          <small class="invite-delivery-note">LINE・SMS・メッセージでは連絡先を保存しません。メールを選んだ場合だけ、登録者照合のため招待先メールを保存します。</small>
         </form>
         <div class="invite-created-result" id="inviteCreatedResult" aria-live="polite"></div>
         <div class="group-invite-list">${rows}</div>
       `;
       settingsList.prepend(card);
 
-      card.querySelector("#groupInviteForm")?.addEventListener("submit", async (event) => {
+      const inviteForm = card.querySelector("#groupInviteForm");
+      const deliverySelect = inviteForm?.querySelector("[name=deliveryMethod]");
+      const contactInput = inviteForm?.querySelector("[name=targetContact]");
+      const updateContactField = () => {
+        if (!deliverySelect || !contactInput) return;
+        const method = deliverySelect.value;
+        contactInput.required = method === "email";
+        contactInput.hidden = !["email", "sms"].includes(method);
+        contactInput.type = method === "email" ? "email" : "tel";
+        contactInput.inputMode = method === "email" ? "email" : "tel";
+        contactInput.autocomplete = method === "email" ? "email" : "tel";
+        contactInput.placeholder = method === "email"
+          ? "相手のメールアドレス"
+          : "相手の携帯電話番号（任意・保存しません）";
+        contactInput.setAttribute("aria-label", method === "email" ? "招待先メール" : "招待先携帯電話番号");
+      };
+      deliverySelect?.addEventListener("change", updateContactField);
+      updateContactField();
+
+      inviteForm?.addEventListener("submit", async (event) => {
         event.preventDefault();
         const form = event.currentTarget;
         const resultBox = card.querySelector("#inviteCreatedResult");
@@ -2625,26 +2652,81 @@ function renderScheduleDrawer() {
         resultBox.textContent = "安全な招待リンクを作成しています。";
         try {
           const data = new FormData(form);
+          const deliveryMethod = String(data.get("deliveryMethod") || "copy");
+          const targetContact = String(data.get("targetContact") || "").trim();
+          const targetRole = String(data.get("targetRole") || "");
+          const relationship = String(data.get("relationship") || "");
+          const ttlHours = Number(data.get("ttlHours"));
           const result = await callGroupFunction("createGroupInvite", {
             studentId: firebaseBridge.studentId,
-            targetRole: data.get("targetRole"),
-            targetEmail: data.get("targetEmail"),
-            relationship: data.get("relationship"),
-            ttlHours: Number(data.get("ttlHours"))
+            targetRole,
+            targetEmail: deliveryMethod === "email" ? targetContact : "",
+            relationship,
+            ttlHours
           });
           const inviteUrl = new URL(window.location.href);
           inviteUrl.search = "";
           inviteUrl.hash = "";
           inviteUrl.searchParams.set("invite", result.token);
+          const expiryLabel = ttlHours === 1 ? "1時間" : `${ttlHours}時間`;
+          const inviteMessage = [
+            "CORTEX Limit Breakの生徒支援グループへ招待します。",
+            `役割: ${inviteRoleLabel(targetRole)}`,
+            `関係: ${relationship}`,
+            `このリンクは${expiryLabel}・一度限りです。登録後は保護者の承認が必要です。`,
+            inviteUrl.toString()
+          ].join("\n");
           resultBox.innerHTML = `
             <strong>招待リンクを作成しました</strong>
-            <span>このリンクをメール・LINE・メッセージで相手だけに送ってください。</span>
+            <span>送信方法を選んで、招待する相手だけに送ってください。リンクは一度使うと無効になります。</span>
             <input readonly value="${escapeHtml(inviteUrl.toString())}" aria-label="作成した招待リンク">
-            <button type="button" id="copyInviteLinkButton">リンクをコピー</button>
+            <div class="invite-delivery-actions">
+              <button type="button" data-send-invite="line">LINE</button>
+              <button type="button" data-send-invite="sms">SMS・携帯電話</button>
+              <button type="button" data-send-invite="share">メッセージ・他アプリ</button>
+              <button type="button" data-send-invite="email">メール</button>
+              <button type="button" data-send-invite="copy">招待文をコピー</button>
+            </div>
           `;
-          resultBox.querySelector("#copyInviteLinkButton")?.addEventListener("click", async () => {
-            await navigator.clipboard.writeText(inviteUrl.toString());
-            resultBox.querySelector("#copyInviteLinkButton").textContent = "コピーしました";
+          const copyInviteMessage = async (button) => {
+            try {
+              await navigator.clipboard.writeText(inviteMessage);
+              button.textContent = "コピーしました";
+            } catch {
+              window.prompt("この招待文をコピーしてください。", inviteMessage);
+            }
+          };
+          resultBox.querySelectorAll("[data-send-invite]").forEach((button) => {
+            button.addEventListener("click", async () => {
+              const method = button.dataset.sendInvite;
+              if (method === "line") {
+                window.location.href = `https://line.me/R/share?text=${encodeURIComponent(inviteMessage)}`;
+                return;
+              }
+              if (method === "sms") {
+                const phone = deliveryMethod === "sms" ? targetContact.replace(/[^\d+]/g, "") : "";
+                window.location.href = `sms:${phone}?body=${encodeURIComponent(inviteMessage)}`;
+                return;
+              }
+              if (method === "email") {
+                const email = deliveryMethod === "email" ? targetContact : "";
+                const subject = "CORTEX Limit Break 生徒支援グループへの招待";
+                window.location.href = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(inviteMessage)}`;
+                return;
+              }
+              if (method === "share" && navigator.share) {
+                try {
+                  await navigator.share({
+                    title: "CORTEX Limit Breakへの招待",
+                    text: inviteMessage
+                  });
+                  return;
+                } catch (error) {
+                  if (error?.name === "AbortError") return;
+                }
+              }
+              await copyInviteMessage(button);
+            });
           });
           await loadGroupInvites();
         } catch (error) {

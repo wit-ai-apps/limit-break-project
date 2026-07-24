@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.17.4-dev";
-export const APP_RELEASE_NAME = "登録テキスト一覧";
+export const APP_VERSION = "v4.17.5-dev";
+export const APP_RELEASE_NAME = "招待送信方法の拡張";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -41,6 +41,17 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.17.5-dev",
+    date: "2026-07-24",
+    title: "LINE・SMS・メッセージ招待",
+    items: [
+      "生徒支援グループの招待をLINE・SMS・端末の共有メニュー・メール・コピーに対応",
+      "電話番号やLINE情報をサーバーへ保存しない安全な送信方式を採用",
+      "送信先メールを指定した場合だけ登録者照合に利用",
+      "招待文へ役割・関係・有効期限・保護者承認が必要なことを自動記載"
+    ]
+  },
   {
     version: "v4.17.4-dev",
     date: "2026-07-24",

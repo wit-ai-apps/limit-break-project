@@ -3066,9 +3066,27 @@
     }
 
     .group-invite-form button,
+    .invite-delivery-note,
     .invite-created-result,
     .group-invite-list {
       grid-column: 1 / -1;
+    }
+
+    .invite-contact-field[hidden] {
+      display: none;
+    }
+
+    .invite-delivery-note {
+      color: #475569;
+      font-size: 0.78rem;
+      font-weight: 760;
+      line-height: 1.55;
+    }
+
+    .invite-delivery-actions {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
+      gap: 8px;
     }
 
     .group-invite-row {
@@ -3097,6 +3115,16 @@
 
       .group-invite-actions {
         grid-auto-flow: row;
+      }
+
+      .invite-delivery-actions {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 420px) {
+      .invite-delivery-actions {
+        grid-template-columns: 1fr;
       }
     }
 
