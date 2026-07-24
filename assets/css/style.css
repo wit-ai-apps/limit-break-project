@@ -2379,6 +2379,63 @@
       gap: 12px;
     }
 
+    .settings-intro {
+      margin: 0 0 14px;
+      color: var(--muted);
+      font-weight: 760;
+      line-height: 1.55;
+    }
+
+    .settings-feature-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 8px;
+      margin-bottom: 14px;
+    }
+
+    .settings-feature-tabs button {
+      min-width: 0;
+      min-height: 48px;
+      padding: 8px;
+      border-radius: 12px;
+      overflow-wrap: anywhere;
+      box-shadow: none;
+    }
+
+    .settings-feature-tabs button.active,
+    .settings-feature-tabs button[aria-selected="true"] {
+      border-color: var(--primary);
+      background: var(--primary);
+      color: #ffffff;
+    }
+
+    .settings-feature-panels,
+    .settings-feature-panel {
+      width: 100%;
+      min-width: 0;
+    }
+
+    .settings-feature-panel {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: #f9fbfd;
+    }
+
+    .settings-feature-panel[hidden] {
+      display: none;
+    }
+
+    .settings-feature-panel > h3 {
+      margin: 0;
+    }
+
+    .settings-update-panel .dev-version-item {
+      background: #ffffff;
+    }
+
     .settings-card {
       display: grid;
       gap: 8px;
@@ -3553,6 +3610,10 @@
     @media (max-width: 420px) {
       .evidence-draft-tray {
         grid-template-columns: minmax(0, 1fr);
+      }
+
+      .settings-feature-tabs {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
       }
     }
 

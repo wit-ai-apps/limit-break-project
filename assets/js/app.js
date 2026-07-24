@@ -23,7 +23,7 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.18.2";
+} from "../../config/app_config.js?v=4.18.3";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -39,13 +39,9 @@ import {
   recordIdentity,
   saveEvidenceRecordRemote,
   saveEvidenceRecords
-} from "./evidence/evidence-store.js?v=4.18.2";
-import { renderAppNavigation } from "./ui/navigation.js?v=4.18.2";
-import {
-  closeDevDrawerPanel,
-  openDevDrawerPanel,
-  renderDevDrawerPanel
-} from "./ui/dev-drawer.js";
+} from "./evidence/evidence-store.js?v=4.18.3";
+import { renderAppNavigation } from "./ui/navigation.js?v=4.18.3";
+import { renderDevDrawerPanel } from "./ui/dev-drawer.js";
 import {
   closeScheduleDrawerPanel,
   openScheduleDrawerPanel,
@@ -56,9 +52,9 @@ import { fileToDataUrl } from "./evidence/evidence-upload.js";
 import {
   bindEvidencePreviewDialog,
   openEvidencePreviewRecord
-} from "./evidence/evidence-preview.js?v=4.18.2";
+} from "./evidence/evidence-preview.js?v=4.18.3";
 import { evidenceTypeForUnit, hasEvidence } from "./evidence/evidence-policy.js";
-import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.18.2";
+import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.18.3";
 import {
   canDeleteSchedule,
   downloadSchedulesIcs
@@ -158,8 +154,6 @@ import {
     const versionBadge = document.querySelector("#versionBadge");
     const sessionRoleBadge = document.querySelector("#sessionRoleBadge");
     const sessionStudentBadge = document.querySelector("#sessionStudentBadge");
-    const devDrawer = document.querySelector("#devDrawer");
-    const devDrawerBackdrop = document.querySelector("#devDrawerBackdrop");
     const devVersionBadge = document.querySelector("#devVersionBadge");
     const devVersionList = document.querySelector("#devVersionList");
     const diagnosticLogList = document.querySelector("#diagnosticLogList");
@@ -194,6 +188,10 @@ import {
     const summerWeekList = document.querySelector("#summerWeekList");
     const materialList = document.querySelector("#materialList");
     const settingsList = document.querySelector("#settingsList");
+    const groupSettingsList = document.querySelector("#groupSettingsList");
+    const scheduleSettingsList = document.querySelector("#scheduleSettingsList");
+    const aiSettingsList = document.querySelector("#aiSettingsList");
+    const settingsFeatureTabs = document.querySelector("#settingsFeatureTabs");
     const paceList = document.querySelector("#paceList");
     const studyLoadGrid = document.querySelector("#studyLoadGrid");
     const memorySummary = document.querySelector("#memorySummary");
@@ -1329,8 +1327,7 @@ import {
         container: appNav,
         views: visibleAppViews(),
         activeView,
-        onSelect: setActiveView,
-        onOpenDevDrawer: openDevDrawer
+        onSelect: setActiveView
       });
     }
 
@@ -1363,6 +1360,20 @@ import {
       render();
     }
 
+    function selectSettingsFeature(feature = "account") {
+      const panels = [...document.querySelectorAll("[data-settings-panel]")];
+      const available = new Set(panels.map((panel) => panel.dataset.settingsPanel));
+      const selected = available.has(feature) ? feature : "account";
+      settingsFeatureTabs?.querySelectorAll("[data-settings-feature]").forEach((button) => {
+        const isSelected = button.dataset.settingsFeature === selected;
+        button.setAttribute("aria-selected", String(isSelected));
+        button.classList.toggle("active", isSelected);
+      });
+      panels.forEach((panel) => {
+        panel.hidden = panel.dataset.settingsPanel !== selected;
+      });
+    }
+
     function renderDevDrawer() {
       renderDevDrawerPanel({
         versionBadge,
@@ -1372,14 +1383,6 @@ import {
         releaseNotes: RELEASE_NOTES,
         escapeHtml
       });
-    }
-
-    function openDevDrawer() {
-      openDevDrawerPanel({ drawer: devDrawer, backdrop: devDrawerBackdrop });
-    }
-
-    function closeDevDrawer() {
-      closeDevDrawerPanel({ drawer: devDrawer, backdrop: devDrawerBackdrop });
     }
 
     function render() {
@@ -2646,7 +2649,16 @@ function renderScheduleDrawer() {
     }
 
     function renderGroupInviteManager() {
-      if (!settingsList || !["parent", "lead_teacher"].includes(currentRole)) return;
+      if (!groupSettingsList) return;
+      if (!["parent", "lead_teacher"].includes(currentRole)) {
+        groupSettingsList.innerHTML = `
+          <article class="settings-card">
+            <strong>保護者または統括教師でログインしてください</strong>
+            <span>サポーター招待の作成と承認は、連携生徒を管理する保護者または統括教師だけが行えます。</span>
+          </article>
+        `;
+        return;
+      }
       if (!firebaseBridge.currentUser) {
         const authCard = document.createElement("article");
         authCard.className = "settings-card group-invite-manager invite-auth-required";
@@ -2655,7 +2667,7 @@ function renderScheduleDrawer() {
           <span>招待リンクを安全に発行するため、Firebaseでの本人確認が必要です。</span>
           <button type="button" id="inviteReloginButton">登録済みアカウントで再ログインする</button>
         `;
-        settingsList.prepend(authCard);
+        groupSettingsList.appendChild(authCard);
         authCard.querySelector("#inviteReloginButton")?.addEventListener("click", prepareInviteRelogin);
         return;
       }
@@ -2672,7 +2684,7 @@ function renderScheduleDrawer() {
           </form>
           <div class="invite-created-result" id="studentSetupResult" hidden aria-live="polite"></div>
         `;
-        settingsList.prepend(setupCard);
+        groupSettingsList.appendChild(setupCard);
         setupCard.querySelector("#createStudentForm")?.addEventListener("submit", async (event) => {
           event.preventDefault();
           const form = event.currentTarget;
@@ -2739,7 +2751,7 @@ function renderScheduleDrawer() {
         <div class="invite-created-result" id="inviteCreatedResult" aria-live="polite"></div>
         <div class="group-invite-list">${rows}</div>
       `;
-      settingsList.prepend(card);
+      groupSettingsList.appendChild(card);
 
       const inviteForm = card.querySelector("#groupInviteForm");
       const deliverySelect = inviteForm?.querySelector("[name=deliveryMethod]");
@@ -2882,50 +2894,25 @@ function renderScheduleDrawer() {
     }
 
     function renderSettings() {
-      if (!settingsList) return;
+      if (!settingsList || !scheduleSettingsList || !aiSettingsList || !groupSettingsList) return;
+      settingsList.innerHTML = "";
+      scheduleSettingsList.innerHTML = "";
+      aiSettingsList.innerHTML = "";
+      groupSettingsList.innerHTML = "";
       const settings = [
         {
-          title: "Firebase Storage + Firestore",
+          title: "データ保存・同期",
           body: `${firebaseBridge.message} 現在の保存先: ${firebaseBridge.enabled ? `Firebase / student_id=${firebaseBridge.studentId}` : "localStorage"}`
         },
         {
-          title: "メール通知設定",
-          body: "保護者、サポーター、塾講師への提出通知先を管理します。Phase1はmailto作成、Phase2はサーバー送信へ移行します。"
-        },
-        {
-          title: "Firebase Authentication",
+          title: "ログイン認証",
           body: "uid、email、displayName、role、linked_student_id、created_at、last_login_at、login_count、statusをユーザー単位で管理します。"
         },
         {
-          title: "Firestore users / login_logs",
-          body: "users/{uid} にユーザー情報、login_logs/{log_id} にログイン履歴を保存する設計です。counselorは表面上サポーター属性でもDB上は独立ロールとして保持できます。"
-        },
-        {
-          title: "外部アプリ連携設定",
-          body: "英単語アプリなどのCSV、スクリーンショット、手動入力を管理します。Homeには表示しません。"
-        },
-        {
-          title: "OCR設定",
-          body: "確認テスト結果スクショから回答数と正答率を読み取る準備項目です。Phase1では手入力を維持します。"
-        },
-        {
-          title: "AI Teacher API設定",
-          body: "OpenAI APIキーはブラウザに置かず、Cloud FunctionsまたはAPIサーバーの環境変数で保持します。"
-        },
-        {
-          title: "英文300選 Grammar Link",
-          body: "英文300選は各英文を文法タグ、構文、難度、出題形式、関連する映像授業IDでDB化し、Today's Memory、AI Check、復習Missionへつなげる設計です。Phase1は管理方針、Phase2でOCR・構文解析・講座紐付けを実装します。"
-        },
-        {
-          title: "確認テスト合格後の上位類題",
-          body: "確認テスト画像または正答率が合格基準を超えた場合、同じ学習ポイントの一段上の類題をAI Teacherで作る設計です。Phase1は提案表示、Phase2はサーバーAPIで生成します。教材本文の複製ではなく、学習ポイントを抽象化したオリジナル問題を作ります。"
-        },
-        {
-          title: "管理者用設定",
-          body: "教材DB、Exam DB、権限、通知、AI接続、外部連携を管理者画面に集約します。"
+          title: "AI解析接続",
+          body: "AIキーはブラウザや画面には保存せず、Cloud Functions側の秘密設定から利用します。接続状態と解析結果だけをアプリへ返します。"
         }
       ];
-      settingsList.innerHTML = "";
       settings.forEach((item) => {
         const card = document.createElement("article");
         card.className = "settings-card";
@@ -2944,7 +2931,7 @@ function renderScheduleDrawer() {
           <button type="submit">開始日を保存</button>
         </form>
       `;
-      settingsList.appendChild(startDateCard);
+      scheduleSettingsList.appendChild(startDateCard);
       startDateCard.querySelector("#studyStartForm")?.addEventListener("submit", (event) => {
         event.preventDefault();
         saveStudyStartDate(startDateCard.querySelector("#studyStartDateInput")?.value);
@@ -2980,7 +2967,7 @@ function renderScheduleDrawer() {
         </form>
         <div class="custom-countdown-list">${customRows}</div>
       `;
-      settingsList.appendChild(countdownCard);
+      scheduleSettingsList.appendChild(countdownCard);
       countdownCard.querySelector("#customCountdownForm")?.addEventListener("submit", addCustomCountdown);
       countdownCard.querySelectorAll("[data-delete-countdown]").forEach((button) => {
         button.addEventListener("click", () => deleteCustomCountdown(button.dataset.deleteCountdown));
@@ -3080,7 +3067,7 @@ function renderScheduleDrawer() {
         </details>
         <p class="button-note" id="aiTextIndexResult">${materialTexts.length + systemTexts.length}件を表示中</p>
       `;
-      settingsList.prepend(card);
+      aiSettingsList.appendChild(card);
       const searchInput = card.querySelector("#aiTextIndexSearch");
       const result = card.querySelector("#aiTextIndexResult");
       searchInput?.addEventListener("input", () => {
@@ -4091,10 +4078,8 @@ function renderScheduleDrawer() {
     });
 
     document.querySelector("#closeDialogButton").addEventListener("click", () => recordDialog.close());
-        document.querySelector("#closeDevDrawerButton").addEventListener("click", closeDevDrawer);
     document.querySelector("#refreshAppCacheButton").addEventListener("click", refreshAppCache);
     startupUpdateButton?.addEventListener("click", refreshAppCache);
-    devDrawerBackdrop.addEventListener("click", closeDevDrawer);
     scheduleDrawerOpen?.addEventListener("click", openScheduleDrawer);
     scheduleDrawerClose?.addEventListener("click", closeScheduleDrawer);
     scheduleDrawerBackdrop?.addEventListener("click", closeScheduleDrawer);
@@ -4105,7 +4090,6 @@ function renderScheduleDrawer() {
     });
     document.addEventListener("keydown", (event) => {
       if (event.key === "Escape") {
-        closeDevDrawer();
         closeScheduleDrawer();
       }
     });
@@ -4136,9 +4120,17 @@ function renderScheduleDrawer() {
     });
 
     document.addEventListener("click", (event) => {
+      const settingsTarget = event.target.closest("[data-settings-feature]");
+      if (settingsTarget) {
+        event.preventDefault();
+        selectSettingsFeature(settingsTarget.dataset.settingsFeature);
+      }
       const target = event.target.closest("[data-target-view]");
       if (!target) return;
       event.preventDefault();
+      if (target.dataset.targetView === "admin" && !settingsTarget) {
+        selectSettingsFeature("account");
+      }
       setActiveView(target.dataset.targetView);
       if (scheduleDrawer?.contains(target)) closeScheduleDrawer();
     });

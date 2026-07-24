@@ -2,8 +2,7 @@ export function renderAppNavigation({
   container,
   views,
   activeView,
-  onSelect,
-  onOpenDevDrawer
+  onSelect
 }) {
   if (!container) return;
   container.innerHTML = "";
@@ -16,14 +15,6 @@ export function renderAppNavigation({
     button.addEventListener("click", () => onSelect(view.id));
     container.appendChild(button);
   });
-
-  const devButton = document.createElement("button");
-  devButton.type = "button";
-  devButton.className = "nav-button";
-  devButton.textContent = "更新内容";
-  devButton.setAttribute("aria-controls", "devDrawer");
-  devButton.addEventListener("click", onOpenDevDrawer);
-  container.appendChild(devButton);
 
   requestAnimationFrame(() => {
     const activeButton = container.querySelector(".nav-button.active");

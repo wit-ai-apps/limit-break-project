@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.svg">
-  <link rel="stylesheet" href="assets/css/style.css?v=4.18.2">
+  <link rel="stylesheet" href="assets/css/style.css?v=4.18.3">
 </head>
 <body data-role="student" data-auth="out">
   <div class="app-startup-gate" id="appStartupGate" role="status" aria-live="polite">
@@ -134,46 +134,14 @@
       </div>
       <div class="calendar-sync-note">Googleは予定ごとの「Googleへ追加」、Apple・OutlookはICSファイルで連携できます。</div>
       <button class="secondary" type="button" id="downloadScheduleIcs">Apple / Outlook用ICSを書き出す</button>
-      <button class="secondary view-link" type="button" data-target-view="admin">予定を設定する</button>
+      <button class="secondary view-link" type="button" data-target-view="admin" data-settings-feature="schedule">予定を設定する</button>
     </aside>
 
     <nav class="app-nav" aria-label="画面切替" id="appNav"></nav>
 
-    <div class="dev-drawer-backdrop" id="devDrawerBackdrop" hidden></div>
-    <aside class="dev-drawer" id="devDrawer" aria-labelledby="devDrawerTitle" aria-hidden="true" hidden>
-      <div class="topline">
-        <div>
-          <div class="system-label">開発中の更新内容</div>
-          <h2 id="devDrawerTitle">検証メモ</h2>
-        </div>
-        <button class="secondary" type="button" id="closeDevDrawerButton">閉じる</button>
-      </div>
-      <div class="badge-row">
-        <span class="badge" id="devVersionBadge">v4.7.0-dev</span>
-        <span class="badge">検証用</span>
-      </div>
-      <button class="secondary" type="button" id="refreshAppCacheButton">最新版に更新</button>
-      <div class="diagnostic-log-panel">
-        <div class="topline">
-          <strong>検証ログ</strong>
-          <span class="badge" id="diagnosticLogCount">0件</span>
-        </div>
-        <p class="button-note">画像の選択・Firebase保存・送信・AI解析状態を記録します。パスワード、APIキー、画像内容は記録しません。</p>
-        <div class="diagnostic-log-actions">
-          <button class="secondary" type="button" id="copyDiagnosticLogButton">ログをコピー</button>
-          <button class="warning" type="button" id="clearDiagnosticLogButton">ログを消去</button>
-        </div>
-        <pre class="diagnostic-log-list" id="diagnosticLogList">ログはまだありません。</pre>
-      </div>
-      <p class="button-note">
-        リロードしても古いバージョンが出る時だけ使います。学習記録は消さず、PWAの古い表示キャッシュだけ更新します。
-      </p>
-      <div class="dev-version-list" id="devVersionList"></div>
-    </aside>
-
     <main>
       <div class="stack">
-        <section class="view-section view-admin" aria-labelledby="phase-heading">
+        <section class="view-section view-long" aria-labelledby="phase-heading">
           <div class="topline">
             <h2 id="phase-heading">受験までの作戦</h2>
             <span class="badge" id="phaseDateLabel"></span>
@@ -274,7 +242,7 @@
           <div class="retention-list" id="retentionList"></div>
         </section>
 
-        <section class="view-section view-admin" aria-labelledby="summer-heading">
+        <section class="view-section view-long" aria-labelledby="summer-heading">
           <div class="topline">
             <h2 id="summer-heading">8月末集中カリキュラム</h2>
             <span class="badge" id="summerPeriodLabel"></span>
@@ -314,21 +282,21 @@
           <div class="counselor-list" id="counselorList"></div>
         </section>
 
-        <section class="view-section view-admin" aria-labelledby="exam-heading">
+        <section class="view-section view-long" aria-labelledby="exam-heading">
           <div class="topline">
             <h2 id="exam-heading">Exam Schedule DB</h2>
           </div>
           <div class="exam-list" id="examList"></div>
         </section>
 
-        <section class="view-section view-admin" aria-labelledby="level-heading">
+        <section class="view-section view-progress" aria-labelledby="level-heading">
           <div class="topline">
             <h2 id="level-heading">Level Tasks</h2>
           </div>
           <div class="level-list" id="levelList"></div>
         </section>
 
-        <section class="view-section view-admin" aria-labelledby="materials-heading">
+        <section class="view-section view-long" aria-labelledby="materials-heading">
           <div class="topline">
             <h2 id="materials-heading">教材データ</h2>
           </div>
@@ -338,21 +306,82 @@
         <section class="view-section view-admin" aria-labelledby="settings-heading">
           <div class="topline">
             <h2 id="settings-heading">設定</h2>
-            <span class="badge">管理</span>
+            <span class="badge">アプリ設定</span>
           </div>
-          <div class="role-panel account-settings-panel" aria-labelledby="account-heading">
-            <h3 id="account-heading">アカウント</h3>
-            <div class="account-panel" id="accountPanel"></div>
+          <p class="settings-intro">変更・確認する機能を選んでください。学習計画や受験情報は「長期計画」「進み具合」で確認します。</p>
+          <div class="settings-feature-tabs" id="settingsFeatureTabs" role="tablist" aria-label="設定機能">
+            <button type="button" role="tab" aria-selected="true" data-settings-feature="account">アカウント</button>
+            <button type="button" role="tab" aria-selected="false" data-settings-feature="support">支援者・招待</button>
+            <button type="button" role="tab" aria-selected="false" data-settings-feature="schedule">学習日・予定</button>
+            <button type="button" role="tab" aria-selected="false" data-settings-feature="ai">AI・教材</button>
+            <button type="button" role="tab" aria-selected="false" data-settings-feature="external">外部連携</button>
+            <button type="button" role="tab" aria-selected="false" data-settings-feature="notification">通知</button>
+            <button type="button" role="tab" aria-selected="false" data-settings-feature="system">システム</button>
+            <button type="button" role="tab" aria-selected="false" data-settings-feature="updates">更新内容</button>
           </div>
-          <div class="settings-list" id="settingsList"></div>
-        </section>
-
-        <section class="view-section view-admin" aria-labelledby="external-heading">
-          <div class="topline">
-            <h2 id="external-heading">外部アプリ連携設定</h2>
-            <span class="badge">手動入力</span>
+          <div class="settings-feature-panels">
+            <div class="settings-feature-panel" data-settings-panel="account" role="tabpanel">
+              <div class="role-panel account-settings-panel" aria-labelledby="account-heading">
+                <h3 id="account-heading">アカウント</h3>
+                <div class="account-panel" id="accountPanel"></div>
+              </div>
+            </div>
+            <div class="settings-feature-panel" data-settings-panel="support" role="tabpanel" hidden>
+              <h3>生徒支援グループ・招待</h3>
+              <p class="button-note">保護者または統括教師が、サポーターなどの一度限り招待を作成・承認します。</p>
+              <div class="settings-list" id="groupSettingsList"></div>
+            </div>
+            <div class="settings-feature-panel" data-settings-panel="schedule" role="tabpanel" hidden>
+              <h3>学習開始日・予定</h3>
+              <div class="settings-list" id="scheduleSettingsList"></div>
+            </div>
+            <div class="settings-feature-panel" data-settings-panel="ai" role="tabpanel" hidden>
+              <h3>AI・教材登録情報</h3>
+              <div class="settings-list" id="aiSettingsList"></div>
+            </div>
+            <div class="settings-feature-panel" data-settings-panel="external" role="tabpanel" hidden>
+              <div class="topline">
+                <h3>外部アプリ連携</h3>
+                <span class="badge">手動入力</span>
+              </div>
+              <div class="external-list" id="externalList"></div>
+            </div>
+            <div class="settings-feature-panel" data-settings-panel="notification" role="tabpanel" hidden>
+              <div class="topline">
+                <h3>通知設定</h3>
+                <span class="badge">メール作成</span>
+              </div>
+              <div class="notification-panel" id="notificationPanel"></div>
+            </div>
+            <div class="settings-feature-panel" data-settings-panel="system" role="tabpanel" hidden>
+              <h3>システム・接続状態</h3>
+              <div class="settings-list" id="settingsList"></div>
+            </div>
+            <div class="settings-feature-panel settings-update-panel" id="devDrawer" data-settings-panel="updates" role="tabpanel" hidden>
+              <div class="topline">
+                <div>
+                  <div class="system-label">アプリの更新内容</div>
+                  <h3 id="devDrawerTitle">バージョン・検証情報</h3>
+                </div>
+                <span class="badge" id="devVersionBadge">バージョン確認中</span>
+              </div>
+              <button class="secondary" type="button" id="refreshAppCacheButton">最新版に更新</button>
+              <p class="button-note">古い表示が残る場合だけ使います。学習記録は消さず、PWAの表示キャッシュを更新します。</p>
+              <div class="diagnostic-log-panel">
+                <div class="topline">
+                  <strong>検証ログ</strong>
+                  <span class="badge" id="diagnosticLogCount">0件</span>
+                </div>
+                <p class="button-note">画像の選択・Firebase保存・送信・AI解析状態を記録します。パスワード、APIキー、画像内容は記録しません。</p>
+                <div class="diagnostic-log-actions">
+                  <button class="secondary" type="button" id="copyDiagnosticLogButton">ログをコピー</button>
+                  <button class="warning" type="button" id="clearDiagnosticLogButton">ログを消去</button>
+                </div>
+                <pre class="diagnostic-log-list" id="diagnosticLogList">ログはまだありません。</pre>
+              </div>
+              <div class="dev-version-list" id="devVersionList"></div>
+            </div>
           </div>
-          <div class="external-list" id="externalList"></div>
         </section>
 
         <section class="view-section view-support" aria-labelledby="role-view-heading">
@@ -360,14 +389,6 @@
             <h2 id="role-view-heading">表示権限</h2>
           </div>
           <div class="permission-list" id="permissionList"></div>
-        </section>
-
-        <section class="view-section view-admin" aria-labelledby="notification-heading">
-          <div class="topline">
-            <h2 id="notification-heading">メール通知設定</h2>
-            <span class="badge">メール作成</span>
-          </div>
-          <div class="notification-panel" id="notificationPanel"></div>
         </section>
 
         <section class="view-section view-evidence view-support view-progress" aria-labelledby="records-heading">
@@ -477,6 +498,6 @@
     </div>
   </dialog>
 
-  <script type="module" src="assets/js/app.js?v=4.18.2"></script>
+  <script type="module" src="assets/js/app.js?v=4.18.3"></script>
 </body>
 </html>

@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.18.2-dev";
-export const APP_RELEASE_NAME = "スマホ画像表示・起動ホーム";
+export const APP_VERSION = "v4.18.3-dev";
+export const APP_RELEASE_NAME = "設定画面・支援者招待整理";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -41,6 +41,18 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.18.3-dev",
+    date: "2026-07-25",
+    title: "設定画面を機能別ボタンへ整理",
+    items: [
+      "受験までの作戦・8月末集中カリキュラム・Exam Scheduleを長期計画へ移動",
+      "Level Tasksを進み具合へ移動し、設定画面から学習計画表示を除外",
+      "設定画面をアカウント・支援者招待・予定・AI教材・外部連携・通知・システム・更新内容のボタン式に変更",
+      "下部メニューの更新内容を廃止し、設定内へ移動",
+      "サポーター招待を保護者・統括教師だけが作成・承認できることを画面上で明確化"
+    ]
+  },
   {
     version: "v4.18.2-dev",
     date: "2026-07-25",
