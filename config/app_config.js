@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.17.3-dev";
-export const APP_RELEASE_NAME = "スマホ専用レイアウト再設計";
+export const APP_VERSION = "v4.17.4-dev";
+export const APP_RELEASE_NAME = "登録テキスト一覧";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -41,6 +41,18 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.17.4-dev",
+    date: "2026-07-24",
+    title: "登録テキスト一覧",
+    items: [
+      "設定画面にAI・学習ナビへ登録されたテキスト一覧を追加",
+      "教材18件の教科・講座・ファイル名・構造抽出状態を表示",
+      "学習計画・AI方針テキスト21件を用途付きで表示",
+      "教科・講座・ファイル名による一覧検索に対応",
+      "教材本文・秘密情報は一覧へ表示しない"
+    ]
+  },
   {
     version: "v4.17.3-dev",
     date: "2026-07-24",

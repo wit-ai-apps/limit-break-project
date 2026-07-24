@@ -23,7 +23,7 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.17.3";
+} from "../../config/app_config.js?v=4.17.4";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -39,8 +39,8 @@ import {
   recordIdentity,
   saveEvidenceRecordRemote,
   saveEvidenceRecords
-} from "./evidence/evidence-store.js?v=4.17.3";
-import { renderAppNavigation } from "./ui/navigation.js?v=4.17.3";
+} from "./evidence/evidence-store.js?v=4.17.4";
+import { renderAppNavigation } from "./ui/navigation.js?v=4.17.4";
 import {
   closeDevDrawerPanel,
   openDevDrawerPanel,
@@ -56,9 +56,9 @@ import { fileToDataUrl } from "./evidence/evidence-upload.js";
 import {
   bindEvidencePreviewDialog,
   openEvidencePreviewRecord
-} from "./evidence/evidence-preview.js?v=4.17.3";
+} from "./evidence/evidence-preview.js?v=4.17.4";
 import { evidenceTypeForUnit, hasEvidence } from "./evidence/evidence-policy.js";
-import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.17.3";
+import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.17.4";
 import {
   canDeleteSchedule,
   downloadSchedulesIcs
@@ -2724,6 +2724,7 @@ function renderScheduleDrawer() {
         card.innerHTML = `<strong>${item.title}</strong><span>${item.body}</span>`;
         settingsList.appendChild(card);
       });
+      renderAiReferenceTextIndex();
       renderGroupInviteManager();
       const startDateCard = document.createElement("article");
       startDateCard.className = "settings-card";
@@ -2775,6 +2776,114 @@ function renderScheduleDrawer() {
       countdownCard.querySelector("#customCountdownForm")?.addEventListener("submit", addCustomCountdown);
       countdownCard.querySelectorAll("[data-delete-countdown]").forEach((button) => {
         button.addEventListener("click", () => deleteCustomCountdown(button.dataset.deleteCountdown));
+      });
+    }
+
+    function renderAiReferenceTextIndex() {
+      const outlineByFile = new Map(
+        (materialsOutline.materials || []).map((item) => [item.file_name, item])
+      );
+      const materialTexts = (materialsCatalog.materials || []).map((item) => {
+        const outline = outlineByFile.get(item.file_name) || {};
+        const isExtracted = Number.isFinite(Number(outline.page_count)) || Number.isFinite(Number(outline.observed_lessons));
+        return {
+          subject: item.subject || "未分類",
+          course: item.course_name || "講座名未設定",
+          fileName: item.file_name || "ファイル名未設定",
+          pageCount: outline.page_count,
+          lessonCount: outline.observed_lessons,
+          status: isExtracted
+            ? "目次・構造抽出済み"
+            : item.extraction_status === "uploaded_pending_outline"
+              ? "アップロード済み・構造抽出待ち"
+              : "教材索引へ登録済み"
+        };
+      });
+      const systemTexts = [
+        ["daily_missions.json", "日々の学習ミッション"],
+        ["curriculum.json", "カリキュラム"],
+        ["course_route.json", "講座の学習順序"],
+        ["course_priority_matrix.json", "講座優先順位"],
+        ["course_pacing.json", "講座進行ペース"],
+        ["summer_plan_2026.json", "8月末までの学習計画"],
+        ["video_schedule_august_2026.json", "映像授業スケジュール"],
+        ["confirmation_tests_index.json", "確認問題・確認テスト所在索引"],
+        ["materials_catalog.json", "教材カタログ"],
+        ["materials_outline.json", "教材目次・講座構造"],
+        ["material_extraction_schema.json", "教材抽出形式"],
+        ["review_schedule.json", "復習タイミング"],
+        ["memory_items.json", "暗記項目"],
+        ["english_300_training_policy.json", "英文300選の学習方針"],
+        ["knowledge_extraction_policy.json", "知識抽出方針"],
+        ["similar_question_generation_policy.json", "類題生成方針"],
+        ["submission_policy.json", "画像提出方針"],
+        ["ai_teacher_config.json", "AI先生の応答方針"],
+        ["counselor_notes.json", "見守り・相談方針"],
+        ["subject_balance.json", "教科配分"],
+        ["exam_schedule.json", "試験予定"]
+      ];
+      const card = document.createElement("article");
+      card.className = "settings-card ai-text-index-card";
+      card.innerHTML = `
+        <div class="topline ai-text-index-title">
+          <div>
+            <strong>AI・学習ナビ 登録テキスト一覧</strong>
+            <span>現在Limit Breakに登録されている教材索引と学習設定テキストを確認できます。</span>
+          </div>
+          <span class="badge">${materialTexts.length + systemTexts.length}件</span>
+        </div>
+        <div class="limited">
+          教材PDF本文や問題文を公開している一覧ではありません。教材名・ファイル名・目次構造・学習方針など、ナビゲーションに必要な登録情報を表示します。APIキーや秘密設定は表示しません。
+        </div>
+        <label class="ai-text-search">
+          <span>一覧を検索</span>
+          <input id="aiTextIndexSearch" type="search" placeholder="教科・講座・ファイル名で検索">
+        </label>
+        <details open>
+          <summary>教材テキスト・索引 ${materialTexts.length}件</summary>
+          <div class="ai-text-list" id="aiMaterialTextList">
+            ${materialTexts.map((item) => `
+              <div class="ai-text-row" data-ai-text-search="${escapeHtml(`${item.subject} ${item.course} ${item.fileName} ${item.status}`.toLowerCase())}">
+                <div>
+                  <strong>${escapeHtml(item.subject)} / ${escapeHtml(item.course)}</strong>
+                  <code>${escapeHtml(item.fileName)}</code>
+                </div>
+                <div class="ai-text-meta">
+                  <span class="badge">${escapeHtml(item.status)}</span>
+                  <small>${item.pageCount ? `${escapeHtml(item.pageCount)}ページ` : "ページ数未確定"} / ${item.lessonCount ? `${escapeHtml(item.lessonCount)}講` : "講数未確定"}</small>
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        </details>
+        <details>
+          <summary>学習計画・AI方針テキスト ${systemTexts.length}件</summary>
+          <div class="ai-text-list" id="aiSystemTextList">
+            ${systemTexts.map(([fileName, description]) => `
+              <div class="ai-text-row" data-ai-text-search="${escapeHtml(`${fileName} ${description}`.toLowerCase())}">
+                <div>
+                  <strong>${escapeHtml(description)}</strong>
+                  <code>data/${escapeHtml(fileName)}</code>
+                </div>
+                <span class="badge">登録済み</span>
+              </div>
+            `).join("")}
+          </div>
+        </details>
+        <p class="button-note" id="aiTextIndexResult">${materialTexts.length + systemTexts.length}件を表示中</p>
+      `;
+      settingsList.prepend(card);
+      const searchInput = card.querySelector("#aiTextIndexSearch");
+      const result = card.querySelector("#aiTextIndexResult");
+      searchInput?.addEventListener("input", () => {
+        const keyword = searchInput.value.trim().toLowerCase();
+        let visibleCount = 0;
+        card.querySelectorAll("[data-ai-text-search]").forEach((row) => {
+          const visible = !keyword || row.dataset.aiTextSearch.includes(keyword);
+          row.hidden = !visible;
+          if (visible) visibleCount += 1;
+        });
+        result.textContent = `${visibleCount}件を表示中`;
       });
     }
 
