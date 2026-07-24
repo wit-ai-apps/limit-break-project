@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.15.4-dev";
-export const APP_RELEASE_NAME = "処理中の画像を画面から中止";
+export const APP_VERSION = "v4.15.5-dev";
+export const APP_RELEASE_NAME = "重複・失敗した提出を削除";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -41,6 +41,16 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.15.5-dev",
+    date: "2026-07-24",
+    title: "重複・失敗した提出を削除",
+    items: [
+      "端末内に残った要確認・重複提出へ削除ボタンを追加",
+      "Firebase未同期の失敗記録だけを安全に端末から削除",
+      "Firebase保存済みの正式提出は従来どおり先生・管理者が管理"
+    ]
+  },
   {
     version: "v4.15.4-dev",
     date: "2026-07-24",

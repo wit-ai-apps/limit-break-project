@@ -14,7 +14,8 @@ export function renderEvidenceLogs({
   recordKey,
   openEvidencePreview,
   onRandomEvidenceSubmit,
-  onCancelEvidenceAnalysis
+  onCancelEvidenceAnalysis,
+  onDeleteEvidenceRecord
 }) {
   logList.innerHTML = "";
   const canSubmit = canSubmitEvidence(role);
@@ -77,6 +78,7 @@ export function renderEvidenceLogs({
             ${record.weaknessAnalysis ? `<small><b>弱点：</b>${escapeHtml(record.weaknessAnalysis)}</small>` : ""}
             ${record.nextLearningAction ? `<small><b>次：</b>${escapeHtml(record.nextLearningAction)}</small>` : ""}
             ${canCancelAnalysis(record) ? `<button type="button" class="warning evidence-cancel-button" data-cancel-evidence-key="${recordKey(record)}">解析を中止</button>` : ""}
+            ${canSubmit && !record.firebaseDocumentId ? `<button type="button" class="warning evidence-delete-button" data-delete-evidence-key="${recordKey(record)}">端末内記録を削除</button>` : ""}
           </article>
         `).join("")}
       </div>
@@ -85,6 +87,7 @@ export function renderEvidenceLogs({
       button.addEventListener("click", () => openEvidencePreview(button.dataset.evidenceKey));
     });
     bindCancelButtons(gallery, onCancelEvidenceAnalysis);
+    bindDeleteButtons(gallery, onDeleteEvidenceRecord);
     logList.appendChild(gallery);
 
     const tableCard = document.createElement("div");
@@ -121,6 +124,7 @@ export function renderEvidenceLogs({
                 <td>
                   ${analysisStatusLabel(record)}
                   ${canCancelAnalysis(record) ? `<button type="button" class="warning evidence-cancel-button" data-cancel-evidence-key="${recordKey(record)}">中止</button>` : ""}
+                  ${canSubmit && !record.firebaseDocumentId ? `<button type="button" class="warning evidence-delete-button" data-delete-evidence-key="${recordKey(record)}">削除</button>` : ""}
                 </td>
                 <td>${record.firebaseSyncStatus === "synced" ? "Firebase" : "端末内"}</td>
                 <td><button type="button" class="evidence-open-button" data-evidence-key="${recordKey(record)}">${escapeHtml(record.evidenceImageName)}</button></td>
@@ -134,6 +138,7 @@ export function renderEvidenceLogs({
       button.addEventListener("click", () => openEvidencePreview(button.dataset.evidenceKey));
     });
     bindCancelButtons(tableCard, onCancelEvidenceAnalysis);
+    bindDeleteButtons(tableCard, onDeleteEvidenceRecord);
     logList.appendChild(tableCard);
   } else {
     logList.insertAdjacentHTML("beforeend", `<div class="empty">提出画像はまだありません。生徒が確認テスト結果を提出すると、ここに日時・教科・教材ごとに表示されます。</div>`);
@@ -232,6 +237,13 @@ function bindCancelButtons(container, onCancelEvidenceAnalysis) {
   if (typeof onCancelEvidenceAnalysis !== "function") return;
   container.querySelectorAll("[data-cancel-evidence-key]").forEach((button) => {
     button.addEventListener("click", () => onCancelEvidenceAnalysis(button.dataset.cancelEvidenceKey, button));
+  });
+}
+
+function bindDeleteButtons(container, onDeleteEvidenceRecord) {
+  if (typeof onDeleteEvidenceRecord !== "function") return;
+  container.querySelectorAll("[data-delete-evidence-key]").forEach((button) => {
+    button.addEventListener("click", () => onDeleteEvidenceRecord(button.dataset.deleteEvidenceKey, button));
   });
 }
 

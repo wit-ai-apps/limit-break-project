@@ -23,7 +23,7 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.15.4";
+} from "../../config/app_config.js?v=4.15.5";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -58,7 +58,7 @@ import {
   openEvidencePreviewRecord
 } from "./evidence/evidence-preview.js";
 import { evidenceTypeForUnit, hasEvidence } from "./evidence/evidence-policy.js";
-import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.15.4";
+import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.15.5";
 import {
   canDeleteSchedule,
   downloadSchedulesIcs
@@ -3212,8 +3212,34 @@ function renderScheduleDrawer() {
         recordKey,
         openEvidencePreview,
         onRandomEvidenceSubmit: handleRandomEvidenceSubmit,
-        onCancelEvidenceAnalysis: cancelEvidenceAnalysis
+        onCancelEvidenceAnalysis: cancelEvidenceAnalysis,
+        onDeleteEvidenceRecord: deleteEvidenceRecord
       });
+    }
+
+    async function deleteEvidenceRecord(key, button) {
+      const record = records.find((item) => recordKey(item) === key);
+      if (!record) return;
+      if (record.firebaseDocumentId) {
+        alert("Firebaseに保存済みの正式な提出は、生徒画面から削除できません。先生または管理者へ依頼してください。");
+        return;
+      }
+      if (!confirm(`${record.evidenceImageName || "この提出"}をこの端末から削除しますか？`)) return;
+      if (button) {
+        button.disabled = true;
+        button.textContent = "削除中...";
+      }
+      try {
+        records = records.filter((item) => recordKey(item) !== key);
+        saveEvidenceRecords(STORAGE_KEY, records);
+        render();
+      } catch (error) {
+        if (button) {
+          button.disabled = false;
+          button.textContent = "削除";
+        }
+        alert(`提出を削除できませんでした。${error.message || error}`);
+      }
     }
 
     async function cancelEvidenceAnalysis(key, button) {
