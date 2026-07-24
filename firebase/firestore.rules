@@ -69,10 +69,7 @@ service cloud.firestore {
           && resource.data.linked_student_ids is list
           && resource.data.linked_student_ids.hasAny(linkedStudentIds())
       );
-      allow create: if signedIn() && (
-        userRole() == "admin" ||
-        request.auth.uid == uid && isPublicRole(request.resource.data.role)
-      );
+      allow create: if false;
       allow update: if signedIn() && (
         userRole() == "admin" ||
         request.auth.uid == uid
@@ -127,6 +124,16 @@ service cloud.firestore {
         allow read: if canReadStudent(studentId);
         allow write: if false;
       }
+
+      match /members/{memberUid} {
+        allow read: if canReadStudent(studentId);
+        allow write: if false;
+      }
+    }
+
+    // 招待トークンと承認状態はCloud Functionsだけが扱う。
+    match /group_invites/{inviteId} {
+      allow read, write: if false;
     }
 
     match /classrooms/{classroomId} {

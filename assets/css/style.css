@@ -2354,6 +2354,183 @@
       white-space: nowrap;
     }
 
+    /* v4.13.0: PC半画面・タブレットでは読みやすい1列表示にする */
+    @media (max-width: 1180px) {
+      .shell {
+        width: min(100% - 20px, 980px);
+      }
+
+      .hero,
+      main,
+      .phase-panel {
+        grid-template-columns: minmax(0, 1fr) !important;
+      }
+
+      main > .stack,
+      main > aside,
+      .view-section,
+      .phase-panel > * {
+        width: 100%;
+        min-width: 0;
+      }
+
+      main > aside {
+        display: grid;
+      }
+
+      body[data-view="home"] main > aside,
+      body[data-view="long"] main > aside,
+      body[data-view="week"] main > aside,
+      body[data-view="today"] main > aside {
+        display: none;
+      }
+
+      .app-nav {
+        position: sticky;
+        bottom: 8px;
+        z-index: 45;
+        box-shadow: 0 8px 28px rgba(15, 23, 42, 0.14);
+        scroll-snap-type: x mandatory;
+      }
+
+      .nav-button {
+        min-width: 96px;
+        scroll-snap-align: center;
+      }
+
+      .pace-summary,
+      .load-grid,
+      .memory-summary,
+      .metric-grid,
+      .form-grid,
+      .visibility-grid,
+      .role-dashboard-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    /* v4.13.0: スマートフォン */
+    @media (max-width: 700px) {
+      .shell {
+        width: min(100% - 12px, 980px);
+        padding-top: 10px;
+        padding-bottom: 72px;
+      }
+
+      .brand {
+        padding-top: 62px;
+        padding-right: 14px;
+      }
+
+      .brand-settings-button {
+        right: 8px;
+        top: 8px;
+      }
+
+      .brand-logout-button {
+        right: 58px;
+        top: 8px;
+      }
+
+      .brand-ui-mode-button {
+        left: 10px;
+        right: auto;
+        top: 8px;
+      }
+
+      .app-nav {
+        position: fixed;
+        inset: auto 6px 6px;
+        margin: 0;
+        padding-bottom: max(0px, env(safe-area-inset-bottom));
+        border-radius: 16px;
+      }
+
+      body[data-ui-mode="focus"] .app-nav {
+        overflow-x: hidden;
+      }
+
+      body[data-ui-mode="focus"] .nav-button {
+        min-width: 0;
+        padding: 8px 4px;
+        font-size: 0.74rem;
+      }
+
+      .countdown-grid {
+        display: flex;
+        overflow-x: auto;
+        scroll-snap-type: x mandatory;
+      }
+
+      .countdown-card {
+        flex: 0 0 min(82vw, 300px);
+        scroll-snap-align: start;
+      }
+
+      .pace-summary,
+      .load-grid,
+      .memory-summary,
+      .metric-grid,
+      .form-grid,
+      .visibility-grid,
+      .role-dashboard-grid,
+      .timetable-list,
+      .home-brief-grid {
+        grid-template-columns: 1fr;
+      }
+
+      section,
+      aside {
+        padding: 14px;
+      }
+
+      button,
+      .nav-button,
+      input,
+      select {
+        min-height: 44px;
+      }
+
+      .evidence-table-wrap {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+      }
+
+      .schedule-tab {
+        top: auto;
+        bottom: 82px;
+      }
+    }
+
+    .brand-ui-mode-button {
+      position: absolute;
+      right: 116px;
+      top: 12px;
+      z-index: 2;
+      min-height: 42px;
+      padding: 0 14px;
+      border-color: #93c5fd;
+      background: #eff6ff;
+      color: #1d4ed8;
+      box-shadow: none;
+    }
+
+    body[data-ui-mode="focus"] .brand-ui-mode-button {
+      border-color: #22c55e;
+      background: #ecfdf5;
+      color: #166534;
+    }
+
+    body[data-ui-mode="focus"] .app-nav {
+      justify-content: center;
+    }
+
+    body[data-ui-mode="focus"] .nav-button {
+      flex: 1 1 0;
+      min-width: 92px;
+      max-width: 150px;
+    }
+
     .evidence-preview-stage {
       position: relative;
     }
@@ -2597,6 +2774,77 @@
       font-size: 0.84rem;
       font-weight: 760;
       line-height: 1.5;
+    }
+
+    .invite-entry-panel,
+    .invite-created-result {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+      border: 1px solid #93c5fd;
+      border-radius: 14px;
+      background: #eff6ff;
+      color: #1e3a8a;
+      font-weight: 800;
+      line-height: 1.55;
+    }
+
+    .invite-entry-panel[data-status="expired"],
+    .invite-entry-panel[data-status="revoked"],
+    .invite-entry-panel[data-status="invalid"],
+    .invite-entry-panel[data-status="error"] {
+      border-color: #fca5a5;
+      background: #fef2f2;
+      color: #991b1b;
+    }
+
+    .group-invite-manager,
+    .group-invite-list,
+    .group-invite-form,
+    .group-invite-row,
+    .group-invite-actions {
+      display: grid;
+      gap: 10px;
+    }
+
+    .group-invite-form {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      margin-top: 12px;
+    }
+
+    .group-invite-form button,
+    .invite-created-result,
+    .group-invite-list {
+      grid-column: 1 / -1;
+    }
+
+    .group-invite-row {
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: #f8fafc;
+    }
+
+    .group-invite-row strong,
+    .group-invite-row span {
+      display: block;
+    }
+
+    .group-invite-actions {
+      grid-auto-flow: column;
+    }
+
+    @media (max-width: 700px) {
+      .group-invite-form,
+      .group-invite-row {
+        grid-template-columns: 1fr;
+      }
+
+      .group-invite-actions {
+        grid-auto-flow: row;
+      }
     }
 
     @media (max-width: 560px) {

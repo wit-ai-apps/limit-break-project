@@ -18,11 +18,12 @@ import {
   NOTICE_QUEUE_KEY,
   CUSTOM_COUNTDOWNS_KEY,
   STUDY_START_DATE_KEY,
+  UI_MODE_KEY,
   DEFAULT_STUDY_START_DATE,
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.12.3";
+} from "../../config/app_config.js?v=4.14.0";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -120,20 +121,26 @@ import {
     if (currentRole === "counselor") currentRole = "supporter";
     let currentSupportType = localStorage.getItem(SUPPORT_TYPE_KEY) || "family";
     let activeView = localStorage.getItem(VIEW_KEY) || "home";
+    let uiMode = localStorage.getItem(UI_MODE_KEY) || "detail";
     let navigationStepIndex = Number(localStorage.getItem(NAV_STEP_KEY) || 0);
     let records = loadEvidenceRecords(STORAGE_KEY);
     let memoryResults = loadMemoryResults();
     let aiTeacherLog = loadAiTeacherLog();
+    const pendingInviteToken = new URLSearchParams(window.location.search).get("invite") || "";
+    let inviteEntryState = null;
+    let groupInvites = [];
 
     const loginForm = document.querySelector("#loginForm");
     const loginNameInput = document.querySelector("#loginName");
     const loginPasscodeInput = document.querySelector("#loginPasscode");
     const loginVersionBadge = document.querySelector("#loginVersionBadge");
     const loginStatus = document.querySelector("#loginStatus");
+    const inviteEntryPanel = document.querySelector("#inviteEntryPanel");
     const loginRoleOptions = document.querySelector("#loginRoleOptions");
     const loginSupportTypePanel = document.querySelector("#loginSupportTypePanel");
     const accountPanel = document.querySelector("#accountPanel");
     const headerLogoutButton = document.querySelector("#headerLogoutButton");
+    const uiModeToggleButton = document.querySelector("#uiModeToggleButton");
     const appNav = document.querySelector("#appNav");
     const versionBadge = document.querySelector("#versionBadge");
     const sessionRoleBadge = document.querySelector("#sessionRoleBadge");
@@ -268,17 +275,20 @@ import {
           firebaseApp,
           firebaseFirestore,
           firebaseStorage,
-          firebaseAuth
+          firebaseAuth,
+          firebaseFunctions
         ] = await Promise.all([
           import("https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js"),
           import("https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js"),
           import("https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js"),
-          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js")
+          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-auth.js"),
+          import("https://www.gstatic.com/firebasejs/10.12.5/firebase-functions.js")
         ]);
         const app = firebaseApp.initializeApp(config.firebase);
         const db = firebaseFirestore.getFirestore(app);
         const storage = firebaseStorage.getStorage(app);
         const auth = firebaseAuth.getAuth(app);
+        const functions = firebaseFunctions.getFunctions(app, "us-east1");
         firebaseBridge = {
           enabled: true,
           status: "connected",
@@ -290,6 +300,7 @@ import {
           db,
           storage,
           auth,
+          functions,
           collection: firebaseFirestore.collection,
           doc: firebaseFirestore.doc,
           getDoc: firebaseFirestore.getDoc,
@@ -308,7 +319,10 @@ import {
           storageRef: firebaseStorage.ref,
           uploadBytes: firebaseStorage.uploadBytes,
           getDownloadURL: firebaseStorage.getDownloadURL
+          ,
+          httpsCallable: firebaseFunctions.httpsCallable
         };
+        if (pendingInviteToken) await inspectPendingInvite();
         if (auth.currentUser) {
           await applyFirebaseUser(auth.currentUser);
         }
@@ -328,7 +342,7 @@ import {
       firebaseBridge.userDoc = userData;
       firebaseBridge.studentId = Array.isArray(userData.linked_student_ids) && userData.linked_student_ids[0]
         ? userData.linked_student_ids[0]
-        : firebaseBridge.studentId;
+        : "";
       currentRole = userData.role || currentRole || "student";
       loginName = userData.displayName || user.displayName || user.email || loginName;
       localStorage.setItem(LOGIN_KEY, "true");
@@ -347,6 +361,57 @@ import {
       subscribeAdaptivePlan();
       await loadLinkedStudentIdentity();
       await loadLinkDirectory();
+      if (pendingInviteToken) await claimPendingInvite();
+      if (currentRole === "parent" || currentRole === "lead_teacher") await loadGroupInvites();
+    }
+
+    async function callGroupFunction(name, data = {}) {
+      if (!firebaseBridge.enabled || !firebaseBridge.httpsCallable || !firebaseBridge.functions) {
+        throw new Error("招待機能はFirebase接続時のみ利用できます。");
+      }
+      const callable = firebaseBridge.httpsCallable(firebaseBridge.functions, name);
+      const result = await callable(data);
+      return result.data;
+    }
+
+    async function inspectPendingInvite() {
+      if (!pendingInviteToken) return;
+      try {
+        inviteEntryState = await callGroupFunction("inspectGroupInvite", { token: pendingInviteToken });
+      } catch (error) {
+        inviteEntryState = { status: "invalid", message: error.message || "招待リンクを確認できません。" };
+      }
+      renderInviteEntryPanel();
+    }
+
+    async function claimPendingInvite() {
+      if (!pendingInviteToken || !firebaseBridge.currentUser) return;
+      if (["pending_approval", "approved"].includes(inviteEntryState?.status)) return;
+      try {
+        inviteEntryState = await callGroupFunction("claimGroupInvite", { token: pendingInviteToken });
+      } catch (error) {
+        inviteEntryState = { status: "error", message: error.message || "招待の申請に失敗しました。" };
+      }
+      renderInviteEntryPanel();
+    }
+
+    function renderInviteEntryPanel() {
+      if (!inviteEntryPanel) return;
+      inviteEntryPanel.hidden = !pendingInviteToken;
+      if (!pendingInviteToken) return;
+      const status = inviteEntryState?.status || "checking";
+      const messages = {
+        checking: "招待リンクを確認しています。",
+        issued: `招待を確認しました。ログインまたは新規登録すると、${inviteEntryState?.targetRole || "サポーター"}として承認申請します。`,
+        pending_approval: "登録申請を受け付けました。保護者の承認後に生徒情報を閲覧できます。",
+        approved: "この招待は承認済みです。通常のログイン画面から利用してください。",
+        expired: "この招待リンクは期限切れです。保護者へ再発行を依頼してください。",
+        revoked: "この招待は取り消されています。保護者へ新しい招待を依頼してください。",
+        invalid: "この招待リンクは無効です。",
+        error: inviteEntryState?.message || "招待を処理できませんでした。"
+      };
+      inviteEntryPanel.dataset.status = status;
+      inviteEntryPanel.textContent = messages[status] || "この招待は現在利用できません。";
     }
 
     function defaultUserProfile(user) {
@@ -377,8 +442,11 @@ import {
       }
       const credential = await firebaseBridge.createUserWithEmailAndPassword(firebaseBridge.auth, email, password);
       const user = credential.user;
-      const userRef = firebaseBridge.doc(firebaseBridge.db, "users", user.uid);
-      await firebaseBridge.setDoc(userRef, defaultUserProfile(user), { merge: true });
+      await callGroupFunction("createUserOnboarding", {
+        role: currentRole,
+        displayName: loginName || String(email).split("@")[0],
+        supporterType: currentSupportType
+      });
       await applyFirebaseUser(user);
       return user;
     }
@@ -866,6 +934,14 @@ import {
     }
 
     headerLogoutButton?.addEventListener("click", logoutUser);
+    uiModeToggleButton?.addEventListener("click", () => {
+      uiMode = uiMode === "focus" ? "detail" : "focus";
+      localStorage.setItem(UI_MODE_KEY, uiMode);
+      const visibleIds = visibleAppViews().map((view) => view.id);
+      if (!visibleIds.includes(activeView)) activeView = "home";
+      localStorage.setItem(VIEW_KEY, activeView);
+      render();
+    });
 
     function activeRoleConfig() {
       const base = ROLES[currentRole] || ROLES.student;
@@ -896,11 +972,28 @@ import {
     function renderAppNav() {
       renderAppNavigation({
         container: appNav,
-        views: APP_VIEWS,
+        views: visibleAppViews(),
         activeView,
         onSelect: setActiveView,
         onOpenDevDrawer: openDevDrawer
       });
+    }
+
+    function visibleAppViews() {
+      if (uiMode !== "focus") return APP_VIEWS;
+      const focusIds = new Set(["home", "today", "evidence", "progress", "ai"]);
+      return APP_VIEWS
+        .filter((view) => focusIds.has(view.id))
+        .map((view) => ({
+          ...view,
+          label: {
+            home: "いまやる",
+            today: "今日",
+            evidence: "提出",
+            progress: "進み具合",
+            ai: "AI先生"
+          }[view.id] || view.label
+        }));
     }
 
     function setActiveView(viewId) {
@@ -933,6 +1026,15 @@ import {
       document.body.dataset.role = currentRole;
       document.body.dataset.supportType = currentSupportType;
       document.body.dataset.view = activeView;
+      document.body.dataset.uiMode = uiMode;
+      if (uiModeToggleButton) {
+        const isFocus = uiMode === "focus";
+        uiModeToggleButton.textContent = isFocus ? "詳細表示へ" : "集中表示";
+        uiModeToggleButton.setAttribute("aria-pressed", String(isFocus));
+        uiModeToggleButton.title = isFocus
+          ? "全機能が見える詳細表示へ切り替えます"
+          : "主要5画面だけの集中表示へ切り替えます";
+      }
       if (versionBadge) versionBadge.textContent = APP_VERSION;
       if (sessionRoleBadge) {
         const supportType = SUPPORTER_TYPES.find((type) => type.value === currentSupportType);
@@ -2139,6 +2241,168 @@ function renderScheduleDrawer() {
       });
     }
 
+    async function loadGroupInvites() {
+      groupInvites = [];
+      if (!firebaseBridge.currentUser || !["parent", "lead_teacher"].includes(currentRole)) return;
+      try {
+        const result = await callGroupFunction("listGroupInvites", { studentId: firebaseBridge.studentId });
+        groupInvites = Array.isArray(result?.invites) ? result.invites : [];
+      } catch (_) {
+        groupInvites = [];
+      }
+    }
+
+    function inviteRoleLabel(role) {
+      return {
+        parent: "保護者",
+        supporter: "外部サポーター",
+        teacher: "教師・塾講師"
+      }[role] || role;
+    }
+
+    function inviteStatusLabel(status) {
+      return {
+        issued: "招待送信済み",
+        pending_approval: "保護者承認待ち",
+        approved: "連携済み",
+        expired: "期限切れ",
+        revoked: "取り消し済み"
+      }[status] || status;
+    }
+
+    function renderGroupInviteManager() {
+      if (!settingsList || !["parent", "lead_teacher"].includes(currentRole)) return;
+      if (currentRole === "parent" && !firebaseBridge.studentId) {
+        const setupCard = document.createElement("article");
+        setupCard.className = "settings-card group-invite-manager";
+        setupCard.innerHTML = `
+          <strong>最初の生徒を登録</strong>
+          <span>保護者として利用を始める場合、最初に見守る生徒を登録してください。登録後に本人や支援者を招待できます。</span>
+          <form class="group-invite-form" id="createStudentForm">
+            <input name="displayName" aria-label="生徒名" placeholder="生徒の表示名" required>
+            <input name="grade" aria-label="学年" placeholder="例: 高校1年">
+            <button type="submit">生徒グループを作る</button>
+          </form>
+          <div class="invite-created-result" id="studentSetupResult" hidden aria-live="polite"></div>
+        `;
+        settingsList.prepend(setupCard);
+        setupCard.querySelector("#createStudentForm")?.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const form = event.currentTarget;
+          const resultBox = setupCard.querySelector("#studentSetupResult");
+          const data = new FormData(form);
+          resultBox.hidden = false;
+          resultBox.textContent = "生徒グループを安全に作成しています。";
+          try {
+            const result = await callGroupFunction("createStudentForParent", {
+              displayName: data.get("displayName"),
+              grade: data.get("grade")
+            });
+            firebaseBridge.studentId = result.studentId;
+            await applyFirebaseUser(firebaseBridge.currentUser);
+            render();
+          } catch (error) {
+            resultBox.textContent = `生徒を登録できませんでした。${error.message || error}`;
+          }
+        });
+        return;
+      }
+      const card = document.createElement("article");
+      card.className = "settings-card group-invite-manager";
+      const rows = groupInvites.length
+        ? groupInvites.map((invite) => `
+          <div class="group-invite-row">
+            <div>
+              <strong>${escapeHtml(inviteRoleLabel(invite.targetRole))}・${escapeHtml(invite.relationship || "関係未設定")}</strong>
+              <span>${escapeHtml(invite.targetEmail || invite.claimedEmail || "メール指定なし")} / ${escapeHtml(inviteStatusLabel(invite.status))}</span>
+            </div>
+            <div class="group-invite-actions">
+              ${invite.status === "pending_approval" ? `<button type="button" data-approve-invite="${escapeHtml(invite.id)}">承認する</button>` : ""}
+              ${["issued", "pending_approval"].includes(invite.status) ? `<button class="warning" type="button" data-revoke-invite="${escapeHtml(invite.id)}">取り消す</button>` : ""}
+            </div>
+          </div>
+        `).join("")
+        : `<div class="empty">現在処理中の招待はありません。</div>`;
+      card.innerHTML = `
+        <strong>生徒支援グループ・招待管理</strong>
+        <span>招待リンクは72時間・一度限りです。登録後も、保護者が承認するまで学習情報は表示されません。</span>
+        <form class="group-invite-form" id="groupInviteForm">
+          <select name="targetRole" aria-label="招待する役割" required>
+            <option value="supporter">外部サポーター</option>
+            <option value="teacher">教師・塾講師</option>
+            <option value="parent">別の保護者</option>
+          </select>
+          <input name="relationship" aria-label="関係" placeholder="例: 家庭教師、カウンセラー" required>
+          <input name="targetEmail" type="email" aria-label="招待先メール" placeholder="相手のメールアドレス">
+          <select name="ttlHours" aria-label="有効期限">
+            <option value="72">72時間</option>
+            <option value="24">24時間</option>
+            <option value="1">1時間（検証用）</option>
+          </select>
+          <button type="submit">一度限りの招待リンクを作る</button>
+        </form>
+        <div class="invite-created-result" id="inviteCreatedResult" aria-live="polite"></div>
+        <div class="group-invite-list">${rows}</div>
+      `;
+      settingsList.prepend(card);
+
+      card.querySelector("#groupInviteForm")?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const resultBox = card.querySelector("#inviteCreatedResult");
+        const submitButton = form.querySelector("button[type=submit]");
+        submitButton.disabled = true;
+        resultBox.textContent = "安全な招待リンクを作成しています。";
+        try {
+          const data = new FormData(form);
+          const result = await callGroupFunction("createGroupInvite", {
+            studentId: firebaseBridge.studentId,
+            targetRole: data.get("targetRole"),
+            targetEmail: data.get("targetEmail"),
+            relationship: data.get("relationship"),
+            ttlHours: Number(data.get("ttlHours"))
+          });
+          const inviteUrl = new URL(window.location.href);
+          inviteUrl.search = "";
+          inviteUrl.hash = "";
+          inviteUrl.searchParams.set("invite", result.token);
+          resultBox.innerHTML = `
+            <strong>招待リンクを作成しました</strong>
+            <span>このリンクをメール・LINE・メッセージで相手だけに送ってください。</span>
+            <input readonly value="${escapeHtml(inviteUrl.toString())}" aria-label="作成した招待リンク">
+            <button type="button" id="copyInviteLinkButton">リンクをコピー</button>
+          `;
+          resultBox.querySelector("#copyInviteLinkButton")?.addEventListener("click", async () => {
+            await navigator.clipboard.writeText(inviteUrl.toString());
+            resultBox.querySelector("#copyInviteLinkButton").textContent = "コピーしました";
+          });
+          await loadGroupInvites();
+        } catch (error) {
+          resultBox.textContent = `招待を作成できませんでした。${error.message || error}`;
+        } finally {
+          submitButton.disabled = false;
+        }
+      });
+
+      card.querySelectorAll("[data-approve-invite]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          button.disabled = true;
+          await callGroupFunction("approveGroupInvite", { inviteId: button.dataset.approveInvite });
+          await loadGroupInvites();
+          render();
+        });
+      });
+      card.querySelectorAll("[data-revoke-invite]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          if (!confirm("この招待を取り消しますか？古いリンクは再利用できません。")) return;
+          button.disabled = true;
+          await callGroupFunction("revokeGroupInvite", { inviteId: button.dataset.revokeInvite });
+          await loadGroupInvites();
+          render();
+        });
+      });
+    }
+
     function renderSettings() {
       if (!settingsList) return;
       const settings = [
@@ -2190,6 +2454,7 @@ function renderScheduleDrawer() {
         card.innerHTML = `<strong>${item.title}</strong><span>${item.body}</span>`;
         settingsList.appendChild(card);
       });
+      renderGroupInviteManager();
       const startDateCard = document.createElement("article");
       startDateCard.className = "settings-card";
       startDateCard.innerHTML = `

@@ -40,6 +40,7 @@
           <input id="loginPasscode" type="password" autocomplete="current-password" placeholder="検証用: Test1234">
         </div>
         <p class="button-note" id="loginStatus">新規登録またはログインを選んでください。</p>
+        <div class="invite-entry-panel" id="inviteEntryPanel" role="status" aria-live="polite" hidden></div>
         <div>
           <label class="role-label-sub">ログイン種別</label>
           <div class="role-options" id="loginRoleOptions"></div>
@@ -58,6 +59,7 @@
       <section class="brand glass" aria-labelledby="brand-title">
         <button class="secondary view-link settings-gear brand-settings-button" type="button" data-target-view="admin" aria-label="設定">⚙</button>
         <button class="secondary brand-logout-button" type="button" id="headerLogoutButton">ログアウト</button>
+        <button class="secondary brand-ui-mode-button" type="button" id="uiModeToggleButton" aria-pressed="false">集中表示</button>
         <div>
           <div class="system-label">AI学習ナビ</div>
           <h1 id="brand-title">CORTEX Limit Break</h1>
@@ -449,6 +451,6 @@
     </div>
   </dialog>
 
-  <script type="module" src="assets/js/app.js?v=4.12.3"></script>
+  <script type="module" src="assets/js/app.js?v=4.14.0"></script>
 </body>
 </html>

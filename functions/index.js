@@ -1,18 +1,303 @@
 import { initializeApp } from "firebase-admin/app";
-import { getFirestore, FieldValue } from "firebase-admin/firestore";
+import { randomBytes } from "node:crypto";
+import { getFirestore, FieldValue, Timestamp } from "firebase-admin/firestore";
 import { getStorage } from "firebase-admin/storage";
 import { defineSecret, defineString } from "firebase-functions/params";
 import { onObjectFinalized } from "firebase-functions/v2/storage";
 import { onDocumentWritten } from "firebase-functions/v2/firestore";
 import { onSchedule } from "firebase-functions/v2/scheduler";
+import { HttpsError, onCall } from "firebase-functions/v2/https";
 import OpenAI from "openai";
 import { buildAdaptivePlan, dateKeyJst, DEFAULT_DEADLINE } from "./adaptive-scheduler.js";
+import {
+  INVITE_PERMISSIONS,
+  INVITE_ROLES,
+  canApprove,
+  canInvite,
+  canRevokeInvite,
+  inviteClaimState,
+  inviteHash,
+  linkedToStudent,
+  normalizedEmail
+} from "./invite-policy.js";
 
 initializeApp();
 
 const openRouterApiKey = defineSecret("OPENROUTER_API_KEY");
 const visionModel = defineString("OPENROUTER_VISION_MODEL", { default: "openai/gpt-4o-mini" });
 const adaptiveDeadline = defineString("ADAPTIVE_PLAN_DEADLINE", { default: DEFAULT_DEADLINE });
+
+function requireAuth(request) {
+  if (!request.auth?.uid) throw new HttpsError("unauthenticated", "LOGIN_REQUIRED");
+  return request.auth.uid;
+}
+
+async function requireUser(uid) {
+  const snapshot = await getFirestore().doc(`users/${uid}`).get();
+  if (!snapshot.exists) throw new HttpsError("failed-precondition", "USER_PROFILE_REQUIRED");
+  return { ref: snapshot.ref, data: snapshot.data() };
+}
+
+export const createUserOnboarding = onCall({ region: "us-east1" }, async (request) => {
+  const uid = requireAuth(request);
+  const role = String(request.data?.role || "student");
+  if (!["student", "parent", "supporter", "teacher"].includes(role)) {
+    throw new HttpsError("invalid-argument", "INVALID_ROLE");
+  }
+  const email = normalizedEmail(request.auth.token.email);
+  const displayName = String(request.data?.displayName || email.split("@")[0] || "利用者").trim().slice(0, 80);
+  const studentId = role === "student" ? `STU_${uid.slice(0, 12).toUpperCase()}` : "";
+  const db = getFirestore();
+  const userRef = db.doc(`users/${uid}`);
+  const existing = await userRef.get();
+  if (existing.exists) return { created: false, studentId: existing.data().linked_student_ids?.[0] || "" };
+  const batch = db.batch();
+  batch.set(userRef, {
+    uid,
+    email,
+    displayName,
+    role,
+    supporter_type: role === "supporter" ? String(request.data?.supporterType || "family") : "",
+    linked_student_ids: studentId ? [studentId] : [],
+    classroom_ids: [],
+    status: studentId ? "active" : "awaiting_invite_or_student_setup",
+    created_at: FieldValue.serverTimestamp(),
+    last_login_at: FieldValue.serverTimestamp(),
+    login_count: 1
+  });
+  if (studentId) {
+    batch.set(db.doc(`students/${studentId}`), {
+      student_id: studentId,
+      owner_uid: uid,
+      status: "active",
+      created_at: FieldValue.serverTimestamp()
+    }, { merge: true });
+    batch.set(db.doc(`students/${studentId}/members/${uid}`), {
+      uid,
+      role: "student",
+      relationship: "本人",
+      permissions: ["progress.read", "evidence.read", "evidence.write", "schedule.read", "schedule.write"],
+      status: "active",
+      created_at: FieldValue.serverTimestamp(),
+      updated_at: FieldValue.serverTimestamp()
+    });
+  }
+  await batch.commit();
+  return { created: true, studentId };
+});
+
+export const createStudentForParent = onCall({ region: "us-east1" }, async (request) => {
+  const uid = requireAuth(request);
+  const { data: parent } = await requireUser(uid);
+  if (parent.role !== "parent") throw new HttpsError("permission-denied", "PARENT_REQUIRED");
+  const displayName = String(request.data?.displayName || "").trim().slice(0, 80);
+  if (!displayName) throw new HttpsError("invalid-argument", "STUDENT_NAME_REQUIRED");
+  const studentId = `STU_${randomBytes(8).toString("hex").toUpperCase()}`;
+  const db = getFirestore();
+  const batch = db.batch();
+  batch.set(db.doc(`students/${studentId}`), {
+    student_id: studentId,
+    display_name: displayName,
+    grade: String(request.data?.grade || "").trim().slice(0, 40),
+    owner_uid: uid,
+    status: "pending_student_account",
+    created_at: FieldValue.serverTimestamp()
+  });
+  batch.set(db.doc(`students/${studentId}/members/${uid}`), {
+    uid,
+    role: "parent",
+    relationship: "保護者",
+    permissions: INVITE_PERMISSIONS.parent,
+    status: "active",
+    approved_by_uid: uid,
+    created_at: FieldValue.serverTimestamp(),
+    updated_at: FieldValue.serverTimestamp()
+  });
+  batch.update(db.doc(`users/${uid}`), {
+    linked_student_ids: FieldValue.arrayUnion(studentId),
+    status: "active",
+    updated_at: FieldValue.serverTimestamp()
+  });
+  await batch.commit();
+  return { studentId };
+});
+
+export const inspectGroupInvite = onCall({ region: "us-east1" }, async (request) => {
+  const hash = inviteHash(request.data?.token);
+  if (!/^[a-f0-9]{64}$/.test(hash)) throw new HttpsError("invalid-argument", "INVALID_INVITE");
+  const snapshot = await getFirestore().doc(`group_invites/${hash}`).get();
+  if (!snapshot.exists) throw new HttpsError("not-found", "INVITE_NOT_FOUND");
+  const invite = snapshot.data();
+  const expired = !invite.expires_at || invite.expires_at.toMillis() <= Date.now();
+  return {
+    status: expired && invite.status === "issued" ? "expired" : invite.status,
+    targetRole: invite.target_role,
+    relationship: invite.relationship || "",
+    expiresAt: invite.expires_at?.toDate().toISOString() || "",
+    loginRequired: !request.auth?.uid
+  };
+});
+
+export const createGroupInvite = onCall({ region: "us-east1" }, async (request) => {
+  const uid = requireAuth(request);
+  const { data: user } = await requireUser(uid);
+  const studentId = String(request.data?.studentId || "").trim();
+  const targetRole = String(request.data?.targetRole || "").trim();
+  if (!studentId || !INVITE_ROLES.has(targetRole)) {
+    throw new HttpsError("invalid-argument", "INVALID_INVITE_REQUEST");
+  }
+  if (!canInvite(user, studentId)) throw new HttpsError("permission-denied", "INVITE_NOT_ALLOWED");
+
+  const ttlHours = Math.min(72, Math.max(1, Number(request.data?.ttlHours) || 72));
+  const token = randomBytes(32).toString("base64url");
+  const hash = inviteHash(token);
+  const now = Date.now();
+  await getFirestore().doc(`group_invites/${hash}`).set({
+    student_id: studentId,
+    target_role: targetRole,
+    target_email: normalizedEmail(request.data?.targetEmail),
+    relationship: String(request.data?.relationship || "").trim().slice(0, 80),
+    permissions: INVITE_PERMISSIONS[targetRole],
+    status: "issued",
+    invited_by_uid: uid,
+    invited_by_role: user.role,
+    created_at: FieldValue.serverTimestamp(),
+    expires_at: Timestamp.fromMillis(now + ttlHours * 60 * 60 * 1000),
+    claimed_by_uid: "",
+    approved_by_uid: ""
+  });
+  return { token, expiresAt: new Date(now + ttlHours * 60 * 60 * 1000).toISOString() };
+});
+
+export const claimGroupInvite = onCall({ region: "us-east1" }, async (request) => {
+  const uid = requireAuth(request);
+  const hash = inviteHash(request.data?.token);
+  const db = getFirestore();
+  const inviteRef = db.doc(`group_invites/${hash}`);
+  const userRef = db.doc(`users/${uid}`);
+  await db.runTransaction(async (transaction) => {
+    const [inviteSnapshot, userSnapshot] = await Promise.all([
+      transaction.get(inviteRef),
+      transaction.get(userRef)
+    ]);
+    if (!inviteSnapshot.exists) throw new HttpsError("not-found", "INVITE_NOT_FOUND");
+    if (!userSnapshot.exists) throw new HttpsError("failed-precondition", "USER_PROFILE_REQUIRED");
+    const invite = inviteSnapshot.data();
+    const user = userSnapshot.data();
+    const claimState = inviteClaimState(invite);
+    if (claimState === "already_used") throw new HttpsError("failed-precondition", "INVITE_ALREADY_USED");
+    if (claimState === "expired") {
+      transaction.update(inviteRef, { status: "expired", updated_at: FieldValue.serverTimestamp() });
+      throw new HttpsError("deadline-exceeded", "INVITE_EXPIRED");
+    }
+    const expectedEmail = normalizedEmail(invite.target_email);
+    const actualEmail = normalizedEmail(request.auth.token.email || user.email);
+    if (expectedEmail && expectedEmail !== actualEmail) {
+      throw new HttpsError("permission-denied", "INVITE_EMAIL_MISMATCH");
+    }
+    transaction.update(inviteRef, {
+      status: "pending_approval",
+      claimed_by_uid: uid,
+      claimed_email: actualEmail,
+      claimed_at: FieldValue.serverTimestamp(),
+      updated_at: FieldValue.serverTimestamp()
+    });
+  });
+  return { status: "pending_approval" };
+});
+
+export const approveGroupInvite = onCall({ region: "us-east1" }, async (request) => {
+  const approverUid = requireAuth(request);
+  const inviteId = String(request.data?.inviteId || "");
+  const db = getFirestore();
+  const inviteRef = db.doc(`group_invites/${inviteId}`);
+  await db.runTransaction(async (transaction) => {
+    const [inviteSnapshot, approverSnapshot] = await Promise.all([
+      transaction.get(inviteRef),
+      transaction.get(db.doc(`users/${approverUid}`))
+    ]);
+    if (!inviteSnapshot.exists || !approverSnapshot.exists) {
+      throw new HttpsError("not-found", "INVITE_OR_APPROVER_NOT_FOUND");
+    }
+    const invite = inviteSnapshot.data();
+    const approver = approverSnapshot.data();
+    if (!canApprove(approver, invite.student_id)) throw new HttpsError("permission-denied", "APPROVAL_NOT_ALLOWED");
+    if (invite.status !== "pending_approval" || !invite.claimed_by_uid) {
+      throw new HttpsError("failed-precondition", "INVITE_NOT_PENDING");
+    }
+    const memberRef = db.doc(`students/${invite.student_id}/members/${invite.claimed_by_uid}`);
+    const claimedUserRef = db.doc(`users/${invite.claimed_by_uid}`);
+    transaction.set(memberRef, {
+      uid: invite.claimed_by_uid,
+      role: invite.target_role,
+      relationship: invite.relationship || "",
+      permissions: invite.permissions || INVITE_PERMISSIONS[invite.target_role] || [],
+      status: "active",
+      invited_by_uid: invite.invited_by_uid,
+      approved_by_uid: approverUid,
+      created_at: FieldValue.serverTimestamp(),
+      updated_at: FieldValue.serverTimestamp()
+    }, { merge: true });
+    transaction.update(claimedUserRef, {
+      role: invite.target_role,
+      linked_student_ids: FieldValue.arrayUnion(invite.student_id),
+      status: "active",
+      updated_at: FieldValue.serverTimestamp()
+    });
+    transaction.update(inviteRef, {
+      status: "approved",
+      approved_by_uid: approverUid,
+      approved_at: FieldValue.serverTimestamp(),
+      updated_at: FieldValue.serverTimestamp()
+    });
+  });
+  return { status: "approved" };
+});
+
+export const revokeGroupInvite = onCall({ region: "us-east1" }, async (request) => {
+  const uid = requireAuth(request);
+  const inviteId = String(request.data?.inviteId || "");
+  const db = getFirestore();
+  const inviteRef = db.doc(`group_invites/${inviteId}`);
+  const [inviteSnapshot, user] = await Promise.all([inviteRef.get(), requireUser(uid)]);
+  if (!inviteSnapshot.exists) throw new HttpsError("not-found", "INVITE_NOT_FOUND");
+  const invite = inviteSnapshot.data();
+  if (!canRevokeInvite(invite, user.data, uid)) {
+    throw new HttpsError("permission-denied", "REVOKE_NOT_ALLOWED");
+  }
+  await inviteRef.update({
+    status: "revoked",
+    revoked_by_uid: uid,
+    revoked_at: FieldValue.serverTimestamp(),
+    updated_at: FieldValue.serverTimestamp()
+  });
+  return { status: "revoked" };
+});
+
+export const listGroupInvites = onCall({ region: "us-east1" }, async (request) => {
+  const uid = requireAuth(request);
+  const { data: user } = await requireUser(uid);
+  const studentId = String(request.data?.studentId || "").trim();
+  if (!studentId || !canApprove(user, studentId)) throw new HttpsError("permission-denied", "LIST_NOT_ALLOWED");
+  const snapshot = await getFirestore().collection("group_invites")
+    .where("student_id", "==", studentId)
+    .limit(50)
+    .get();
+  return {
+    invites: snapshot.docs.map((document) => {
+      const invite = document.data();
+      return {
+        id: document.id,
+        targetRole: invite.target_role,
+        targetEmail: invite.target_email,
+        relationship: invite.relationship || "",
+        status: invite.status,
+        expiresAt: invite.expires_at?.toDate().toISOString() || "",
+        claimedEmail: invite.claimed_email || ""
+      };
+    })
+  };
+});
 
 const MATERIAL_HINTS = [
   ["数学", "中学総復習数学"],

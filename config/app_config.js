@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.12.3-dev";
-export const APP_RELEASE_NAME = "提出画像クリック例外修正";
+export const APP_VERSION = "v4.14.0-dev";
+export const APP_RELEASE_NAME = "支援グループ招待・承認";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -20,6 +20,7 @@ export const NOTICE_CONTACTS_KEY = "limitBreakProjectNoticeContactsV370";
 export const NOTICE_QUEUE_KEY = "limitBreakProjectNoticeQueueV370";
 export const CUSTOM_COUNTDOWNS_KEY = "limitBreakProjectCustomCountdownsV464";
 export const STUDY_START_DATE_KEY = "limitBreakProjectStudyStartDateV465";
+export const UI_MODE_KEY = "limitBreakProjectUiModeV4130";
 
 export const DEFAULT_STUDY_START_DATE = "2026-07-08";
 export const BASELINE_DATE = "2026-06-30";
@@ -40,6 +41,28 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.14.0-dev",
+    date: "2026-07-24",
+    title: "支援グループ招待・承認",
+    items: [
+      "保護者が外部サポーター・教師・別の保護者へ一度限りの招待リンクを発行",
+      "招待リンクの期限切れ・使用済み・取り消しをサーバー側で判定",
+      "招待先が登録しても保護者承認までは学習情報を非公開",
+      "承認時だけ生徒グループと役割別権限を安全に付与"
+    ]
+  },
+  {
+    version: "v4.13.0-dev",
+    date: "2026-07-24",
+    title: "集中表示・レスポンシブUI",
+    items: [
+      "生徒向けに主要5画面だけを表示する集中表示を追加",
+      "従来の全機能を使える詳細表示へいつでも切替可能",
+      "PC半画面・タブレットでは2列を1列にして空白と細長いカードを解消",
+      "スマホではナビゲーションとカードを指で操作しやすい寸法へ調整"
+    ]
+  },
   {
     version: "v4.12.3-dev",
     date: "2026-07-24",
