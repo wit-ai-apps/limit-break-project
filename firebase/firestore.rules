@@ -125,6 +125,12 @@ service cloud.firestore {
         allow write: if false;
       }
 
+      // AI解析で構造化した弱点。作成・集計・克服状態の更新はCloud Functionsだけが行う。
+      match /learning_issues/{issueId} {
+        allow read: if canReadStudent(studentId);
+        allow write: if false;
+      }
+
       match /members/{memberUid} {
         allow read: if canReadStudent(studentId);
         allow write: if false;

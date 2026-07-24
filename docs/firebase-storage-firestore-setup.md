@@ -48,6 +48,14 @@ students/STU_0001/evidence/2026-07-08/2026-07-08_MATH_001-1780000000000-result.j
 students/{student_id}/evidence_records/{date}_{mission_id}
 ```
 
+AIが問題・生徒解答・正解を高信頼で確認できた不正解は、次の弱点専用コレクションにも保存します。
+
+```text
+students/{student_id}/learning_issues/{issue_id}
+```
+
+同じ教科・分野・単元・技能・誤り種別は同じ`issue_id`へ集約し、`occurrence_count`を加算します。問題文全体は保存せず、80文字以内の要約、技能タグ、誤り種別、元の提出記録IDとStorageパスを保持します。
+
 例:
 
 ```text

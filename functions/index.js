@@ -20,6 +20,7 @@ import {
   linkedToStudent,
   normalizedEmail
 } from "./invite-policy.js";
+import { buildVerifiedLearningIssues } from "./learning-issues.js";
 
 initializeApp();
 
@@ -465,13 +466,43 @@ const ANALYSIS_SCHEMA = {
           "markConfidence", "evidenceBasis"
         ]
       }
+    },
+    learningIssues: {
+      type: "array",
+      maxItems: 20,
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          problemLabel: { type: "string" },
+          contentSummary: { type: "string" },
+          domain: { type: "string" },
+          unit: { type: "string" },
+          skillTags: {
+            type: "array",
+            maxItems: 8,
+            items: { type: "string" }
+          },
+          mistakeType: {
+            type: "string",
+            enum: ["knowledge", "calculation", "reading", "condition", "careless", "unknown"]
+          },
+          detectedAnswer: { type: "string" },
+          correctAnswer: { type: "string" },
+          confidence: { type: "number", minimum: 0, maximum: 1 }
+        },
+        required: [
+          "problemLabel", "contentSummary", "domain", "unit", "skillTags",
+          "mistakeType", "detectedAnswer", "correctAnswer", "confidence"
+        ]
+      }
     }
   },
   required: [
     "subject", "course", "lesson", "part", "unit", "testType", "documentType",
     "answeredCount", "correctRate", "confidence", "needsReview",
     "reviewReason", "detectedTextSummary", "strengthAnalysis",
-    "weaknessAnalysis", "nextLearningAction", "answerMarks"
+    "weaknessAnalysis", "nextLearningAction", "answerMarks", "learningIssues"
   ]
 };
 
@@ -505,6 +536,66 @@ async function rebuildPlanForStudent(studentId) {
     db.doc(`students/${studentId}/adaptive_state/current`).set(payload, { merge: true })
   ]);
   return plan;
+}
+
+async function saveLearningIssuesForEvidence({
+  db,
+  studentId,
+  recordId,
+  storagePath,
+  analysis,
+  recordContext
+}) {
+  const issues = buildVerifiedLearningIssues(analysis, {
+    ...recordContext,
+    recordId,
+    storagePath
+  });
+  if (!issues.length) return [];
+  const issueRefs = issues.map((issue) => db.doc(`students/${studentId}/learning_issues/${issue.id}`));
+  await db.runTransaction(async (transaction) => {
+    const snapshots = await Promise.all(issueRefs.map((ref) => transaction.get(ref)));
+    issues.forEach((issue, index) => {
+      const issueRef = issueRefs[index];
+      const snapshot = snapshots[index];
+      const existing = snapshot.exists ? snapshot.data() : {};
+      const sourceRecordIds = Array.isArray(existing.source_record_ids) ? existing.source_record_ids : [];
+      const isNewOccurrence = !sourceRecordIds.includes(recordId);
+      const payload = {
+        student_id: studentId,
+        subject: issue.subject,
+        course: issue.course,
+        lesson: issue.lesson,
+        part: issue.part,
+        domain: issue.domain,
+        unit: issue.unit,
+        problem_label: issue.problemLabel,
+        content_summary: issue.contentSummary,
+        mistake_type: issue.mistakeType,
+        skill_tags: issue.skillTags,
+        latest_detected_answer: issue.detectedAnswer,
+        latest_correct_answer: issue.correctAnswer,
+        confidence: issue.confidence,
+        source_record_ids: FieldValue.arrayUnion(recordId),
+        source_storage_paths: FieldValue.arrayUnion(storagePath),
+        occurrence_count: isNewOccurrence ? FieldValue.increment(1) : (existing.occurrence_count || 1),
+        review_count: existing.review_count || 0,
+        correct_streak: 0,
+        status: "reviewing",
+        review_status: "ai_proposed",
+        visible_to: ["student", "parent", "supporter", "teacher"],
+        schema_version: issue.schemaVersion,
+        last_detected_at: FieldValue.serverTimestamp(),
+        updated_at: FieldValue.serverTimestamp()
+      };
+      if (!snapshot.exists) payload.first_detected_at = FieldValue.serverTimestamp();
+      if (existing.status === "resolved" && isNewOccurrence) {
+        payload.reopened_at = FieldValue.serverTimestamp();
+      }
+      transaction.set(issueRef, payload, { merge: true });
+    });
+  });
+  return issues.map((issue) => issue.id);
 }
 
 export const rebuildAdaptiveSchedules = onSchedule(
@@ -602,6 +693,8 @@ export const analyzeEvidenceImage = onObjectFinalized(
                 ,"answerMarksのx,yは実際の解答記入欄の中心だけを画像左上基準の百分率で返してください。見出し、余白、印刷例、得点欄、問題ではない場所には置かないでください。"
                 ,"各markConfidenceと、正誤判断の短い根拠evidenceBasisを返してください。3点が完全に読めない場合markConfidenceは0.98未満にしてください。"
                 ,"できた点、弱点、次の学習は短く返してください。結果画面に表示済みの正答率は抽出できますが、答案から正答率を推測計算しないでください。"
+                ,"learningIssuesは、answerMarksでresult=incorrectかつ問題・生徒解答・正解が明瞭な設問だけを返してください。"
+                ,"各learningIssueには教科内の分野domain、単元unit、技能タグ、誤りの種類、80文字以内の問題要約を入れてください。問題文全体や氏名などの個人情報は入れないでください。"
               ].join("\n")
             },
             isPdf
@@ -636,6 +729,19 @@ export const analyzeEvidenceImage = onObjectFinalized(
       const proposedMarks = Array.isArray(analysis.answerMarks)
         ? analysis.answerMarks.filter((mark) => mark.result !== "unknown" && Number(mark.markConfidence) >= 0.98)
         : [];
+      const learningIssueIds = await saveLearningIssuesForEvidence({
+        db,
+        studentId: path.studentId,
+        recordId,
+        storagePath: object.name,
+        analysis,
+        recordContext: {
+          subject: analysis.subject,
+          course: analysis.course,
+          lesson: analysis.lesson,
+          part: analysis.part
+        }
+      });
       await recordRef.set({
         subject: analysis.subject || "未分類",
         course: analysis.course || "教材不明",
@@ -648,6 +754,8 @@ export const analyzeEvidenceImage = onObjectFinalized(
         strengthAnalysis: analysis.strengthAnalysis || "",
         weaknessAnalysis: analysis.weaknessAnalysis || "",
         nextLearningAction: analysis.nextLearningAction || "",
+        learningIssueIds,
+        learningIssueCount: learningIssueIds.length,
         proposedGradingMarks: proposedMarks,
         gradingMarks: [],
         gradingReviewStatus: proposedMarks.length ? "teacher_confirmation_required" : "not_available",

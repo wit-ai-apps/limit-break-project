@@ -23,7 +23,7 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.17.6";
+} from "../../config/app_config.js?v=4.18.0";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -39,8 +39,8 @@ import {
   recordIdentity,
   saveEvidenceRecordRemote,
   saveEvidenceRecords
-} from "./evidence/evidence-store.js?v=4.17.6";
-import { renderAppNavigation } from "./ui/navigation.js?v=4.17.6";
+} from "./evidence/evidence-store.js?v=4.18.0";
+import { renderAppNavigation } from "./ui/navigation.js?v=4.18.0";
 import {
   closeDevDrawerPanel,
   openDevDrawerPanel,
@@ -56,9 +56,9 @@ import { fileToDataUrl } from "./evidence/evidence-upload.js";
 import {
   bindEvidencePreviewDialog,
   openEvidencePreviewRecord
-} from "./evidence/evidence-preview.js?v=4.17.6";
+} from "./evidence/evidence-preview.js?v=4.18.0";
 import { evidenceTypeForUnit, hasEvidence } from "./evidence/evidence-policy.js";
-import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.17.6";
+import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.18.0";
 import {
   canDeleteSchedule,
   downloadSchedulesIcs

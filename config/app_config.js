@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.17.6-dev";
-export const APP_RELEASE_NAME = "招待ログイン復旧";
+export const APP_VERSION = "v4.18.0-dev";
+export const APP_RELEASE_NAME = "弱点データベース";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -41,6 +41,18 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.18.0-dev",
+    date: "2026-07-24",
+    title: "教科・分野・単元別の弱点データベース",
+    items: [
+      "高信頼で確認できた不正解を生徒別learning_issuesへ構造化保存",
+      "教科・講座・分野・単元・技能タグ・誤りの種類を記録",
+      "同じ弱点が別の提出で再発した場合は発生回数を自動加算",
+      "問題文全体を保存せず80文字以内の要約と元画像への参照だけを保持",
+      "推測判定や要確認の答案は弱点DBへ確定保存しない"
+    ]
+  },
   {
     version: "v4.17.6-dev",
     date: "2026-07-24",

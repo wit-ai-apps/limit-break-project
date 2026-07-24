@@ -80,6 +80,7 @@ export function renderEvidenceLogs({
             ${record.strengthAnalysis ? `<small><b>できた：</b>${escapeHtml(record.strengthAnalysis)}</small>` : ""}
             ${record.weaknessAnalysis ? `<small><b>弱点：</b>${escapeHtml(record.weaknessAnalysis)}</small>` : ""}
             ${record.nextLearningAction ? `<small><b>次：</b>${escapeHtml(record.nextLearningAction)}</small>` : ""}
+            ${Number(record.learningIssueCount) > 0 ? `<small><b>弱点DB：</b>${escapeHtml(record.learningIssueCount)}件を分野・単元別に保存</small>` : ""}
             ${canCancelAnalysis(record) ? `<button type="button" class="warning evidence-cancel-button" data-cancel-evidence-key="${recordKey(record)}">解析を中止</button>` : ""}
             ${canSubmit && isFailedEvidenceRecord(record) ? `<button type="button" class="warning evidence-delete-button" data-delete-evidence-key="${recordKey(record)}">失敗記録を削除</button>` : ""}
           </article>
