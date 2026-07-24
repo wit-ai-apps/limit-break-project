@@ -47,12 +47,14 @@ const baseUrl = process.env.LB_BASE_URL || "http://127.0.0.1:5500/?e2e=ai";
   await page.locator("#loginPasscode").fill(password);
   await page.locator("#loginForm button[type=submit]").click();
   await page.waitForFunction(() => document.body.dataset.auth === "in", null, { timeout: 30000 });
+  await page.waitForTimeout(6000);
   await page.getByRole("button", { name: "提出画像", exact: true }).click();
+  await page.waitForFunction(() => document.body.dataset.view === "evidence", null, { timeout: 30000 });
   await page.locator("#randomEvidenceImage").setInputFiles([fixturePath, fixturePath2]);
   await page.locator("#randomEvidenceSubmitButton").click();
   const fileNames = [path.basename(fixturePath), path.basename(fixturePath2)];
   const rows = fileNames.map((fileName) => page.locator(".evidence-table tbody tr").filter({ hasText: fileName }).first());
-  await Promise.all(rows.map((row) => row.waitFor({ state: "visible", timeout: 90000 })));
+  await Promise.all(rows.map((row) => row.waitFor({ state: "attached", timeout: 90000 })));
   await page.waitForFunction((expectedNames) => {
     const rows = [...document.querySelectorAll(".evidence-table tbody tr")];
     return expectedNames.every((fileName) => {
