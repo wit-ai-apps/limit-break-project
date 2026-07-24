@@ -21,9 +21,21 @@ const { chromium } = require(path.join(process.env.PLAYWRIGHT_PATH, "playwright"
   await target.waitFor({ state: "visible", timeout: 30000 });
   await target.click();
   await page.getByRole("button", { name: "提出画像", exact: true }).click();
-  const imageButton = page.getByRole("button", { name: /254\.png/ }).first();
-  await imageButton.waitFor({ state: "visible", timeout: 30000 });
-  await imageButton.click();
+  const imageButtons = page.getByRole("button", { name: /254\.png/ });
+  await imageButtons.first().waitFor({ state: "visible", timeout: 30000 });
+  console.log(`IMAGE_BUTTONS=${await imageButtons.count()}`);
+  for (let index = 0; index < await imageButtons.count(); index += 1) {
+    const imageButton = imageButtons.nth(index);
+    console.log(`BUTTON_${index}=${JSON.stringify(await imageButton.evaluate((element) => ({
+      key: element.dataset.evidenceKey,
+      html: element.outerHTML.slice(0, 500)
+    })))}`);
+    await imageButton.click();
+    await page.waitForTimeout(500);
+    console.log(`DIALOG_AFTER_${index}=${await page.locator("#evidencePreviewDialog").getAttribute("open")}`);
+    console.log(`ERRORS_AFTER_${index}=${errors.join(" | ")}`);
+    if (await page.locator("#evidencePreviewDialog[open]").count()) break;
+  }
   await page.locator("#evidencePreviewDialog[open]").waitFor({ state: "visible", timeout: 15000 });
   await page.locator("#evidencePreviewImage").waitFor({ state: "visible", timeout: 15000 });
   console.log(`IMAGE_SRC=${Boolean(await page.locator("#evidencePreviewImage").getAttribute("src"))}`);

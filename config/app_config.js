@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.12.2-dev";
-export const APP_RELEASE_NAME = "提出画像キー照合修正";
+export const APP_VERSION = "v4.12.3-dev";
+export const APP_RELEASE_NAME = "提出画像クリック例外修正";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -40,6 +40,16 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.12.3-dev",
+    date: "2026-07-24",
+    title: "提出画像クリック例外修正",
+    items: [
+      "未提出一覧データを正しい描画関数へ渡すよう修正",
+      "画像クリック時のexpectedMissions例外を解消",
+      "画像確認ダイアログ・採点〇×表示を復旧"
+    ]
+  },
   {
     version: "v4.12.2-dev",
     date: "2026-07-24",

@@ -22,7 +22,7 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.12.2";
+} from "../../config/app_config.js?v=4.12.3";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -2843,6 +2843,7 @@ function renderScheduleDrawer() {
         role: activeRoleConfig(),
         roleKey: currentRole,
         records,
+        expectedMissions,
         recordKey,
         openEvidencePreview,
         onRandomEvidenceSubmit: handleRandomEvidenceSubmit
@@ -2857,7 +2858,6 @@ function renderScheduleDrawer() {
       return openEvidencePreviewRecord(
         key,
         records,
-        expectedMissions,
         {
           dialog: evidencePreviewDialog,
           title: evidencePreviewTitle,
