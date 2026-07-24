@@ -10,6 +10,7 @@ export function renderEvidenceLogs({
   role,
   roleKey,
   records,
+  expectedMissions = [],
   recordKey,
   openEvidencePreview,
   onRandomEvidenceSubmit
@@ -39,7 +40,50 @@ export function renderEvidenceLogs({
     roleKey
   );
 
+  const submittedMissionIds = new Set(evidenceRecords.map((record) => record.missionId));
+  const missingMissions = expectedMissions.filter((mission) => !submittedMissionIds.has(mission.missionId));
+  logList.insertAdjacentHTML("beforeend", `
+    <div class="log-card">
+      <strong>未提出・画像待ち</strong>
+      ${missingMissions.length
+        ? `<div class="missing-evidence-grid">${missingMissions.map((mission) => `
+            <div class="missing-evidence-card">
+              <strong>${escapeHtml(mission.subject || "未分類")} / ${escapeHtml(mission.lesson || mission.title || "")}</strong>
+              <span>${escapeHtml(mission.course || "")} ${escapeHtml(mission.part || "")}</span>
+              <small>提出画像なし</small>
+            </div>`).join("")}</div>`
+        : `<span>現在の予定分はすべて提出済みです。</span>`}
+    </div>
+  `);
+
   if (evidenceRecords.length) {
+    const gallery = document.createElement("div");
+    gallery.className = "log-card";
+    gallery.innerHTML = `
+      <strong>教科・講座・単元別 提出画像</strong>
+      <div class="evidence-gallery">
+        ${evidenceRecords.map((record) => `
+          <article class="evidence-gallery-card">
+            <button type="button" class="evidence-thumbnail-button" data-evidence-key="${recordKey(record)}">
+              ${record.evidenceImageUrl
+                ? `<img src="${escapeHtml(record.evidenceImageUrl)}" alt="${escapeHtml(record.evidenceImageName)}" loading="lazy">`
+                : `<span class="evidence-thumbnail-placeholder">画像を開く</span>`}
+            </button>
+            <strong>${escapeHtml(record.subject || "未分類")} / ${escapeHtml(record.course || "教材不明")}</strong>
+            <span>${escapeHtml(record.lesson || "")} ${escapeHtml(record.part || "")}</span>
+            <span>${canViewEvidenceScore(role) ? `正答率 ${escapeHtml(record.score || "-")}%` : "採点結果あり"}</span>
+            ${record.strengthAnalysis ? `<small><b>できた：</b>${escapeHtml(record.strengthAnalysis)}</small>` : ""}
+            ${record.weaknessAnalysis ? `<small><b>弱点：</b>${escapeHtml(record.weaknessAnalysis)}</small>` : ""}
+            ${record.nextLearningAction ? `<small><b>次：</b>${escapeHtml(record.nextLearningAction)}</small>` : ""}
+          </article>
+        `).join("")}
+      </div>
+    `;
+    gallery.querySelectorAll("[data-evidence-key]").forEach((button) => {
+      button.addEventListener("click", () => openEvidencePreview(button.dataset.evidenceKey));
+    });
+    logList.appendChild(gallery);
+
     const tableCard = document.createElement("div");
     tableCard.className = "log-card";
     tableCard.innerHTML = `

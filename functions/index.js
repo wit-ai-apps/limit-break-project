@@ -49,12 +49,32 @@ const ANALYSIS_SCHEMA = {
     confidence: { type: "number", minimum: 0, maximum: 1 },
     needsReview: { type: "boolean" },
     reviewReason: { type: "string" },
-    detectedTextSummary: { type: "string" }
+    detectedTextSummary: { type: "string" },
+    strengthAnalysis: { type: "string" },
+    weaknessAnalysis: { type: "string" },
+    nextLearningAction: { type: "string" },
+    answerMarks: {
+      type: "array",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          label: { type: "string" },
+          result: { type: "string", enum: ["correct", "incorrect", "unknown"] },
+          x: { type: "number", minimum: 0, maximum: 100 },
+          y: { type: "number", minimum: 0, maximum: 100 },
+          detectedAnswer: { type: "string" },
+          correctAnswer: { type: "string" }
+        },
+        required: ["label", "result", "x", "y", "detectedAnswer", "correctAnswer"]
+      }
+    }
   },
   required: [
     "subject", "course", "lesson", "part", "unit", "testType",
     "answeredCount", "correctRate", "confidence", "needsReview",
-    "reviewReason", "detectedTextSummary"
+    "reviewReason", "detectedTextSummary", "strengthAnalysis",
+    "weaknessAnalysis", "nextLearningAction", "answerMarks"
   ]
 };
 
@@ -168,6 +188,8 @@ export const analyzeEvidenceImage = onObjectFinalized(
                 JSON.stringify(MATERIAL_HINTS),
                 "読めない値は空文字またはnullにし、推測が強い場合はneedsReview=trueにしてください。",
                 "問題文や解答本文は保存せず、detectedTextSummaryは識別に必要な短い見出しだけにしてください。"
+                ,"答案の場合は各記入答案を数学的に照合し、できた点、弱点、次の学習を短く返してください。"
+                ,"answerMarksには各答案の中心位置を画像左上基準の百分率x,yで返し、正解はcorrect、不正解はincorrect、判定不能はunknownにしてください。"
               ].join("\n")
             },
             { type: "image_url", image_url: { url: dataUrl, detail: "high" } }
@@ -197,6 +219,10 @@ export const analyzeEvidenceImage = onObjectFinalized(
         answeredCount: analysis.answeredCount ?? "",
         score: analysis.correctRate ?? "",
         aiAnalysis: analysis,
+        strengthAnalysis: analysis.strengthAnalysis || "",
+        weaknessAnalysis: analysis.weaknessAnalysis || "",
+        nextLearningAction: analysis.nextLearningAction || "",
+        gradingMarks: Array.isArray(analysis.answerMarks) ? analysis.answerMarks : [],
         aiAnalysisStatus: confident ? "completed" : "needs_review",
         aiAnalysisModel: visionModel.value(),
         aiAnalysisUpdatedAt: FieldValue.serverTimestamp()

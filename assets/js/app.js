@@ -22,7 +22,7 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.11.1";
+} from "../../config/app_config.js?v=4.12.0";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -186,6 +186,7 @@ import {
     const evidencePreviewTitle = document.querySelector("#evidencePreviewTitle");
     const evidencePreviewMeta = document.querySelector("#evidencePreviewMeta");
     const evidencePreviewImage = document.querySelector("#evidencePreviewImage");
+    const evidenceMarkLayer = document.querySelector("#evidenceMarkLayer");
     if (loginNameInput && !loginNameInput.value) {
       loginNameInput.value = localStorage.getItem(LOGIN_EMAIL_KEY) || loginName;
     }
@@ -2827,6 +2828,16 @@ function renderScheduleDrawer() {
     }
 
     function renderLogs() {
+      const expectedMissions = navigationItems()
+        .filter((item) => item.type === "submit")
+        .map((item) => ({
+          missionId: item.missionId,
+          subject: item.subject,
+          course: item.course,
+          lesson: item.lesson,
+          part: item.part,
+          title: item.title
+        }));
       renderEvidenceLogs({
         logList,
         role: activeRoleConfig(),
@@ -2846,11 +2857,13 @@ function renderScheduleDrawer() {
       return openEvidencePreviewRecord(
         key,
         records,
+        expectedMissions,
         {
           dialog: evidencePreviewDialog,
           title: evidencePreviewTitle,
           meta: evidencePreviewMeta,
-          image: evidencePreviewImage
+          image: evidencePreviewImage,
+          markLayer: evidenceMarkLayer
         },
         recordKey,
         resolveEvidenceImageUrl

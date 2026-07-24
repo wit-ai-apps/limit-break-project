@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.11.1-dev";
-export const APP_RELEASE_NAME = "パスワード再設定";
+export const APP_VERSION = "v4.12.0-dev";
+export const APP_RELEASE_NAME = "採点画像・分析・未提出ボード";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -40,6 +40,16 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.12.0-dev",
+    date: "2026-07-24",
+    title: "採点画像・分析・未提出ボード",
+    items: [
+      "提出画像をサムネイルで並べ、教科・講座・単元別に自動整理",
+      "できた点・弱点・次の学習を画像カードに表示",
+      "予定と照合した未提出一覧と、元画像を変えない〇×重ね表示を追加"
+    ]
+  },
   {
     version: "v4.11.1-dev",
     date: "2026-07-24",

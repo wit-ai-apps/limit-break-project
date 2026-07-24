@@ -18,6 +18,15 @@ export async function openEvidencePreviewRecord(key, records, elements, recordKe
   elements.title.textContent = record.evidenceImageName || "提出画像";
   elements.meta.textContent = `${record.subject || ""} ${record.course || ""} ${record.lesson || ""} ${record.part || ""} / ${record.testType || ""} / 回答数 ${record.answeredCount || "-"} / 正答率 ${record.score ? `${record.score}%` : "-"} / 保存先 ${record.firebaseSyncStatus === "synced" ? "Firebase" : "端末内"}`;
   elements.image.src = src;
+  if (elements.markLayer) {
+    const marks = record.gradingMarks || record.aiAnalysis?.answerMarks || [];
+    elements.markLayer.innerHTML = marks.map((mark) => `
+      <span class="evidence-mark ${mark.result === "correct" ? "correct" : mark.result === "incorrect" ? "incorrect" : "unknown"}"
+        style="left:${Number(mark.x) || 0}%;top:${Number(mark.y) || 0}%">
+        ${mark.result === "correct" ? "〇" : mark.result === "incorrect" ? "×" : "?"}
+      </span>
+    `).join("");
+  }
   elements.dialog.showModal();
 }
 
@@ -25,5 +34,6 @@ export function bindEvidencePreviewDialog({ dialog, image, closeButton }) {
   closeButton?.addEventListener("click", () => dialog.close());
   dialog.addEventListener("close", () => {
     image.removeAttribute("src");
+    dialog.querySelector(".evidence-mark-layer")?.replaceChildren();
   });
 }
