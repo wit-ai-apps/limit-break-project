@@ -23,7 +23,7 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.15.2";
+} from "../../config/app_config.js?v=4.15.3";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -194,12 +194,15 @@ import {
     const evidencePreviewMeta = document.querySelector("#evidencePreviewMeta");
     const evidencePreviewImage = document.querySelector("#evidencePreviewImage");
     const evidenceMarkLayer = document.querySelector("#evidenceMarkLayer");
+    const appStartupGate = document.querySelector("#appStartupGate");
+    const appStartupMessage = document.querySelector("#appStartupMessage");
     if (loginNameInput && !loginNameInput.value) {
       loginNameInput.value = localStorage.getItem(LOGIN_EMAIL_KEY) || loginName;
     }
     if (loginVersionBadge) loginVersionBadge.textContent = APP_VERSION;
 
     async function init() {
+      if (!(await ensureLatestAppVersion())) return;
       renderRoleOptions();
       try {
         const [dailyResponse, examResponse] = await Promise.all([
@@ -555,6 +558,41 @@ import {
       subscribeFirebaseSchedules();
       subscribeAdaptivePlan();
       render();
+    }
+
+    async function ensureLatestAppVersion() {
+      if (!appStartupGate) return true;
+      try {
+        const response = await fetch(`data/app_version.json?check=${Date.now()}`, { cache: "no-store" });
+        if (!response.ok) throw new Error("VERSION_CHECK_FAILED");
+        const payload = await response.json();
+        const latestVersion = String(payload.version || "");
+        if (latestVersion && latestVersion !== APP_VERSION) {
+          if (appStartupMessage) appStartupMessage.textContent = `${latestVersion}へ更新しています...`;
+          if ("serviceWorker" in navigator) {
+            const registrations = await navigator.serviceWorker.getRegistrations();
+            await Promise.all(registrations.map((registration) => registration.unregister()));
+          }
+          if ("caches" in window) {
+            const keys = await caches.keys();
+            await Promise.all(keys.map((key) => caches.delete(key)));
+          }
+          const url = new URL(window.location.href);
+          url.searchParams.set("v", latestVersion.replace("-dev", "").replace(/^v/, ""));
+          url.searchParams.set("updated", Date.now().toString());
+          window.location.replace(url.toString());
+          return false;
+        }
+        document.body.dataset.updateStatus = "current";
+        appStartupGate.hidden = true;
+        return true;
+      } catch (_) {
+        document.body.dataset.updateStatus = "offline";
+        if (appStartupMessage) appStartupMessage.textContent = "更新確認ができないため、保存済みの版で起動します。";
+        await new Promise((resolve) => setTimeout(resolve, 900));
+        appStartupGate.hidden = true;
+        return true;
+      }
     }
 
     async function resolveEvidenceImageUrl(record, forceRefresh = false) {
@@ -3140,8 +3178,38 @@ function renderScheduleDrawer() {
         expectedMissions,
         recordKey,
         openEvidencePreview,
-        onRandomEvidenceSubmit: handleRandomEvidenceSubmit
+        onRandomEvidenceSubmit: handleRandomEvidenceSubmit,
+        onCancelEvidenceAnalysis: cancelEvidenceAnalysis
       });
+    }
+
+    async function cancelEvidenceAnalysis(key, button) {
+      const record = records.find((item) => recordKey(item) === key);
+      if (!record?.firebaseDocumentId) {
+        alert("Firebase同期前のため、アップロード完了後に中止してください。");
+        return;
+      }
+      if (!confirm(`${record.evidenceImageName || "この画像"}のAI解析を中止しますか？画像自体は削除しません。`)) return;
+      if (button) {
+        button.disabled = true;
+        button.textContent = "中止処理中...";
+      }
+      try {
+        await callGroupFunction("cancelEvidenceAnalysis", {
+          studentId: firebaseBridge.studentId,
+          recordId: record.firebaseDocumentId
+        });
+        record.aiAnalysisStatus = "cancelled";
+        record.aiAnalysisError = "";
+        saveEvidenceRecords(STORAGE_KEY, records);
+        render();
+      } catch (error) {
+        if (button) {
+          button.disabled = false;
+          button.textContent = "解析を中止";
+        }
+        alert(`解析を中止できませんでした。${error.message || error}`);
+      }
     }
 
     function recordKey(record) {

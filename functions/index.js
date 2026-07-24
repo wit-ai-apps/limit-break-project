@@ -356,6 +356,31 @@ export const recoverStalledEvidenceAnalyses = onCall(
   }
 );
 
+export const cancelEvidenceAnalysis = onCall({ region: "us-east1" }, async (request) => {
+  const uid = requireAuth(request);
+  const { data: user } = await requireUser(uid);
+  const studentId = String(request.data?.studentId || "").trim();
+  const recordId = String(request.data?.recordId || "").trim();
+  if (!studentId || !recordId || !linkedToStudent(user, studentId) || !["student", "parent", "teacher", "lead_teacher", "admin"].includes(user.role)) {
+    throw new HttpsError("permission-denied", "CANCEL_NOT_ALLOWED");
+  }
+  const recordRef = getFirestore().doc(`students/${studentId}/evidence_records/${recordId}`);
+  const snapshot = await recordRef.get();
+  if (!snapshot.exists) throw new HttpsError("not-found", "EVIDENCE_NOT_FOUND");
+  const status = snapshot.data().aiAnalysisStatus;
+  if (!["queued", "processing", "stalled"].includes(status)) {
+    return { status, changed: false };
+  }
+  await recordRef.set({
+    aiAnalysisStatus: "cancelled",
+    aiAnalysisError: "",
+    aiAnalysisCancelledBy: uid,
+    aiAnalysisCancelledAt: FieldValue.serverTimestamp(),
+    aiAnalysisUpdatedAt: FieldValue.serverTimestamp()
+  }, { merge: true });
+  return { status: "cancelled", changed: true };
+});
+
 const MATERIAL_HINTS = [
   ["数学", "中学総復習数学"],
   ["数学Ⅰ", "ベーシックレベル数学Ⅰ"],
@@ -502,6 +527,14 @@ export const analyzeEvidenceImage = onObjectFinalized(
     const recordRef = db.doc(`students/${path.studentId}/evidence_records/${recordId}`);
     await recordRef.set({
       aiAnalysisStatus: "processing",
+      evidenceStatus: "submitted",
+      evidenceImageName: object.metadata?.original_file_name || path.fileName,
+      evidenceImageType: object.contentType || "image/jpeg",
+      evidenceStoragePath: object.name,
+      submissionGroupId: object.metadata?.submission_group_id || "",
+      pageNumber: Number(object.metadata?.page_number || 1),
+      pageCount: Number(object.metadata?.page_count || 1),
+      firebaseSyncStatus: "synced",
       aiAnalysisUpdatedAt: FieldValue.serverTimestamp()
     }, { merge: true });
 
@@ -553,6 +586,8 @@ export const analyzeEvidenceImage = onObjectFinalized(
       const output = response.choices?.[0]?.message?.content;
       if (!output) throw new Error("OpenRouter returned an empty analysis response.");
       const analysis = JSON.parse(output);
+      const latestSnapshot = await recordRef.get();
+      if (latestSnapshot.data()?.aiAnalysisStatus === "cancelled") return;
       const confident = analysis.confidence >= 0.75 && !analysis.needsReview;
       await recordRef.set({
         subject: analysis.subject || "未分類",

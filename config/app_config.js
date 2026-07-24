@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.15.2-dev";
-export const APP_RELEASE_NAME = "複数ページ画像一括提出";
+export const APP_VERSION = "v4.15.3-dev";
+export const APP_RELEASE_NAME = "PWA起動時バージョン確認";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -41,6 +41,17 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.15.3-dev",
+    date: "2026-07-24",
+    title: "PWA起動時バージョン確認",
+    items: [
+      "ホーム画面アイコンからの起動時に本番の最新バージョンを確認",
+      "古い場合はService Workerと表示キャッシュを更新して自動再起動",
+      "更新確認中は操作画面を開かず、現在の処理状態を表示",
+      "オフライン時は保存済みの版で起動"
+    ]
+  },
   {
     version: "v4.15.2-dev",
     date: "2026-07-24",

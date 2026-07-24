@@ -46,6 +46,12 @@ const sizes = [
         await page.getByRole("button", { name: label, exact: true }).click();
       }
 
+      await page.getByRole("button", { name: "いまやる", exact: true }).click({ force: true });
+      const todayLabel = await page.locator("#todayDateLabel").textContent();
+      if (!/7(?:月|\/)24/.test(String(todayLabel))) {
+        throw new Error(`today label is stale: ${todayLabel}`);
+      }
+
       const geometry = await page.evaluate(() => {
         const main = document.querySelector("main");
         const columns = main ? getComputedStyle(main).gridTemplateColumns.split(" ").filter(Boolean).length : 0;

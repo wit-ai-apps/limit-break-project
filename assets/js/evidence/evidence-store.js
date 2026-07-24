@@ -89,7 +89,11 @@ export async function saveEvidenceRecordRemote(record, evidenceFile, firebaseBri
           student_id: firebaseBridge.studentId,
           mission_id: record.missionId || "",
           subject: record.subject || "",
-          test_type: record.testType || ""
+          test_type: record.testType || "",
+          original_file_name: evidenceFile.name || "",
+          submission_group_id: record.submissionGroupId || "",
+          page_number: String(record.pageNumber || 1),
+          page_count: String(record.pageCount || 1)
         }
       }));
       remoteRecord.evidenceImageUrl = await withRetry(() => firebaseBridge.getDownloadURL(imageRef));
