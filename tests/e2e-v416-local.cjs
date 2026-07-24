@@ -58,7 +58,13 @@ if (!password) throw new Error("LB_TEST_PASSWORD is required.");
   }
   await deleteButton.click();
   await row.waitFor({ state: "detached" });
-  console.log("PASS v4.16 local: PDF accept / persistent delete / share / deletion");
+  await page.locator(".nav-button").filter({ hasText: "進み具合" }).click();
+  await page.waitForFunction(() => document.body.dataset.view === "progress");
+  await page.locator(".nav-button").filter({ hasText: "AI先生" }).click();
+  await page.waitForFunction(() => document.body.dataset.view === "ai");
+  await page.goBack();
+  await page.waitForFunction(() => document.body.dataset.view === "progress");
+  console.log("PASS local: PDF / persistent delete / share / deletion / back history");
   await browser.close();
 })().catch((error) => {
   console.error(`FAIL v4.16 local: ${error.message}`);

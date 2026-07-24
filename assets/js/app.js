@@ -23,7 +23,7 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.16.0";
+} from "../../config/app_config.js?v=4.16.1";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -39,7 +39,7 @@ import {
   recordIdentity,
   saveEvidenceRecordRemote,
   saveEvidenceRecords
-} from "./evidence/evidence-store.js?v=4.16.0";
+} from "./evidence/evidence-store.js?v=4.16.1";
 import { renderAppNavigation } from "./ui/navigation.js";
 import {
   closeDevDrawerPanel,
@@ -56,9 +56,9 @@ import { fileToDataUrl } from "./evidence/evidence-upload.js";
 import {
   bindEvidencePreviewDialog,
   openEvidencePreviewRecord
-} from "./evidence/evidence-preview.js?v=4.16.0";
+} from "./evidence/evidence-preview.js?v=4.16.1";
 import { evidenceTypeForUnit, hasEvidence } from "./evidence/evidence-policy.js";
-import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.16.0";
+import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.16.1";
 import {
   canDeleteSchedule,
   downloadSchedulesIcs
@@ -130,6 +130,8 @@ import {
     let inviteEntryState = null;
     let groupInvites = [];
     let activeEvidenceUpload = null;
+    const lastEvidenceStatuses = new Map();
+    const DIAGNOSTIC_LOG_KEY = "limitBreakDiagnosticLogV1";
 
     const loginForm = document.querySelector("#loginForm");
     const loginNameInput = document.querySelector("#loginName");
@@ -150,6 +152,8 @@ import {
     const devDrawerBackdrop = document.querySelector("#devDrawerBackdrop");
     const devVersionBadge = document.querySelector("#devVersionBadge");
     const devVersionList = document.querySelector("#devVersionList");
+    const diagnosticLogList = document.querySelector("#diagnosticLogList");
+    const diagnosticLogCount = document.querySelector("#diagnosticLogCount");
     const countdownGrid = document.querySelector("#countdownGrid");
     const adaptivePlanPanel = document.querySelector("#adaptivePlanPanel");
     const scheduleDrawer = document.querySelector("#scheduleDrawer");
@@ -203,8 +207,102 @@ import {
     }
     if (loginVersionBadge) loginVersionBadge.textContent = APP_VERSION;
 
+    function readDiagnosticLogs() {
+      try {
+        return JSON.parse(localStorage.getItem(DIAGNOSTIC_LOG_KEY) || "[]");
+      } catch (_) {
+        return [];
+      }
+    }
+
+    function addDiagnosticLog(event, details = {}) {
+      const safeDetails = {};
+      Object.entries(details || {}).forEach(([key, value]) => {
+        if (/password|passcode|token|secret|api.?key|imageData|fileData/i.test(key)) return;
+        const text = typeof value === "string" ? value : JSON.stringify(value);
+        safeDetails[key] = String(text ?? "").replace(/data:[^;]+;base64,[A-Za-z0-9+/=]+/g, "[file-data]").slice(0, 300);
+      });
+      const logs = readDiagnosticLogs();
+      logs.push({
+        at: new Date().toISOString(),
+        event: String(event || "event"),
+        details: safeDetails
+      });
+      localStorage.setItem(DIAGNOSTIC_LOG_KEY, JSON.stringify(logs.slice(-200)));
+      renderDiagnosticLogs();
+    }
+
+    function renderDiagnosticLogs() {
+      if (!diagnosticLogList) return;
+      const logs = readDiagnosticLogs();
+      if (diagnosticLogCount) diagnosticLogCount.textContent = `${logs.length}件`;
+      diagnosticLogList.textContent = logs.length
+        ? logs.slice().reverse().map((entry) => {
+            const time = new Date(entry.at).toLocaleString("ja-JP");
+            const details = Object.keys(entry.details || {}).length ? ` ${JSON.stringify(entry.details)}` : "";
+            return `[${time}] ${entry.event}${details}`;
+          }).join("\n")
+        : "ログはまだありません。";
+    }
+
+    function bindDiagnosticLogging() {
+      window.addEventListener("error", (event) => {
+        addDiagnosticLog("app.javascript.error", {
+          message: String(event.message || "JavaScript error").slice(0, 240),
+          file: String(event.filename || "").split("/").pop(),
+          line: event.lineno || 0
+        });
+      });
+      window.addEventListener("unhandledrejection", (event) => {
+        addDiagnosticLog("app.promise.error", {
+          message: String(event.reason?.message || event.reason || "Promise rejected").slice(0, 240),
+          code: String(event.reason?.code || "")
+        });
+      });
+      document.querySelector("#copyDiagnosticLogButton")?.addEventListener("click", async () => {
+        const text = diagnosticLogList?.textContent || "";
+        try {
+          await navigator.clipboard.writeText(text);
+          alert("検証ログをコピーしました。");
+        } catch (_) {
+          alert("コピーできませんでした。ログを長押しして選択してください。");
+        }
+      });
+      document.querySelector("#clearDiagnosticLogButton")?.addEventListener("click", () => {
+        if (!confirm("検証ログを消去しますか？学習記録と提出画像は消えません。")) return;
+        localStorage.removeItem(DIAGNOSTIC_LOG_KEY);
+        renderDiagnosticLogs();
+      });
+      renderDiagnosticLogs();
+    }
+
+    function initializeViewHistory() {
+      const hashMatch = window.location.hash.match(/^#view=([^&]+)/);
+      const hashView = hashMatch ? decodeURIComponent(hashMatch[1]) : "";
+      if (APP_VIEWS.some((view) => view.id === hashView)) activeView = hashView;
+      localStorage.setItem(VIEW_KEY, activeView);
+      const url = new URL(window.location.href);
+      url.hash = `view=${encodeURIComponent(activeView)}`;
+      history.replaceState({ limitBreakView: activeView }, "", url);
+      window.addEventListener("popstate", (event) => {
+        const previousView = event.state?.limitBreakView;
+        if (!previousView || !APP_VIEWS.some((view) => view.id === previousView)) return;
+        activeView = previousView;
+        localStorage.setItem(VIEW_KEY, activeView);
+        addDiagnosticLog("navigation.back", { view: activeView });
+        render();
+      });
+    }
+
     async function init() {
+      bindDiagnosticLogging();
+      addDiagnosticLog("app.init", {
+        version: APP_VERSION,
+        online: navigator.onLine,
+        userAgent: navigator.userAgent.slice(0, 120)
+      });
       if (!(await ensureLatestAppVersion())) return;
+      initializeViewHistory();
       renderRoleOptions();
       try {
         const [dailyResponse, examResponse] = await Promise.all([
@@ -323,15 +421,22 @@ import {
           signOut: firebaseAuth.signOut,
           storageRef: firebaseStorage.ref,
           uploadBytes: firebaseStorage.uploadBytes,
+          uploadBytesResumable: firebaseStorage.uploadBytesResumable,
           getDownloadURL: firebaseStorage.getDownloadURL
           ,
           httpsCallable: firebaseFunctions.httpsCallable
         };
+        firebaseBridge.diagnosticLog = addDiagnosticLog;
+        addDiagnosticLog("firebase.ready", { projectId: config.firebase?.projectId || "" });
         if (pendingInviteToken) await inspectPendingInvite();
         if (auth.currentUser) {
           await applyFirebaseUser(auth.currentUser);
         }
       } catch (error) {
+        addDiagnosticLog("firebase.init.error", {
+          code: String(error?.code || "FIREBASE_INIT_FAILED"),
+          message: String(error?.message || error).slice(0, 240)
+        });
         firebaseBridge.enabled = false;
         firebaseBridge.status = "error";
         firebaseBridge.message = `Firebase接続に失敗しました。localStorageで保存します。${error.message || error}`;
@@ -360,6 +465,11 @@ import {
       firebaseBridge.message = userSnap.exists()
         ? "Firebaseログイン済み。提出画像はStorage、記録はFirestoreへ保存します。"
         : "Firebaseログイン済みですが、users/{uid} が未作成です。管理者に確認してください。";
+      addDiagnosticLog("firebase.authenticated", {
+        role: currentRole,
+        studentId: firebaseBridge.studentId,
+        profile: userSnap.exists() ? "ready" : "missing"
+      });
       await writeLoginLog(user, userData);
       subscribeFirebaseRecords();
       subscribeFirebaseSchedules();
@@ -398,6 +508,10 @@ import {
       try {
         inviteEntryState = await callGroupFunction("inspectGroupInvite", { token: pendingInviteToken });
       } catch (error) {
+        addDiagnosticLog("invite.inspect.error", {
+          code: String(error?.code || "INVITE_INSPECT_FAILED"),
+          message: String(error?.message || error).slice(0, 240)
+        });
         inviteEntryState = { status: "invalid", message: error.message || "招待リンクを確認できません。" };
       }
       renderInviteEntryPanel();
@@ -511,6 +625,17 @@ import {
         firebaseDocumentId: docSnap.id,
         firebaseSyncStatus: docSnap.data().firebaseSyncStatus || "synced"
       }));
+      remoteRecords.forEach((record) => {
+        const status = record.aiAnalysisStatus || record.firebaseSyncStatus || "unknown";
+        if (lastEvidenceStatuses.get(record.firebaseDocumentId) !== status) {
+          lastEvidenceStatuses.set(record.firebaseDocumentId, status);
+          addDiagnosticLog("evidence.ai.status", {
+            recordId: record.firebaseDocumentId,
+            status,
+            error: record.aiAnalysisError || ""
+          });
+        }
+      });
       records = mergeAuthoritativeEvidenceRecords(records, remoteRecords);
       saveEvidenceRecords(STORAGE_KEY, records);
     }
@@ -1051,8 +1176,13 @@ import {
     }
 
     function setActiveView(viewId) {
+      if (viewId === activeView) return;
       activeView = viewId;
       localStorage.setItem(VIEW_KEY, activeView);
+      const nextUrl = new URL(window.location.href);
+      nextUrl.hash = `view=${encodeURIComponent(activeView)}`;
+      history.pushState({ limitBreakView: activeView }, "", nextUrl);
+      addDiagnosticLog("navigation.view", { view: activeView });
       render();
     }
 
@@ -3075,6 +3205,14 @@ function renderScheduleDrawer() {
       const submitButton = form.querySelector("#randomEvidenceSubmitButton");
       const cancelButton = form.querySelector("#randomEvidenceCancelButton");
       const evidenceFiles = [...form.querySelector("#randomEvidenceImage").files];
+      addDiagnosticLog("evidence.selection", {
+        count: evidenceFiles.length,
+        files: evidenceFiles.map((file) => ({
+          name: file.name,
+          type: file.type,
+          size: file.size
+        }))
+      });
       if (!evidenceFiles.length) {
         status.textContent = "確認テスト画像を選んでください。";
         form.querySelector("#randomEvidenceImage").focus();
@@ -3171,8 +3309,16 @@ function renderScheduleDrawer() {
             break;
           }
           if (submittedRecord.firebaseSyncStatus === "error") {
+            addDiagnosticLog("evidence.submit.failed", {
+              fileName: evidenceFile.name,
+              code: submittedRecord.firebaseSyncError || "FIREBASE_SYNC_FAILED"
+            });
             failedNames.push(evidenceFile.name);
           } else {
+            addDiagnosticLog("evidence.submit.accepted", {
+              fileName: evidenceFile.name,
+              recordId: submittedRecord.firebaseDocumentId || ""
+            });
             createSubmissionNotice(submittedRecord);
           }
         }

@@ -17,19 +17,35 @@ async function withRetry(operation, attempts = 3) {
   throw lastError;
 }
 
-function withTimeout(operation, timeoutMs = 45000) {
+function uploadWithTimeout(imageRef, evidenceFile, metadata, firebaseBridge, log, timeoutMs = 45000) {
+  if (!firebaseBridge.uploadBytesResumable) {
+    return firebaseBridge.uploadBytes(imageRef, evidenceFile, metadata);
+  }
   return new Promise((resolve, reject) => {
+    const task = firebaseBridge.uploadBytesResumable(imageRef, evidenceFile, metadata);
+    let lastProgressBucket = -1;
     const timer = setTimeout(() => {
+      task.cancel();
       reject(Object.assign(new Error("UPLOAD_TIMEOUT"), { code: "storage/retry-limit-exceeded" }));
     }, timeoutMs);
-    operation().then(
-      (value) => {
-        clearTimeout(timer);
-        resolve(value);
+    task.on("state_changed",
+      (snapshot) => {
+        const progress = snapshot.totalBytes
+          ? Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100)
+          : 0;
+        const bucket = Math.floor(progress / 10);
+        if (bucket !== lastProgressBucket) {
+          lastProgressBucket = bucket;
+          log("evidence.storage.progress", { progress });
+        }
       },
       (error) => {
         clearTimeout(timer);
         reject(error);
+      },
+      () => {
+        clearTimeout(timer);
+        resolve(task.snapshot);
       }
     );
   });
@@ -85,11 +101,13 @@ export function recordForFirestore(record) {
 
 export async function saveEvidenceRecordRemote(record, evidenceFile, firebaseBridge) {
   if (!firebaseBridge?.enabled || !firebaseBridge.currentUser) return record;
+  const log = (event, details = {}) => firebaseBridge.diagnosticLog?.(event, details);
   const recordId = firebaseSafeId(recordIdentity(record));
   let remoteRecord = { ...record };
   const docRef = firebaseBridge.doc(firebaseBridge.db, "students", firebaseBridge.studentId, "evidence_records", recordId);
 
   try {
+    log("evidence.firestore.start", { recordId, fileName: evidenceFile?.name || "" });
     await withRetry(() => firebaseBridge.setDoc(docRef, {
       ...recordForFirestore(remoteRecord),
       student_id: firebaseBridge.studentId,
@@ -97,11 +115,18 @@ export async function saveEvidenceRecordRemote(record, evidenceFile, firebaseBri
       firebaseSyncStatus: "syncing",
       updated_at: firebaseBridge.serverTimestamp()
     }, { merge: true }));
+    log("evidence.firestore.ready", { recordId });
 
     if (evidenceFile) {
       const storagePath = `students/${firebaseBridge.studentId}/evidence/${record.date}/${recordId}-${Date.now()}-${sanitizeFileName(evidenceFile.name)}`;
       const imageRef = firebaseBridge.storageRef(firebaseBridge.storage, storagePath);
-      await withRetry(() => withTimeout(() => firebaseBridge.uploadBytes(imageRef, evidenceFile, {
+      log("evidence.storage.start", {
+        recordId,
+        fileName: evidenceFile.name,
+        fileType: evidenceFile.type,
+        fileSize: evidenceFile.size
+      });
+      await withRetry(() => uploadWithTimeout(imageRef, evidenceFile, {
         contentType: evidenceFile.type || "image/jpeg",
         customMetadata: {
           student_id: firebaseBridge.studentId,
@@ -113,7 +138,8 @@ export async function saveEvidenceRecordRemote(record, evidenceFile, firebaseBri
           page_number: String(record.pageNumber || 1),
           page_count: String(record.pageCount || 1)
         }
-      })), 2);
+      }, firebaseBridge, log), 2);
+      log("evidence.storage.complete", { recordId, storagePath });
       remoteRecord.evidenceImageUrl = await withRetry(() => firebaseBridge.getDownloadURL(imageRef));
       remoteRecord.evidenceStoragePath = storagePath;
     }
@@ -125,6 +151,7 @@ export async function saveEvidenceRecordRemote(record, evidenceFile, firebaseBri
       updated_at: firebaseBridge.serverTimestamp()
     };
     await withRetry(() => firebaseBridge.setDoc(docRef, uploadResult, { merge: true }));
+    log("evidence.sync.complete", { recordId });
 
     return {
       ...remoteRecord,
@@ -134,6 +161,11 @@ export async function saveEvidenceRecordRemote(record, evidenceFile, firebaseBri
       firebaseSyncError: ""
     };
   } catch (error) {
+    log("evidence.sync.error", {
+      recordId,
+      code: String(error?.code || "FIREBASE_SYNC_FAILED"),
+      message: String(error?.message || "Firebase sync failed").slice(0, 240)
+    });
     try {
       await firebaseBridge.setDoc(docRef, {
         firebaseSyncStatus: "error",

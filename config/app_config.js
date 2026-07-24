@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.16.0-dev";
-export const APP_RELEASE_NAME = "PDF提出・共有・失敗記録復旧";
+export const APP_VERSION = "v4.16.1-dev";
+export const APP_RELEASE_NAME = "検証ログ・戻る履歴・画像送信安定化";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -41,6 +41,17 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.16.1-dev",
+    date: "2026-07-24",
+    title: "検証ログ・戻る履歴・画像送信安定化",
+    items: [
+      "更新内容画面に画像送信とAI状態の検証ログ・コピー機能を追加",
+      "戻るスワイプでホームではなく直前に開いた画面へ戻る",
+      "画像送信を進捗取得・実中止対応の再開可能アップロードへ変更",
+      "タイムアウト後に裏で送信が続き重複する問題を防止"
+    ]
+  },
   {
     version: "v4.16.0-dev",
     date: "2026-07-24",

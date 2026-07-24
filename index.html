@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.svg">
-  <link rel="stylesheet" href="assets/css/style.css?v=4.16.0">
+  <link rel="stylesheet" href="assets/css/style.css?v=4.16.1">
 </head>
 <body data-role="student" data-auth="out">
   <div class="app-startup-gate" id="appStartupGate" role="status" aria-live="polite">
@@ -146,6 +146,18 @@
         <span class="badge">検証用</span>
       </div>
       <button class="secondary" type="button" id="refreshAppCacheButton">キャッシュ更新</button>
+      <div class="diagnostic-log-panel">
+        <div class="topline">
+          <strong>検証ログ</strong>
+          <span class="badge" id="diagnosticLogCount">0件</span>
+        </div>
+        <p class="button-note">画像の選択・Firebase保存・送信・AI解析状態を記録します。パスワード、APIキー、画像内容は記録しません。</p>
+        <div class="diagnostic-log-actions">
+          <button class="secondary" type="button" id="copyDiagnosticLogButton">ログをコピー</button>
+          <button class="warning" type="button" id="clearDiagnosticLogButton">ログを消去</button>
+        </div>
+        <pre class="diagnostic-log-list" id="diagnosticLogList">ログはまだありません。</pre>
+      </div>
       <p class="button-note">
         リロードしても古いバージョンが出る時だけ使います。学習記録は消さず、PWAの古い表示キャッシュだけ更新します。
       </p>
@@ -458,6 +470,6 @@
     </div>
   </dialog>
 
-  <script type="module" src="assets/js/app.js?v=4.16.0"></script>
+  <script type="module" src="assets/js/app.js?v=4.16.1"></script>
 </body>
 </html>
