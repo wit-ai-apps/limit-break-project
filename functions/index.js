@@ -381,6 +381,27 @@ export const cancelEvidenceAnalysis = onCall({ region: "us-east1" }, async (requ
   return { status: "cancelled", changed: true };
 });
 
+export const deleteFailedEvidenceRecord = onCall({ region: "us-east1" }, async (request) => {
+  const uid = requireAuth(request);
+  const { data: user } = await requireUser(uid);
+  const studentId = String(request.data?.studentId || "").trim();
+  const recordId = String(request.data?.recordId || "").trim();
+  if (!studentId || !recordId || !linkedToStudent(user, studentId) || !["student", "parent", "teacher", "lead_teacher", "admin"].includes(user.role)) {
+    throw new HttpsError("permission-denied", "DELETE_FAILED_EVIDENCE_NOT_ALLOWED");
+  }
+  const recordRef = getFirestore().doc(`students/${studentId}/evidence_records/${recordId}`);
+  const snapshot = await recordRef.get();
+  if (!snapshot.exists) return { deleted: true };
+  const record = snapshot.data();
+  const isFailedPlaceholder = record.firebaseSyncStatus === "error"
+    || (!record.evidenceStoragePath && !["completed"].includes(record.aiAnalysisStatus));
+  if (!isFailedPlaceholder) {
+    throw new HttpsError("failed-precondition", "ONLY_FAILED_PLACEHOLDER_CAN_BE_DELETED");
+  }
+  await recordRef.delete();
+  return { deleted: true };
+});
+
 const MATERIAL_HINTS = [
   ["数学", "中学総復習数学"],
   ["数学Ⅰ", "ベーシックレベル数学Ⅰ"],
@@ -517,7 +538,9 @@ export const analyzeEvidenceImage = onObjectFinalized(
   async (event) => {
     const object = event.data;
     const path = parseEvidencePath(object.name);
-    if (!path || !String(object.contentType || "").startsWith("image/")) return;
+    const contentType = String(object.contentType || "");
+    const isPdf = contentType === "application/pdf";
+    if (!path || (!contentType.startsWith("image/") && !isPdf)) return;
 
     const missionId = object.metadata?.mission_id;
     if (!missionId) return;
@@ -529,7 +552,7 @@ export const analyzeEvidenceImage = onObjectFinalized(
       aiAnalysisStatus: "processing",
       evidenceStatus: "submitted",
       evidenceImageName: object.metadata?.original_file_name || path.fileName,
-      evidenceImageType: object.contentType || "image/jpeg",
+      evidenceImageType: contentType || "image/jpeg",
       evidenceStoragePath: object.name,
       submissionGroupId: object.metadata?.submission_group_id || "",
       pageNumber: Number(object.metadata?.page_number || 1),
@@ -540,7 +563,7 @@ export const analyzeEvidenceImage = onObjectFinalized(
 
     try {
       const [buffer] = await getStorage().bucket(object.bucket).file(object.name).download();
-      const dataUrl = `data:${object.contentType};base64,${buffer.toString("base64")}`;
+      const dataUrl = `data:${contentType};base64,${buffer.toString("base64")}`;
       const openrouter = new OpenAI({
         apiKey: openRouterApiKey.value(),
         baseURL: "https://openrouter.ai/api/v1",
@@ -569,9 +592,17 @@ export const analyzeEvidenceImage = onObjectFinalized(
                 ,"answerMarksには各答案の中心位置を画像左上基準の百分率x,yで返し、正解はcorrect、不正解はincorrect、判定不能はunknownにしてください。"
               ].join("\n")
             },
-            { type: "image_url", image_url: { url: dataUrl, detail: "high" } }
+            isPdf
+              ? { type: "file", file: { filename: object.metadata?.original_file_name || path.fileName, file_data: dataUrl } }
+              : { type: "image_url", image_url: { url: dataUrl, detail: "high" } }
           ]
         }],
+        ...(isPdf ? {
+          plugins: [{
+            id: "file-parser",
+            pdf: { engine: "cloudflare-ai" }
+          }]
+        } : {}),
         response_format: {
           type: "json_schema",
           json_schema: {

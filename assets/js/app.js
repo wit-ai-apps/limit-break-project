@@ -23,7 +23,7 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.15.5";
+} from "../../config/app_config.js?v=4.16.0";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -39,7 +39,7 @@ import {
   recordIdentity,
   saveEvidenceRecordRemote,
   saveEvidenceRecords
-} from "./evidence/evidence-store.js?v=4.11.0";
+} from "./evidence/evidence-store.js?v=4.16.0";
 import { renderAppNavigation } from "./ui/navigation.js";
 import {
   closeDevDrawerPanel,
@@ -56,9 +56,9 @@ import { fileToDataUrl } from "./evidence/evidence-upload.js";
 import {
   bindEvidencePreviewDialog,
   openEvidencePreviewRecord
-} from "./evidence/evidence-preview.js";
+} from "./evidence/evidence-preview.js?v=4.16.0";
 import { evidenceTypeForUnit, hasEvidence } from "./evidence/evidence-policy.js";
-import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.15.5";
+import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.16.0";
 import {
   canDeleteSchedule,
   downloadSchedulesIcs
@@ -194,6 +194,7 @@ import {
     const evidencePreviewTitle = document.querySelector("#evidencePreviewTitle");
     const evidencePreviewMeta = document.querySelector("#evidencePreviewMeta");
     const evidencePreviewImage = document.querySelector("#evidencePreviewImage");
+    const evidencePreviewPdf = document.querySelector("#evidencePreviewPdf");
     const evidenceMarkLayer = document.querySelector("#evidenceMarkLayer");
     const appStartupGate = document.querySelector("#appStartupGate");
     const appStartupMessage = document.querySelector("#appStartupMessage");
@@ -3083,9 +3084,12 @@ function renderScheduleDrawer() {
         status.textContent = "一度に提出できる画像は10枚までです。";
         return;
       }
-      const invalidFile = evidenceFiles.find((file) => !file.type.startsWith("image/") || file.size >= 10 * 1024 * 1024);
+      const invalidFile = evidenceFiles.find((file) =>
+        (!file.type.startsWith("image/") && file.type !== "application/pdf")
+        || file.size >= 10 * 1024 * 1024
+      );
       if (invalidFile) {
-        status.textContent = `${invalidFile.name}は画像形式または10MB未満か確認してください。`;
+        status.textContent = `${invalidFile.name}は画像・PDF形式または10MB未満か確認してください。`;
         return;
       }
 
@@ -3213,23 +3217,29 @@ function renderScheduleDrawer() {
         openEvidencePreview,
         onRandomEvidenceSubmit: handleRandomEvidenceSubmit,
         onCancelEvidenceAnalysis: cancelEvidenceAnalysis,
-        onDeleteEvidenceRecord: deleteEvidenceRecord
+        onDeleteEvidenceRecord: deleteEvidenceRecord,
+        onShareEvidenceRecord: shareEvidenceRecord
       });
     }
 
     async function deleteEvidenceRecord(key, button) {
       const record = records.find((item) => recordKey(item) === key);
       if (!record) return;
-      if (record.firebaseDocumentId) {
-        alert("Firebaseに保存済みの正式な提出は、生徒画面から削除できません。先生または管理者へ依頼してください。");
-        return;
-      }
-      if (!confirm(`${record.evidenceImageName || "この提出"}をこの端末から削除しますか？`)) return;
+      const isFailedRecord = record.firebaseSyncStatus === "error"
+        || (!record.evidenceStoragePath && record.aiAnalysisStatus !== "completed");
+      if (!isFailedRecord) return;
+      if (!confirm(`${record.evidenceImageName || "この提出"}の失敗記録を削除しますか？`)) return;
       if (button) {
         button.disabled = true;
         button.textContent = "削除中...";
       }
       try {
+        if (record.firebaseDocumentId) {
+          await callGroupFunction("deleteFailedEvidenceRecord", {
+            studentId: firebaseBridge.studentId,
+            recordId: record.firebaseDocumentId
+          });
+        }
         records = records.filter((item) => recordKey(item) !== key);
         saveEvidenceRecords(STORAGE_KEY, records);
         render();
@@ -3239,6 +3249,49 @@ function renderScheduleDrawer() {
           button.textContent = "削除";
         }
         alert(`提出を削除できませんでした。${error.message || error}`);
+      }
+    }
+
+    async function shareEvidenceRecord(key, button) {
+      const record = records.find((item) => recordKey(item) === key);
+      if (!record) return;
+      if (button) {
+        button.disabled = true;
+        button.textContent = "準備中...";
+      }
+      try {
+        let source = record.evidenceImageData || record.evidenceImageUrl;
+        if (!source && record.evidenceStoragePath) source = await resolveEvidenceImageUrl(record);
+        if (!source) throw new Error("共有するファイルを取得できません。");
+        const response = await fetch(source);
+        const blob = await response.blob();
+        const file = new File(
+          [blob],
+          record.evidenceImageName || `limit-break-${record.date || todayJapanKey()}`,
+          { type: record.evidenceImageType || blob.type || "application/octet-stream" }
+        );
+        const shareData = {
+          title: "CORTEX Limit Break 提出物",
+          text: `${record.subject || "学習"} ${record.course || ""} ${record.lesson || ""}`.trim(),
+          files: [file]
+        };
+        if (navigator.share && (!navigator.canShare || navigator.canShare(shareData))) {
+          await navigator.share(shareData);
+        } else {
+          const link = document.createElement("a");
+          link.href = URL.createObjectURL(blob);
+          link.download = file.name;
+          link.click();
+          setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+          alert("この端末は直接共有に対応していないため、ファイルをダウンロードしました。");
+        }
+      } catch (error) {
+        if (error?.name !== "AbortError") alert(`共有できませんでした。${error.message || error}`);
+      } finally {
+        if (button) {
+          button.disabled = false;
+          button.textContent = "共有";
+        }
       }
     }
 
@@ -3284,6 +3337,7 @@ function renderScheduleDrawer() {
           title: evidencePreviewTitle,
           meta: evidencePreviewMeta,
           image: evidencePreviewImage,
+          pdf: evidencePreviewPdf,
           markLayer: evidenceMarkLayer
         },
         recordKey,
@@ -3412,8 +3466,11 @@ function renderScheduleDrawer() {
         alert("スタサプ確認テスト結果スクショをアップロードしてください。未提出の場合、この授業は後日にずらします。");
         return;
       }
-      if (evidenceFiles.length > 10 || evidenceFiles.some((file) => !file.type.startsWith("image/") || file.size >= 10 * 1024 * 1024)) {
-        alert("画像は一度に10枚まで、1枚10MB未満のJPEG・PNG・WebPを選択してください。");
+      if (evidenceFiles.length > 10 || evidenceFiles.some((file) =>
+        (!file.type.startsWith("image/") && file.type !== "application/pdf")
+        || file.size >= 10 * 1024 * 1024
+      )) {
+        alert("画像・PDFは一度に10ファイルまで、1ファイル10MB未満で選択してください。");
         return;
       }
       const filesToSave = evidenceFiles.length ? evidenceFiles : [null];
@@ -3506,6 +3563,7 @@ function renderScheduleDrawer() {
     bindEvidencePreviewDialog({
       dialog: evidencePreviewDialog,
       image: evidencePreviewImage,
+      pdf: evidencePreviewPdf,
       closeButton: document.querySelector("#closeEvidencePreviewButton")
     });
 

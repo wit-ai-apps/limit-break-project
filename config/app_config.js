@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.15.5-dev";
-export const APP_RELEASE_NAME = "重複・失敗した提出を削除";
+export const APP_VERSION = "v4.16.0-dev";
+export const APP_RELEASE_NAME = "PDF提出・共有・失敗記録復旧";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -41,6 +41,17 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.16.0-dev",
+    date: "2026-07-24",
+    title: "PDF提出・共有・失敗記録復旧",
+    items: [
+      "複数ページPDFを連続した1ファイルのまま提出・AI解析",
+      "提出した画像・PDFを端末の共有メニューから送信",
+      "Firebase仮記録のため消えていた削除ボタンを安定表示",
+      "画像送信に時間制限と再試行を追加し、無限の解析待ちを防止"
+    ]
+  },
   {
     version: "v4.15.5-dev",
     date: "2026-07-24",

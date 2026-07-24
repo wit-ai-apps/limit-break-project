@@ -19,6 +19,18 @@ export async function openEvidencePreviewRecord(key, records, elements, recordKe
   }
 
   elements.meta.textContent = `${record.subject || ""} ${record.course || ""} ${record.lesson || ""} ${record.part || ""} / ${record.testType || ""} / 回答数 ${record.answeredCount || "-"} / 正答率 ${record.score ? `${record.score}%` : "-"} / 保存先 ${record.firebaseSyncStatus === "synced" ? "Firebase" : "端末内"}`;
+  const isPdf = record.evidenceImageType === "application/pdf" || /\.pdf$/i.test(record.evidenceImageName || "");
+  if (isPdf && elements.pdf) {
+    elements.image.hidden = true;
+    elements.pdf.hidden = false;
+    elements.pdf.src = src;
+    if (elements.markLayer) elements.markLayer.replaceChildren();
+    return;
+  }
+  if (elements.pdf) {
+    elements.pdf.hidden = true;
+    elements.pdf.removeAttribute("src");
+  }
   let retried = false;
   elements.image.onload = () => {
     elements.image.hidden = false;
@@ -49,13 +61,17 @@ export async function openEvidencePreviewRecord(key, records, elements, recordKe
   }
 }
 
-export function bindEvidencePreviewDialog({ dialog, image, closeButton }) {
+export function bindEvidencePreviewDialog({ dialog, image, pdf, closeButton }) {
   closeButton?.addEventListener("click", () => dialog.close());
   dialog.addEventListener("close", () => {
     image.removeAttribute("src");
     image.hidden = false;
     image.onload = null;
     image.onerror = null;
+    if (pdf) {
+      pdf.removeAttribute("src");
+      pdf.hidden = true;
+    }
     dialog.querySelector(".evidence-mark-layer")?.replaceChildren();
   });
 }

@@ -15,7 +15,8 @@ export function renderEvidenceLogs({
   openEvidencePreview,
   onRandomEvidenceSubmit,
   onCancelEvidenceAnalysis,
-  onDeleteEvidenceRecord
+  onDeleteEvidenceRecord,
+  onShareEvidenceRecord
 }) {
   logList.innerHTML = "";
   const canSubmit = canSubmitEvidence(role);
@@ -78,7 +79,8 @@ export function renderEvidenceLogs({
             ${record.weaknessAnalysis ? `<small><b>弱点：</b>${escapeHtml(record.weaknessAnalysis)}</small>` : ""}
             ${record.nextLearningAction ? `<small><b>次：</b>${escapeHtml(record.nextLearningAction)}</small>` : ""}
             ${canCancelAnalysis(record) ? `<button type="button" class="warning evidence-cancel-button" data-cancel-evidence-key="${recordKey(record)}">解析を中止</button>` : ""}
-            ${canSubmit && !record.firebaseDocumentId ? `<button type="button" class="warning evidence-delete-button" data-delete-evidence-key="${recordKey(record)}">端末内記録を削除</button>` : ""}
+            <button type="button" class="secondary evidence-share-button" data-share-evidence-key="${recordKey(record)}">共有</button>
+            ${canSubmit && isFailedEvidenceRecord(record) ? `<button type="button" class="warning evidence-delete-button" data-delete-evidence-key="${recordKey(record)}">失敗記録を削除</button>` : ""}
           </article>
         `).join("")}
       </div>
@@ -88,6 +90,7 @@ export function renderEvidenceLogs({
     });
     bindCancelButtons(gallery, onCancelEvidenceAnalysis);
     bindDeleteButtons(gallery, onDeleteEvidenceRecord);
+    bindShareButtons(gallery, onShareEvidenceRecord);
     logList.appendChild(gallery);
 
     const tableCard = document.createElement("div");
@@ -124,10 +127,13 @@ export function renderEvidenceLogs({
                 <td>
                   ${analysisStatusLabel(record)}
                   ${canCancelAnalysis(record) ? `<button type="button" class="warning evidence-cancel-button" data-cancel-evidence-key="${recordKey(record)}">中止</button>` : ""}
-                  ${canSubmit && !record.firebaseDocumentId ? `<button type="button" class="warning evidence-delete-button" data-delete-evidence-key="${recordKey(record)}">削除</button>` : ""}
+                  ${canSubmit && isFailedEvidenceRecord(record) ? `<button type="button" class="warning evidence-delete-button" data-delete-evidence-key="${recordKey(record)}">削除</button>` : ""}
                 </td>
                 <td>${record.firebaseSyncStatus === "synced" ? "Firebase" : "端末内"}</td>
-                <td><button type="button" class="evidence-open-button" data-evidence-key="${recordKey(record)}">${escapeHtml(record.evidenceImageName)}</button></td>
+                <td>
+                  <button type="button" class="evidence-open-button" data-evidence-key="${recordKey(record)}">${escapeHtml(record.evidenceImageName)}</button>
+                  <button type="button" class="secondary evidence-share-button" data-share-evidence-key="${recordKey(record)}">共有</button>
+                </td>
               </tr>
             `).join("")}
           </tbody>
@@ -139,6 +145,7 @@ export function renderEvidenceLogs({
     });
     bindCancelButtons(tableCard, onCancelEvidenceAnalysis);
     bindDeleteButtons(tableCard, onDeleteEvidenceRecord);
+    bindShareButtons(tableCard, onShareEvidenceRecord);
     logList.appendChild(tableCard);
   } else {
     logList.insertAdjacentHTML("beforeend", `<div class="empty">提出画像はまだありません。生徒が確認テスト結果を提出すると、ここに日時・教科・教材ごとに表示されます。</div>`);
@@ -183,9 +190,9 @@ function renderRandomEvidenceUploader(container, role, onRandomEvidenceSubmit) {
     <span>画像を選ぶだけで提出できます。AIが教科・教材・講座・単元・回答数・正答率を読み取り、保護者・先生の画面へ自動整理します。</span>
     <form id="randomEvidenceForm" class="login-form" novalidate>
       <div class="field">
-        <label for="randomEvidenceImage">確認テスト画像</label>
-        <input id="randomEvidenceImage" type="file" accept="image/png,image/jpeg,image/webp" multiple required>
-        <span class="button-note">2ページ以上はまとめて選択できます。最大10枚、1枚10MB未満です。</span>
+        <label for="randomEvidenceImage">確認テスト画像・PDF</label>
+        <input id="randomEvidenceImage" type="file" accept="image/png,image/jpeg,image/webp,application/pdf" multiple required>
+        <span class="button-note">画像は最大10枚、PDFは連続ページのまま提出できます。1ファイル10MB未満です。</span>
       </div>
       <button type="submit" id="randomEvidenceSubmitButton">画像を提出してAI解析する</button>
       <button type="button" id="randomEvidenceCancelButton" class="warning" hidden>アップロード・解析を中止</button>
@@ -245,6 +252,18 @@ function bindDeleteButtons(container, onDeleteEvidenceRecord) {
   container.querySelectorAll("[data-delete-evidence-key]").forEach((button) => {
     button.addEventListener("click", () => onDeleteEvidenceRecord(button.dataset.deleteEvidenceKey, button));
   });
+}
+
+function bindShareButtons(container, onShareEvidenceRecord) {
+  if (typeof onShareEvidenceRecord !== "function") return;
+  container.querySelectorAll("[data-share-evidence-key]").forEach((button) => {
+    button.addEventListener("click", () => onShareEvidenceRecord(button.dataset.shareEvidenceKey, button));
+  });
+}
+
+function isFailedEvidenceRecord(record) {
+  return record.firebaseSyncStatus === "error"
+    || (!record.evidenceStoragePath && record.aiAnalysisStatus !== "completed");
 }
 
 function isAnalysisStalled(record) {

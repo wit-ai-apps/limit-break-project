@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.svg">
-  <link rel="stylesheet" href="assets/css/style.css?v=4.15.5">
+  <link rel="stylesheet" href="assets/css/style.css?v=4.16.0">
 </head>
 <body data-role="student" data-auth="out">
   <div class="app-startup-gate" id="appStartupGate" role="status" aria-live="polite">
@@ -420,8 +420,8 @@
       </div>
       <div class="field">
         <label for="evidenceImage">スタサプ確認テスト結果スクショ</label>
-        <input id="evidenceImage" type="file" accept="image/png,image/jpeg,image/webp" multiple>
-        <span class="button-note" id="evidenceImageNote">複数ページは一度に選択できます。画像は選択順に1ページ目、2ページ目として提出します。</span>
+        <input id="evidenceImage" type="file" accept="image/png,image/jpeg,image/webp,application/pdf" multiple>
+        <span class="button-note" id="evidenceImageNote">複数画像またはPDFを選択できます。PDFは連続ページのまま提出します。</span>
       </div>
       <div class="field student-only teacher-only">
         <label for="mentalState">今日のメンタル状態</label>
@@ -452,11 +452,12 @@
       <div class="evidence-preview-meta" id="evidencePreviewMeta"></div>
       <div class="evidence-preview-stage">
         <img class="evidence-preview-image" id="evidencePreviewImage" alt="提出された確認テスト結果スクショ">
+        <iframe class="evidence-preview-pdf" id="evidencePreviewPdf" title="提出されたPDF" hidden></iframe>
         <div class="evidence-mark-layer" id="evidenceMarkLayer" aria-hidden="true"></div>
       </div>
     </div>
   </dialog>
 
-  <script type="module" src="assets/js/app.js?v=4.15.5"></script>
+  <script type="module" src="assets/js/app.js?v=4.16.0"></script>
 </body>
 </html>

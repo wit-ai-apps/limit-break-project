@@ -17,6 +17,24 @@ async function withRetry(operation, attempts = 3) {
   throw lastError;
 }
 
+function withTimeout(operation, timeoutMs = 45000) {
+  return new Promise((resolve, reject) => {
+    const timer = setTimeout(() => {
+      reject(Object.assign(new Error("UPLOAD_TIMEOUT"), { code: "storage/retry-limit-exceeded" }));
+    }, timeoutMs);
+    operation().then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      }
+    );
+  });
+}
+
 export function loadEvidenceRecords(storageKey, storage = localStorage) {
   try {
     const currentRecords = storage.getItem(storageKey);
@@ -83,7 +101,7 @@ export async function saveEvidenceRecordRemote(record, evidenceFile, firebaseBri
     if (evidenceFile) {
       const storagePath = `students/${firebaseBridge.studentId}/evidence/${record.date}/${recordId}-${Date.now()}-${sanitizeFileName(evidenceFile.name)}`;
       const imageRef = firebaseBridge.storageRef(firebaseBridge.storage, storagePath);
-      await withRetry(() => firebaseBridge.uploadBytes(imageRef, evidenceFile, {
+      await withRetry(() => withTimeout(() => firebaseBridge.uploadBytes(imageRef, evidenceFile, {
         contentType: evidenceFile.type || "image/jpeg",
         customMetadata: {
           student_id: firebaseBridge.studentId,
@@ -95,7 +113,7 @@ export async function saveEvidenceRecordRemote(record, evidenceFile, firebaseBri
           page_number: String(record.pageNumber || 1),
           page_count: String(record.pageCount || 1)
         }
-      }));
+      })), 2);
       remoteRecord.evidenceImageUrl = await withRetry(() => firebaseBridge.getDownloadURL(imageRef));
       remoteRecord.evidenceStoragePath = storagePath;
     }
