@@ -11,6 +11,7 @@ if (!password) throw new Error("LB_TEST_PASSWORD is required.");
 const sizes = [
   { name: "split-pc", width: 1000, height: 900 },
   { name: "tablet", width: 820, height: 1180 },
+  { name: "tablet-landscape", width: 1280, height: 800 },
   { name: "mobile", width: 390, height: 844 },
   { name: "desktop", width: 1440, height: 900 }
 ];
@@ -44,6 +45,23 @@ const sizes = [
 
       for (const label of ["今日", "提出", "進み具合", "AI先生"]) {
         await page.getByRole("button", { name: label, exact: true }).click();
+        const activeGeometry = await page.evaluate(() => {
+          const active = [...document.querySelectorAll(".view-section")]
+            .find((element) => getComputedStyle(element).display !== "none" && element.getBoundingClientRect().width > 0);
+          const shell = document.querySelector(".shell");
+          if (!active || !shell) return null;
+          const activeRect = active.getBoundingClientRect();
+          const shellRect = shell.getBoundingClientRect();
+          return {
+            leftGap: activeRect.left - shellRect.left,
+            activeWidth: activeRect.width,
+            shellWidth: shellRect.width
+          };
+        });
+        if (activeGeometry && size.width >= 1000 &&
+            (activeGeometry.leftGap > 80 || activeGeometry.activeWidth < activeGeometry.shellWidth * 0.7)) {
+          throw new Error(`active view pushed aside: ${JSON.stringify(activeGeometry)}`);
+        }
       }
 
       await page.getByRole("button", { name: "いまやる", exact: true }).click({ force: true });

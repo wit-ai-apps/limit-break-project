@@ -18,7 +18,10 @@ export async function openEvidencePreviewRecord(key, records, elements, recordKe
     return;
   }
 
-  elements.meta.textContent = `${record.subject || ""} ${record.course || ""} ${record.lesson || ""} ${record.part || ""} / ${record.testType || ""} / 回答数 ${record.answeredCount || "-"} / 正答率 ${record.score ? `${record.score}%` : "-"} / 保存先 ${record.firebaseSyncStatus === "synced" ? "Firebase" : "端末内"}`;
+  const gradingNote = record.gradingReviewStatus === "confirmed"
+    ? "先生確認済み"
+    : "AIの〇×は先生確認前のため表示していません";
+  elements.meta.textContent = `${record.subject || ""} ${record.course || ""} ${record.lesson || ""} ${record.part || ""} / ${record.testType || ""} / 回答数 ${record.answeredCount || "-"} / 正答率 ${record.score ? `${record.score}%` : "-"} / ${gradingNote} / 保存先 ${record.firebaseSyncStatus === "synced" ? "Firebase" : "端末内"}`;
   const isPdf = record.evidenceImageType === "application/pdf" || /\.pdf$/i.test(record.evidenceImageName || "");
   if (isPdf && elements.pdf) {
     elements.image.hidden = true;
@@ -51,7 +54,9 @@ export async function openEvidencePreviewRecord(key, records, elements, recordKe
   };
   elements.image.src = src;
   if (elements.markLayer) {
-    const marks = record.gradingMarks || record.aiAnalysis?.answerMarks || [];
+    const marks = record.gradingReviewStatus === "confirmed" && Array.isArray(record.gradingMarks)
+      ? record.gradingMarks
+      : [];
     elements.markLayer.innerHTML = marks.map((mark) => `
       <span class="evidence-mark ${mark.result === "correct" ? "correct" : mark.result === "incorrect" ? "incorrect" : "unknown"}"
         style="left:${Number(mark.x) || 0}%;top:${Number(mark.y) || 0}%">

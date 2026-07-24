@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.16.1-dev";
-export const APP_RELEASE_NAME = "検証ログ・戻る履歴・画像送信安定化";
+export const APP_VERSION = "v4.17.0-dev";
+export const APP_RELEASE_NAME = "受信共有・横画面・採点安全化";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -41,6 +41,17 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.17.0-dev",
+    date: "2026-07-24",
+    title: "受信共有・横画面・採点安全化",
+    items: [
+      "他アプリの共有先としてLimit Breakへ画像・PDFを受け取るPWA共有を追加",
+      "タブレット横画面で内容が右端へ押し出される空白レイアウトを修正",
+      "AIが読めない答案を推測採点せず、先生確認前の〇×を画像へ表示しない",
+      "結果画面以外から正答率を推測せず、要確認として整理"
+    ]
+  },
   {
     version: "v4.16.1-dev",
     date: "2026-07-24",

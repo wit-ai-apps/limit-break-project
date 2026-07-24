@@ -1,4 +1,4 @@
-const CACHE_NAME = "cortex-limit-break-v4-16-1-dev";
+const CACHE_NAME = "cortex-limit-break-v4-17-0-dev";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -42,9 +42,39 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   const request = event.request;
+  const requestUrl = new URL(request.url);
+  if (request.method === "POST" && requestUrl.pathname.endsWith("/share-target")) {
+    event.respondWith((async () => {
+      const formData = await request.formData();
+      const files = formData.getAll("files")
+        .filter((item) => item && typeof item.arrayBuffer === "function")
+        .filter((file) => (String(file.type).startsWith("image/") || file.type === "application/pdf") && file.size < 10 * 1024 * 1024)
+        .slice(0, 10);
+      const shareId = `${Date.now()}-${crypto.randomUUID()}`;
+      const cache = await caches.open("cortex-limit-break-shared-files");
+      const manifest = [];
+      for (let index = 0; index < files.length; index += 1) {
+        const file = files[index];
+        const key = `./__shared/${shareId}/${index}`;
+        await cache.put(key, new Response(file, {
+          headers: {
+            "Content-Type": file.type || "application/octet-stream",
+            "X-Shared-File-Name": encodeURIComponent(file.name || `shared-${index + 1}`)
+          }
+        }));
+        manifest.push({ key, name: file.name, type: file.type, size: file.size });
+      }
+      await cache.put(`./__shared/${shareId}/manifest`, new Response(JSON.stringify(manifest), {
+        headers: { "Content-Type": "application/json" }
+      }));
+      const redirectUrl = new URL(`./?shared_upload=${encodeURIComponent(shareId)}#view=evidence`, request.url);
+      return Response.redirect(redirectUrl.href, 303);
+    })());
+    return;
+  }
   if (request.method !== "GET") return;
 
-  const url = new URL(request.url);
+  const url = requestUrl;
   if (url.origin !== self.location.origin) return;
 
   if (request.mode === "navigate") {

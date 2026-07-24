@@ -432,6 +432,10 @@ const ANALYSIS_SCHEMA = {
     part: { type: "string" },
     unit: { type: "string" },
     testType: { type: "string" },
+    documentType: {
+      type: "string",
+      enum: ["result_screen", "answer_sheet", "question_sheet", "unknown"]
+    },
     answeredCount: { type: ["integer", "null"] },
     correctRate: { type: ["number", "null"], minimum: 0, maximum: 100 },
     confidence: { type: "number", minimum: 0, maximum: 1 },
@@ -452,14 +456,19 @@ const ANALYSIS_SCHEMA = {
           x: { type: "number", minimum: 0, maximum: 100 },
           y: { type: "number", minimum: 0, maximum: 100 },
           detectedAnswer: { type: "string" },
-          correctAnswer: { type: "string" }
+          correctAnswer: { type: "string" },
+          markConfidence: { type: "number", minimum: 0, maximum: 1 },
+          evidenceBasis: { type: "string" }
         },
-        required: ["label", "result", "x", "y", "detectedAnswer", "correctAnswer"]
+        required: [
+          "label", "result", "x", "y", "detectedAnswer", "correctAnswer",
+          "markConfidence", "evidenceBasis"
+        ]
       }
     }
   },
   required: [
-    "subject", "course", "lesson", "part", "unit", "testType",
+    "subject", "course", "lesson", "part", "unit", "testType", "documentType",
     "answeredCount", "correctRate", "confidence", "needsReview",
     "reviewReason", "detectedTextSummary", "strengthAnalysis",
     "weaknessAnalysis", "nextLearningAction", "answerMarks"
@@ -588,8 +597,11 @@ export const analyzeEvidenceImage = onObjectFinalized(
                 JSON.stringify(MATERIAL_HINTS),
                 "読めない値は空文字またはnullにし、推測が強い場合はneedsReview=trueにしてください。",
                 "問題文や解答本文は保存せず、detectedTextSummaryは識別に必要な短い見出しだけにしてください。"
-                ,"答案の場合は各記入答案を数学的に照合し、できた点、弱点、次の学習を短く返してください。"
-                ,"answerMarksには各答案の中心位置を画像左上基準の百分率x,yで返し、正解はcorrect、不正解はincorrect、判定不能はunknownにしてください。"
+                ,"最初にdocumentTypeを結果画面・答案・問題用紙・不明へ分類してください。"
+                ,"答案の採点は、同じ設問の問題文・生徒の解答・検証可能な正解の3点がすべて明瞭に読める場合だけ行ってください。1点でも欠ける場合はresult=unknownとし、決して推測で正誤を決めないでください。"
+                ,"answerMarksのx,yは実際の解答記入欄の中心だけを画像左上基準の百分率で返してください。見出し、余白、印刷例、得点欄、問題ではない場所には置かないでください。"
+                ,"各markConfidenceと、正誤判断の短い根拠evidenceBasisを返してください。3点が完全に読めない場合markConfidenceは0.98未満にしてください。"
+                ,"できた点、弱点、次の学習は短く返してください。結果画面に表示済みの正答率は抽出できますが、答案から正答率を推測計算しないでください。"
               ].join("\n")
             },
             isPdf
@@ -619,21 +631,27 @@ export const analyzeEvidenceImage = onObjectFinalized(
       const analysis = JSON.parse(output);
       const latestSnapshot = await recordRef.get();
       if (latestSnapshot.data()?.aiAnalysisStatus === "cancelled") return;
-      const confident = analysis.confidence >= 0.75 && !analysis.needsReview;
+      const classificationConfident = analysis.confidence >= 0.9 && !analysis.needsReview;
+      const resultScreenConfident = analysis.documentType === "result_screen" && classificationConfident;
+      const proposedMarks = Array.isArray(analysis.answerMarks)
+        ? analysis.answerMarks.filter((mark) => mark.result !== "unknown" && Number(mark.markConfidence) >= 0.98)
+        : [];
       await recordRef.set({
         subject: analysis.subject || "未分類",
         course: analysis.course || "教材不明",
         lesson: analysis.lesson || "",
         part: analysis.part || analysis.unit || "",
         testType: analysis.testType || "確認テスト",
-        answeredCount: analysis.answeredCount ?? "",
-        score: analysis.correctRate ?? "",
+        answeredCount: resultScreenConfident ? (analysis.answeredCount ?? "") : "",
+        score: resultScreenConfident ? (analysis.correctRate ?? "") : "",
         aiAnalysis: analysis,
         strengthAnalysis: analysis.strengthAnalysis || "",
         weaknessAnalysis: analysis.weaknessAnalysis || "",
         nextLearningAction: analysis.nextLearningAction || "",
-        gradingMarks: Array.isArray(analysis.answerMarks) ? analysis.answerMarks : [],
-        aiAnalysisStatus: confident ? "completed" : "needs_review",
+        proposedGradingMarks: proposedMarks,
+        gradingMarks: [],
+        gradingReviewStatus: proposedMarks.length ? "teacher_confirmation_required" : "not_available",
+        aiAnalysisStatus: resultScreenConfident ? "completed" : "needs_review",
         aiAnalysisModel: visionModel.value(),
         aiAnalysisUpdatedAt: FieldValue.serverTimestamp()
       }, { merge: true });

@@ -519,8 +519,19 @@
 
     main {
       display: grid;
-      grid-template-columns: minmax(0, 1.35fr) minmax(340px, 0.65fr);
+      grid-template-columns: minmax(0, 1fr);
       gap: 18px;
+    }
+
+    main > .stack,
+    main > aside {
+      width: 100%;
+      min-width: 0;
+    }
+
+    body[data-view="ai"] main > .stack:first-child,
+    body[data-view="support"] main > .stack:first-child {
+      display: none;
     }
 
     body[data-view="home"] .countdown-grid,

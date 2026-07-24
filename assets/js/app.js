@@ -23,7 +23,7 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.16.1";
+} from "../../config/app_config.js?v=4.17.0";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -39,7 +39,7 @@ import {
   recordIdentity,
   saveEvidenceRecordRemote,
   saveEvidenceRecords
-} from "./evidence/evidence-store.js?v=4.16.1";
+} from "./evidence/evidence-store.js?v=4.17.0";
 import { renderAppNavigation } from "./ui/navigation.js";
 import {
   closeDevDrawerPanel,
@@ -56,9 +56,9 @@ import { fileToDataUrl } from "./evidence/evidence-upload.js";
 import {
   bindEvidencePreviewDialog,
   openEvidencePreviewRecord
-} from "./evidence/evidence-preview.js?v=4.16.1";
+} from "./evidence/evidence-preview.js?v=4.17.0";
 import { evidenceTypeForUnit, hasEvidence } from "./evidence/evidence-policy.js";
-import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.16.1";
+import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.17.0";
 import {
   canDeleteSchedule,
   downloadSchedulesIcs
@@ -127,9 +127,12 @@ import {
     let memoryResults = loadMemoryResults();
     let aiTeacherLog = loadAiTeacherLog();
     const pendingInviteToken = new URLSearchParams(window.location.search).get("invite") || "";
+    const pendingSharedUploadId = new URLSearchParams(window.location.search).get("shared_upload") || "";
     let inviteEntryState = null;
     let groupInvites = [];
     let activeEvidenceUpload = null;
+    let sharedUploadConsuming = false;
+    let sharedUploadConsumed = false;
     const lastEvidenceStatuses = new Map();
     const DIAGNOSTIC_LOG_KEY = "limitBreakDiagnosticLogV1";
 
@@ -292,6 +295,52 @@ import {
         addDiagnosticLog("navigation.back", { view: activeView });
         render();
       });
+    }
+
+    async function consumeSharedUpload() {
+      if (!pendingSharedUploadId || sharedUploadConsumed || sharedUploadConsuming || !isLoggedIn || !("caches" in window)) return;
+      sharedUploadConsuming = true;
+      try {
+        const cache = await caches.open("cortex-limit-break-shared-files");
+        const manifestKey = new URL(`./__shared/${pendingSharedUploadId}/manifest`, window.location.href).href;
+        const manifestResponse = await cache.match(manifestKey);
+        if (!manifestResponse) throw new Error("SHARED_FILES_NOT_FOUND");
+        const manifest = await manifestResponse.json();
+        const dataTransfer = new DataTransfer();
+        for (const item of manifest.slice(0, 10)) {
+          const fileResponse = await cache.match(new URL(item.key, window.location.href).href);
+          if (!fileResponse) continue;
+          const blob = await fileResponse.blob();
+          dataTransfer.items.add(new File([blob], item.name || "shared-file", {
+            type: item.type || blob.type || "application/octet-stream"
+          }));
+          await cache.delete(new URL(item.key, window.location.href).href);
+        }
+        await cache.delete(manifestKey);
+        if (!dataTransfer.files.length) throw new Error("SHARED_FILES_EMPTY");
+        activeView = "evidence";
+        localStorage.setItem(VIEW_KEY, activeView);
+        render();
+        const input = document.querySelector("#randomEvidenceImage");
+        const status = document.querySelector("#randomEvidenceStatus");
+        input.files = dataTransfer.files;
+        if (status) status.textContent = `他のアプリから${dataTransfer.files.length}件を受け取りました。内容を確認して「提出」を押してください。`;
+        sharedUploadConsumed = true;
+        addDiagnosticLog("share.receive.ready", {
+          count: dataTransfer.files.length,
+          types: [...dataTransfer.files].map((file) => file.type)
+        });
+        const url = new URL(window.location.href);
+        url.searchParams.delete("shared_upload");
+        url.hash = "view=evidence";
+        history.replaceState({ limitBreakView: "evidence" }, "", url);
+      } catch (error) {
+        addDiagnosticLog("share.receive.error", {
+          code: String(error?.message || error).slice(0, 120)
+        });
+      } finally {
+        sharedUploadConsuming = false;
+      }
     }
 
     async function init() {
@@ -1270,6 +1319,9 @@ import {
       renderPermissions();
       renderNotificationPanel();
       renderLogs();
+      if (pendingSharedUploadId && isLoggedIn && !sharedUploadConsumed && !sharedUploadConsuming) {
+        queueMicrotask(consumeSharedUpload);
+      }
       renderDevDrawer();
     }
 
@@ -3363,8 +3415,7 @@ function renderScheduleDrawer() {
         openEvidencePreview,
         onRandomEvidenceSubmit: handleRandomEvidenceSubmit,
         onCancelEvidenceAnalysis: cancelEvidenceAnalysis,
-        onDeleteEvidenceRecord: deleteEvidenceRecord,
-        onShareEvidenceRecord: shareEvidenceRecord
+        onDeleteEvidenceRecord: deleteEvidenceRecord
       });
     }
 
@@ -3395,49 +3446,6 @@ function renderScheduleDrawer() {
           button.textContent = "削除";
         }
         alert(`提出を削除できませんでした。${error.message || error}`);
-      }
-    }
-
-    async function shareEvidenceRecord(key, button) {
-      const record = records.find((item) => recordKey(item) === key);
-      if (!record) return;
-      if (button) {
-        button.disabled = true;
-        button.textContent = "準備中...";
-      }
-      try {
-        let source = record.evidenceImageData || record.evidenceImageUrl;
-        if (!source && record.evidenceStoragePath) source = await resolveEvidenceImageUrl(record);
-        if (!source) throw new Error("共有するファイルを取得できません。");
-        const response = await fetch(source);
-        const blob = await response.blob();
-        const file = new File(
-          [blob],
-          record.evidenceImageName || `limit-break-${record.date || todayJapanKey()}`,
-          { type: record.evidenceImageType || blob.type || "application/octet-stream" }
-        );
-        const shareData = {
-          title: "CORTEX Limit Break 提出物",
-          text: `${record.subject || "学習"} ${record.course || ""} ${record.lesson || ""}`.trim(),
-          files: [file]
-        };
-        if (navigator.share && (!navigator.canShare || navigator.canShare(shareData))) {
-          await navigator.share(shareData);
-        } else {
-          const link = document.createElement("a");
-          link.href = URL.createObjectURL(blob);
-          link.download = file.name;
-          link.click();
-          setTimeout(() => URL.revokeObjectURL(link.href), 1000);
-          alert("この端末は直接共有に対応していないため、ファイルをダウンロードしました。");
-        }
-      } catch (error) {
-        if (error?.name !== "AbortError") alert(`共有できませんでした。${error.message || error}`);
-      } finally {
-        if (button) {
-          button.disabled = false;
-          button.textContent = "共有";
-        }
       }
     }
 
