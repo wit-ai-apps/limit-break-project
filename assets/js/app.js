@@ -22,7 +22,7 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.12.0";
+} from "../../config/app_config.js?v=4.12.1";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -475,8 +475,8 @@ import {
       render();
     }
 
-    async function resolveEvidenceImageUrl(record) {
-      if (record?.evidenceImageUrl) return record.evidenceImageUrl;
+    async function resolveEvidenceImageUrl(record, forceRefresh = false) {
+      if (record?.evidenceImageUrl && !forceRefresh) return record.evidenceImageUrl;
       if (!record?.evidenceStoragePath || !firebaseBridge.storageRef || !firebaseBridge.getDownloadURL) {
         throw new Error("EVIDENCE_IMAGE_LOCATION_MISSING");
       }
@@ -1777,7 +1777,7 @@ function renderScheduleDrawer() {
       roleDashboardBadge.textContent = role.label;
       roleDashboard.innerHTML = "";
 
-      if (currentRole === "teacher") {
+      if (currentRole === "teacher" || currentRole === "lead_teacher") {
         renderTeacherDashboard(todayRecords, evidenceRecords);
         return;
       }

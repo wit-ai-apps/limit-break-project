@@ -1,11 +1,11 @@
 export async function openEvidencePreviewRecord(key, records, elements, recordKey, resolveImageUrl) {
   const record = records.find((item) => recordKey(item) === key);
   if (!record) return;
+  elements.title.textContent = record.evidenceImageName || "提出画像";
+  elements.meta.textContent = "画像を読み込んでいます...";
+  if (!elements.dialog.open) elements.dialog.showModal();
   let src = record.evidenceImageData || record.evidenceImageUrl;
   if (!src && record.evidenceStoragePath && resolveImageUrl) {
-    elements.title.textContent = record.evidenceImageName || "提出画像";
-    elements.meta.textContent = "画像をFirebase Storageから読み込んでいます...";
-    elements.dialog.showModal();
     try {
       src = await resolveImageUrl(record);
     } catch (_) {
@@ -13,10 +13,30 @@ export async function openEvidencePreviewRecord(key, records, elements, recordKe
       return;
     }
   }
-  if (!src) return;
+  if (!src) {
+    elements.meta.textContent = "画像の保存場所が記録されていません。再提出またはFirebase同期を確認してください。";
+    return;
+  }
 
-  elements.title.textContent = record.evidenceImageName || "提出画像";
   elements.meta.textContent = `${record.subject || ""} ${record.course || ""} ${record.lesson || ""} ${record.part || ""} / ${record.testType || ""} / 回答数 ${record.answeredCount || "-"} / 正答率 ${record.score ? `${record.score}%` : "-"} / 保存先 ${record.firebaseSyncStatus === "synced" ? "Firebase" : "端末内"}`;
+  let retried = false;
+  elements.image.onload = () => {
+    elements.image.hidden = false;
+  };
+  elements.image.onerror = async () => {
+    if (!retried && record.evidenceStoragePath && resolveImageUrl) {
+      retried = true;
+      elements.meta.textContent = "画像URLを更新して再読み込みしています...";
+      try {
+        elements.image.src = await resolveImageUrl(record, true);
+        return;
+      } catch (_) {
+        // Show the stable error message below.
+      }
+    }
+    elements.image.hidden = true;
+    elements.meta.textContent = "画像を取得できませんでした。Firebase同期状態を確認して再提出してください。";
+  };
   elements.image.src = src;
   if (elements.markLayer) {
     const marks = record.gradingMarks || record.aiAnalysis?.answerMarks || [];
@@ -27,13 +47,15 @@ export async function openEvidencePreviewRecord(key, records, elements, recordKe
       </span>
     `).join("");
   }
-  elements.dialog.showModal();
 }
 
 export function bindEvidencePreviewDialog({ dialog, image, closeButton }) {
   closeButton?.addEventListener("click", () => dialog.close());
   dialog.addEventListener("close", () => {
     image.removeAttribute("src");
+    image.hidden = false;
+    image.onload = null;
+    image.onerror = null;
     dialog.querySelector(".evidence-mark-layer")?.replaceChildren();
   });
 }

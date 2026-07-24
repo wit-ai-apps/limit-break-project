@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.12.0-dev";
-export const APP_RELEASE_NAME = "採点画像・分析・未提出ボード";
+export const APP_VERSION = "v4.12.1-dev";
+export const APP_RELEASE_NAME = "提出画像ボタン応答修正";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -40,6 +40,16 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.12.1-dev",
+    date: "2026-07-24",
+    title: "提出画像ボタン応答修正",
+    items: [
+      "画像ボタンを押した直後に確認画面を必ず表示",
+      "期限切れ・無効な画像URLはFirebase Storageから再取得",
+      "取得失敗時も無反応にせず原因を画面表示"
+    ]
+  },
   {
     version: "v4.12.0-dev",
     date: "2026-07-24",
