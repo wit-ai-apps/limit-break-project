@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
   mergeAuthoritativeEvidenceRecords,
+  recordIdentity,
   saveEvidenceRecordRemote
 } from "../assets/js/evidence/evidence-store.js";
 
@@ -16,6 +17,31 @@ test("ログイン中はFirebase記録を正本にして別端末の古い画像
     ]
   );
   assert.deepEqual(records.map((record) => record.evidenceImageName), ["再送待ち.png", "Firebaseの画像.png"]);
+});
+
+test("同じ提出の複数ページを固有missionIdで保持する", () => {
+  const pages = [
+    {
+      date: "2026-07-24",
+      missionId: "random_batch_p1",
+      submissionGroupId: "random_batch",
+      pageNumber: 1,
+      pageCount: 2,
+      evidenceImageName: "page-1.jpg"
+    },
+    {
+      date: "2026-07-24",
+      missionId: "random_batch_p2",
+      submissionGroupId: "random_batch",
+      pageNumber: 2,
+      pageCount: 2,
+      evidenceImageName: "page-2.jpg"
+    }
+  ];
+  const merged = mergeAuthoritativeEvidenceRecords([], pages);
+  assert.equal(merged.length, 2);
+  assert.deepEqual(new Set(merged.map(recordIdentity)).size, 2);
+  assert.deepEqual(merged.map((record) => record.submissionGroupId), ["random_batch", "random_batch"]);
 });
 
 test("creates the queued record before upload and never overwrites AI fields afterward", async () => {

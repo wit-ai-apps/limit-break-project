@@ -40,7 +40,7 @@ export function renderEvidenceLogs({
     roleKey
   );
 
-  const submittedMissionIds = new Set(evidenceRecords.map((record) => record.missionId));
+  const submittedMissionIds = new Set(evidenceRecords.map((record) => record.sourceMissionId || record.missionId));
   const missingMissions = expectedMissions.filter((mission) => !submittedMissionIds.has(mission.missionId));
   logList.insertAdjacentHTML("beforeend", `
     <div class="log-card">
@@ -172,8 +172,8 @@ function renderRandomEvidenceUploader(container, role, onRandomEvidenceSubmit) {
     <form id="randomEvidenceForm" class="login-form" novalidate>
       <div class="field">
         <label for="randomEvidenceImage">確認テスト画像</label>
-        <input id="randomEvidenceImage" type="file" accept="image/*" required>
-        <span class="button-note">結果画面、答案、自己採点済み画像などをアップしてください。</span>
+        <input id="randomEvidenceImage" type="file" accept="image/png,image/jpeg,image/webp" multiple required>
+        <span class="button-note">2ページ以上はまとめて選択できます。最大10枚、1枚10MB未満です。</span>
       </div>
       <button type="submit" id="randomEvidenceSubmitButton">画像を提出してAI解析する</button>
       <p class="button-note" id="randomEvidenceStatus" role="status" aria-live="polite">提出後はAI解析待ちとして保存され、完了すると自動分類されます。</p>
@@ -202,12 +202,20 @@ function analysisStatusLabel(record) {
     processing: "解析中",
     completed: "自動分類済み",
     needs_review: "要確認",
-    error: "解析エラー"
+    error: "解析エラー",
+    stalled: "解析停止・再提出してください"
   };
-  const status = record.aiAnalysisStatus || (record.firebaseSyncStatus === "synced" ? "queued" : "");
+  let status = record.aiAnalysisStatus || (record.firebaseSyncStatus === "synced" ? "queued" : "");
+  if (status === "processing" && isAnalysisStalled(record)) status = "stalled";
   const confidence = Number(record.aiAnalysis?.confidence);
   const confidenceText = Number.isFinite(confidence) ? ` ${Math.round(confidence * 100)}%` : "";
   return escapeHtml(`${labels[status] || "未解析"}${confidenceText}`);
+}
+
+function isAnalysisStalled(record) {
+  const raw = record.aiAnalysisUpdatedAt;
+  const date = typeof raw?.toDate === "function" ? raw.toDate() : new Date(raw || record.savedAt || 0);
+  return Number.isFinite(date.getTime()) && Date.now() - date.getTime() > 10 * 60 * 1000;
 }
 
 function formatSavedAt(value) {

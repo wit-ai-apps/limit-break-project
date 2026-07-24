@@ -23,7 +23,7 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.14.0";
+} from "../../config/app_config.js?v=4.15.0";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -363,6 +363,20 @@ import {
       await loadLinkDirectory();
       if (pendingInviteToken) await claimPendingInvite();
       if (currentRole === "parent" || currentRole === "lead_teacher") await loadGroupInvites();
+      if (currentRole === "student") await recoverStalledEvidenceAnalyses();
+    }
+
+    async function recoverStalledEvidenceAnalyses() {
+      try {
+        const result = await callGroupFunction("recoverStalledEvidenceAnalyses", {
+          studentId: firebaseBridge.studentId
+        });
+        if (result?.recovered) {
+          firebaseBridge.message = `${result.recovered}件の停止していた画像解析を再開しました。`;
+        }
+      } catch (_) {
+        // Recovery is best-effort and must not prevent login or ordinary uploads.
+      }
     }
 
     async function callGroupFunction(name, data = {}) {
@@ -3014,77 +3028,87 @@ function renderScheduleDrawer() {
       const form = event.currentTarget;
       const status = form.querySelector("#randomEvidenceStatus");
       const submitButton = form.querySelector("#randomEvidenceSubmitButton");
-      const evidenceFile = form.querySelector("#randomEvidenceImage").files[0];
-      if (!evidenceFile) {
+      const evidenceFiles = [...form.querySelector("#randomEvidenceImage").files];
+      if (!evidenceFiles.length) {
         status.textContent = "確認テスト画像を選んでください。";
         form.querySelector("#randomEvidenceImage").focus();
         return;
       }
+      if (evidenceFiles.length > 10) {
+        status.textContent = "一度に提出できる画像は10枚までです。";
+        return;
+      }
+      const invalidFile = evidenceFiles.find((file) => !file.type.startsWith("image/") || file.size >= 10 * 1024 * 1024);
+      if (invalidFile) {
+        status.textContent = `${invalidFile.name}は画像形式または10MB未満か確認してください。`;
+        return;
+      }
 
       submitButton.disabled = true;
-      submitButton.textContent = "画像を処理中...";
-      status.textContent = "画像を読み込んでいます...";
+      submitButton.textContent = `${evidenceFiles.length}枚を処理中...`;
+      status.textContent = "画像を順番に読み込んでいます...";
 
       try {
-        const submittedAt = new Date().toISOString();
         const dateKey = todayJapanKey();
-        const subject = "AI解析待ち";
-        const course = "AI解析待ち";
-        const lesson = "";
-        const unit = "";
-        const testType = "AI画像確認テスト";
-        const missionTitle = `AI画像解析 ${evidenceFile.name}`;
-        const evidenceImageData = await fileToDataUrl(evidenceFile);
-
-        let submittedRecord = {
-          date: dateKey,
-          day: dailyPlan.day,
-          missionId: `random_${Date.now()}`,
-          missionTitle,
-          subject,
-          course,
-          lesson,
-          part: unit,
-          testType,
-          checkItem: "ランダム確認テスト",
-          levelTask: "到達度判定",
-          answeredCount: "",
-          score: "",
-          understanding: "",
-          fatigue: "",
-          mistakeReason: "",
-          mentalState: "",
-          privateNote: "",
-          evidenceStatus: "submitted",
-          evidenceImageName: evidenceFile.name,
-          evidenceImageType: evidenceFile.type,
-          evidenceImageData,
-          evidenceImageUrl: "",
-          evidenceStoragePath: "",
-          rescheduleStatus: "random_diagnostic",
-          autoGradingStatus: "phase1_random_evidence",
-          autoGradingSummary: "画像を受領。サーバー側AI解析で教科・教材・講座・単元・正答率を自動分類します。",
-          aiAnalysisStatus: firebaseBridge.enabled && firebaseBridge.currentUser ? "queued" : "needs_review",
-          notificationStatus: "queued",
-          submittedAt,
-          savedAt: new Date().toISOString()
-        };
-
-        status.textContent = "提出画像を保存中です...";
-        submittedRecord = await saveEvidenceRecordRemote(submittedRecord, evidenceFile, firebaseBridge);
-        records.push(submittedRecord);
-        saveEvidenceRecords(STORAGE_KEY, records);
-        if (submittedRecord.firebaseSyncStatus === "error") {
-          status.textContent = "Firebaseへの送信に失敗しました。記録は端末内に保持しました。通信を確認して、もう一度提出してください。";
-          submitButton.disabled = false;
-          submitButton.textContent = "画像を提出してAI解析する";
-          render();
-          return;
+        const submissionGroupId = `random_${Date.now()}`;
+        const failedNames = [];
+        for (let index = 0; index < evidenceFiles.length; index += 1) {
+          const evidenceFile = evidenceFiles[index];
+          status.textContent = `${index + 1}/${evidenceFiles.length}枚目「${evidenceFile.name}」を保存中です...`;
+          const submittedAt = new Date().toISOString();
+          const evidenceImageData = await fileToDataUrl(evidenceFile);
+          let submittedRecord = {
+            date: dateKey,
+            day: dailyPlan.day,
+            missionId: `${submissionGroupId}_p${index + 1}`,
+            submissionGroupId,
+            pageNumber: index + 1,
+            pageCount: evidenceFiles.length,
+            missionTitle: `AI画像解析 ${index + 1}/${evidenceFiles.length} ${evidenceFile.name}`,
+            subject: "AI解析待ち",
+            course: "AI解析待ち",
+            lesson: "",
+            part: "",
+            testType: "AI画像確認テスト",
+            checkItem: "ランダム確認テスト",
+            levelTask: "到達度判定",
+            answeredCount: "",
+            score: "",
+            understanding: "",
+            fatigue: "",
+            mistakeReason: "",
+            mentalState: "",
+            privateNote: "",
+            evidenceStatus: "submitted",
+            evidenceImageName: evidenceFile.name,
+            evidenceImageType: evidenceFile.type,
+            evidenceImageData,
+            evidenceImageUrl: "",
+            evidenceStoragePath: "",
+            rescheduleStatus: "random_diagnostic",
+            autoGradingStatus: "multi_page_ai_evidence",
+            autoGradingSummary: `${evidenceFiles.length}ページ中${index + 1}ページ目。サーバー側AI解析で自動分類します。`,
+            aiAnalysisStatus: firebaseBridge.enabled && firebaseBridge.currentUser ? "queued" : "needs_review",
+            notificationStatus: "queued",
+            submittedAt,
+            savedAt: submittedAt
+          };
+          submittedRecord = await saveEvidenceRecordRemote(submittedRecord, evidenceFile, firebaseBridge);
+          records.push(submittedRecord);
+          saveEvidenceRecords(STORAGE_KEY, records);
+          if (submittedRecord.firebaseSyncStatus === "error") {
+            failedNames.push(evidenceFile.name);
+          } else {
+            createSubmissionNotice(submittedRecord);
+          }
         }
-        createSubmissionNotice(submittedRecord);
         form.reset();
         render();
-        window.alert("画像を提出しました。AI解析が完了すると教科・教材・単元ごとに自動整理されます。");
+        if (failedNames.length) {
+          window.alert(`${evidenceFiles.length - failedNames.length}枚を提出しました。失敗: ${failedNames.join("、")}`);
+        } else {
+          window.alert(`${evidenceFiles.length}枚をまとめて提出しました。各ページのAI解析後に同じ提出グループとして整理されます。`);
+        }
       } catch (error) {
         status.textContent = `画像を提出できませんでした: ${error.message || error}`;
         submitButton.disabled = false;
@@ -3251,53 +3275,74 @@ function renderScheduleDrawer() {
       const missionId = document.querySelector("#missionId").value;
       const mission = findMissionById(missionId);
       const existingRecord = getMissionRecord(missionId);
-      const evidenceFile = document.querySelector("#evidenceImage").files[0];
-      if (!existingRecord?.evidenceImageName && !evidenceFile) {
+      const evidenceFiles = [...document.querySelector("#evidenceImage").files];
+      if (!existingRecord?.evidenceImageName && !evidenceFiles.length) {
         alert("スタサプ確認テスト結果スクショをアップロードしてください。未提出の場合、この授業は後日にずらします。");
         return;
       }
-      const evidenceImageData = evidenceFile ? await fileToDataUrl(evidenceFile) : existingRecord.evidenceImageData;
-      records = records.filter((record) => !(record.date === todayKey() && record.missionId === missionId));
-      let submittedRecord = {
-        date: todayKey(),
-        day: dailyPlan.day,
-        missionId,
-        missionTitle: document.querySelector("#missionTitle").value,
-        subject: mission ? mission.subject : "",
-        course: mission ? mission.course : "",
-        lesson: mission ? mission.lesson : "",
-        part: mission ? mission.part : "",
-        testType: document.querySelector("#testType").value,
-        checkItem: mission ? mission.check_item || "" : "",
-        levelTask: mission ? mission.level_task || "" : "",
-        answeredCount: document.querySelector("#answeredCount").value,
-        score: document.querySelector("#score").value,
-        understanding: document.querySelector("#understanding").value,
-        fatigue: document.querySelector("#fatigue").value,
-        mistakeReason: document.querySelector("#mistakeReason").value.trim(),
-        mentalState: document.querySelector("#mentalState").value,
-        privateNote: document.querySelector("#privateNote").value.trim(),
-        evidenceStatus: "submitted",
-        evidenceImageName: evidenceFile ? evidenceFile.name : existingRecord.evidenceImageName,
-        evidenceImageType: evidenceFile ? evidenceFile.type : existingRecord.evidenceImageType,
-        evidenceImageData,
-        evidenceImageUrl: evidenceFile ? "" : existingRecord.evidenceImageUrl,
-        evidenceStoragePath: evidenceFile ? "" : existingRecord.evidenceStoragePath,
-        rescheduleStatus: "not_required",
-        autoGradingStatus: "phase1_sutasapu_result_screenshot",
-        autoGradingSummary: "スタサプ結果スクショと手入力の回答数・正答率を受領。OCR自動読取は正式版で実装。",
-        notificationStatus: "queued",
-        savedAt: new Date().toISOString()
-      };
-      submittedRecord = await saveEvidenceRecordRemote(submittedRecord, evidenceFile, firebaseBridge);
-      records.push(submittedRecord);
-      saveEvidenceRecords(STORAGE_KEY, records);
-      if (submittedRecord.firebaseSyncStatus === "error") {
-        render();
-        alert("Firebaseへの送信に失敗しました。記録は端末内に保持しました。通信を確認して、もう一度提出してください。");
+      if (evidenceFiles.length > 10 || evidenceFiles.some((file) => !file.type.startsWith("image/") || file.size >= 10 * 1024 * 1024)) {
+        alert("画像は一度に10枚まで、1枚10MB未満のJPEG・PNG・WebPを選択してください。");
         return;
       }
-      createSubmissionNotice(submittedRecord);
+      const filesToSave = evidenceFiles.length ? evidenceFiles : [null];
+      const submissionGroupId = `mission_${todayKey()}_${missionId}_${Date.now()}`;
+      records = records.filter((record) => !(
+        record.date === todayKey()
+        && (record.missionId === missionId || record.sourceMissionId === missionId)
+      ));
+      const submittedRecords = [];
+      for (let index = 0; index < filesToSave.length; index += 1) {
+        const evidenceFile = filesToSave[index];
+        const evidenceImageData = evidenceFile ? await fileToDataUrl(evidenceFile) : existingRecord.evidenceImageData;
+        let submittedRecord = {
+          date: todayKey(),
+          day: dailyPlan.day,
+          missionId: filesToSave.length === 1 ? missionId : `${missionId}_p${index + 1}_${Date.now()}`,
+          sourceMissionId: missionId,
+          submissionGroupId,
+          pageNumber: index + 1,
+          pageCount: filesToSave.length,
+          missionTitle: `${document.querySelector("#missionTitle").value}${filesToSave.length > 1 ? ` ${index + 1}/${filesToSave.length}ページ` : ""}`,
+          subject: mission ? mission.subject : "",
+          course: mission ? mission.course : "",
+          lesson: mission ? mission.lesson : "",
+          part: mission ? mission.part : "",
+          testType: document.querySelector("#testType").value,
+          checkItem: mission ? mission.check_item || "" : "",
+          levelTask: mission ? mission.level_task || "" : "",
+          answeredCount: document.querySelector("#answeredCount").value,
+          score: document.querySelector("#score").value,
+          understanding: document.querySelector("#understanding").value,
+          fatigue: document.querySelector("#fatigue").value,
+          mistakeReason: document.querySelector("#mistakeReason").value.trim(),
+          mentalState: document.querySelector("#mentalState").value,
+          privateNote: document.querySelector("#privateNote").value.trim(),
+          evidenceStatus: "submitted",
+          evidenceImageName: evidenceFile ? evidenceFile.name : existingRecord.evidenceImageName,
+          evidenceImageType: evidenceFile ? evidenceFile.type : existingRecord.evidenceImageType,
+          evidenceImageData,
+          evidenceImageUrl: evidenceFile ? "" : existingRecord.evidenceImageUrl,
+          evidenceStoragePath: evidenceFile ? "" : existingRecord.evidenceStoragePath,
+          rescheduleStatus: "not_required",
+          autoGradingStatus: filesToSave.length > 1 ? "multi_page_sutasapu_result" : "phase1_sutasapu_result_screenshot",
+          autoGradingSummary: filesToSave.length > 1
+            ? `${filesToSave.length}ページ中${index + 1}ページ目として受領。`
+            : "スタサプ結果スクショと手入力の回答数・正答率を受領。",
+          aiAnalysisStatus: evidenceFile && firebaseBridge.enabled && firebaseBridge.currentUser ? "queued" : existingRecord?.aiAnalysisStatus || "needs_review",
+          notificationStatus: "queued",
+          savedAt: new Date().toISOString()
+        };
+        submittedRecord = await saveEvidenceRecordRemote(submittedRecord, evidenceFile, firebaseBridge);
+        records.push(submittedRecord);
+        submittedRecords.push(submittedRecord);
+      }
+      saveEvidenceRecords(STORAGE_KEY, records);
+      if (submittedRecords.some((record) => record.firebaseSyncStatus === "error")) {
+        render();
+        alert("一部の画像送信に失敗しました。成功したページは保持されています。失敗した画像だけ再提出してください。");
+        return;
+      }
+      submittedRecords.forEach(createSubmissionNotice);
       const navItems = navigationItems();
       const nextIndex = navItems.findIndex((item) => item.type !== "complete");
       navigationStepIndex = nextIndex >= 0 ? nextIndex : navItems.length;
@@ -3404,11 +3449,18 @@ function renderScheduleDrawer() {
     function registerServiceWorker() {
       if (!("serviceWorker" in navigator)) return;
       window.addEventListener("load", () => {
-        navigator.serviceWorker.register("./sw.js").then((registration) => {
+        navigator.serviceWorker.register("./sw.js", { updateViaCache: "none" }).then((registration) => {
           registration.update();
+          window.setInterval(() => registration.update(), 15 * 60 * 1000);
         }).catch((error) => {
           console.warn("Service Worker registration failed:", error);
         });
+      });
+      let reloadingForUpdate = false;
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (reloadingForUpdate) return;
+        reloadingForUpdate = true;
+        window.location.reload();
       });
     }
 

@@ -22,8 +22,15 @@ const baseUrl = process.env.LB_BASE_URL || "http://127.0.0.1:5500/?e2e=ai";
     <p style="font-size:30px">正解数：8問</p>
     <p style="font-size:42px;font-weight:bold">正答率 80%</p>
   </body></html>`);
-  const fixturePath = path.join(os.tmpdir(), `limit-break-ai-e2e-${Date.now()}.png`);
+  const fixtureId = Date.now();
+  const fixturePath = path.join(os.tmpdir(), `limit-break-ai-e2e-${fixtureId}-p1.png`);
+  const fixturePath2 = path.join(os.tmpdir(), `limit-break-ai-e2e-${fixtureId}-p2.png`);
   await fixturePage.screenshot({ path: fixturePath, fullPage: true });
+  await fixturePage.evaluate(() => {
+    document.querySelector("h2").textContent = "第1講 PART 1　二次関数　確認テスト 2ページ目";
+    document.querySelector("p").textContent = "途中式と解答欄";
+  });
+  await fixturePage.screenshot({ path: fixturePath2, fullPage: true });
   await fixturePage.close();
 
   const context = await browser.newContext();
@@ -41,20 +48,23 @@ const baseUrl = process.env.LB_BASE_URL || "http://127.0.0.1:5500/?e2e=ai";
   await page.locator("#loginForm button[type=submit]").click();
   await page.waitForFunction(() => document.body.dataset.auth === "in", null, { timeout: 30000 });
   await page.getByRole("button", { name: "提出画像", exact: true }).click();
-  await page.locator("#randomEvidenceImage").setInputFiles(fixturePath);
+  await page.locator("#randomEvidenceImage").setInputFiles([fixturePath, fixturePath2]);
   await page.locator("#randomEvidenceSubmitButton").click();
-  const row = page.locator(".evidence-table tbody tr").filter({ hasText: path.basename(fixturePath) }).first();
-  await row.waitFor({ state: "visible", timeout: 60000 });
-  await page.waitForFunction((fileName) => {
+  const fileNames = [path.basename(fixturePath), path.basename(fixturePath2)];
+  const rows = fileNames.map((fileName) => page.locator(".evidence-table tbody tr").filter({ hasText: fileName }).first());
+  await Promise.all(rows.map((row) => row.waitFor({ state: "visible", timeout: 90000 })));
+  await page.waitForFunction((expectedNames) => {
     const rows = [...document.querySelectorAll(".evidence-table tbody tr")];
-    const row = rows.find((item) => item.textContent.includes(fileName));
-    if (!row) return false;
-    const text = row.textContent;
-    return text.includes("自動分類済み") || text.includes("要確認") || text.includes("解析エラー");
-  }, path.basename(fixturePath), { timeout: 180000 });
-  const rowText = (await row.textContent()).replace(/\s+/g, " ").trim();
-  if (rowText.includes("解析エラー")) throw new Error(`AI analysis failed: ${rowText}`);
-  if (!rowText.includes("Firebase")) {
+    return expectedNames.every((fileName) => {
+      const row = rows.find((item) => item.textContent.includes(fileName));
+      if (!row) return false;
+      const text = row.textContent;
+      return text.includes("自動分類済み") || text.includes("要確認") || text.includes("解析エラー");
+    });
+  }, fileNames, { timeout: 240000 });
+  const rowTexts = await Promise.all(rows.map(async (row) => (await row.textContent()).replace(/\s+/g, " ").trim()));
+  if (rowTexts.some((text) => text.includes("解析エラー"))) throw new Error(`AI analysis failed: ${rowTexts.join(" || ")}`);
+  if (rowTexts.some((text) => !text.includes("Firebase"))) {
     const diagnostic = await page.evaluate((fileName) => {
       for (let index = 0; index < localStorage.length; index += 1) {
         const key = localStorage.key(index);
@@ -67,11 +77,11 @@ const baseUrl = process.env.LB_BASE_URL || "http://127.0.0.1:5500/?e2e=ai";
       }
       return "record_not_found";
     }, path.basename(fixturePath));
-    throw new Error(`Firebase sync failed (${diagnostic}): ${rowText}`);
+    throw new Error(`Firebase sync failed (${diagnostic}): ${rowTexts.join(" || ")}`);
   }
-  if (rowText.includes("AI解析待ち")) throw new Error(`AI fields were not updated: ${rowText}`);
+  if (rowTexts.some((text) => text.includes("AI解析待ち"))) throw new Error(`AI fields were not updated: ${rowTexts.join(" || ")}`);
   if (errors.length) throw new Error(`browser errors: ${errors.join(" | ")}`);
-  console.log(`PASS AI_UPLOAD ${rowText}`);
+  console.log(`PASS MULTI_AI_UPLOAD ${rowTexts.join(" || ")}`);
   await context.close();
   await browser.close();
 })().catch((error) => {

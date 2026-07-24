@@ -1,4 +1,4 @@
-const CACHE_NAME = "cortex-limit-break-v4-14-0-dev";
+const CACHE_NAME = "cortex-limit-break-v4-15-0-dev";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -55,6 +55,28 @@ self.addEventListener("fetch", (event) => {
           return response;
         })
         .catch(() => caches.match("./index.html"))
+    );
+    return;
+  }
+
+  const isFreshAppAsset = [
+    "/assets/js/",
+    "/assets/css/",
+    "/config/",
+    "/sw.js"
+  ].some((part) => url.pathname.includes(part));
+
+  if (isFreshAppAsset) {
+    event.respondWith(
+      fetch(request, { cache: "no-store" })
+        .then((response) => {
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match(request))
     );
     return;
   }

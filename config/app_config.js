@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.14.0-dev";
-export const APP_RELEASE_NAME = "支援グループ招待・承認";
+export const APP_VERSION = "v4.15.0-dev";
+export const APP_RELEASE_NAME = "複数ページ画像一括提出";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -41,6 +41,17 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.15.0-dev",
+    date: "2026-07-24",
+    title: "複数ページ画像一括提出",
+    items: [
+      "JPEG・PNG・WebPを一度に最大10枚まで選択可能",
+      "複数画像をページ順と提出グループID付きで個別保存・AI解析",
+      "同じミッションIDへの上書き競合を解消",
+      "10分以上止まった解析を生徒ログイン時に最大3件まで安全に再試行"
+    ]
+  },
   {
     version: "v4.14.0-dev",
     date: "2026-07-24",

@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.svg">
-  <link rel="stylesheet" href="assets/css/style.css">
+  <link rel="stylesheet" href="assets/css/style.css?v=4.15.0">
 </head>
 <body data-role="student" data-auth="out">
   <section class="login-screen" aria-labelledby="login-title">
@@ -414,8 +414,8 @@
       </div>
       <div class="field">
         <label for="evidenceImage">スタサプ確認テスト結果スクショ</label>
-        <input id="evidenceImage" type="file" accept="image/png,image/jpeg,image/webp">
-        <span class="button-note" id="evidenceImageNote">スタサプの確認テスト結果画面をアップしてください。回答数と正答率が見えるスクショを完了の証跡にします。</span>
+        <input id="evidenceImage" type="file" accept="image/png,image/jpeg,image/webp" multiple>
+        <span class="button-note" id="evidenceImageNote">複数ページは一度に選択できます。画像は選択順に1ページ目、2ページ目として提出します。</span>
       </div>
       <div class="field student-only teacher-only">
         <label for="mentalState">今日のメンタル状態</label>
@@ -451,6 +451,6 @@
     </div>
   </dialog>
 
-  <script type="module" src="assets/js/app.js?v=4.14.0"></script>
+  <script type="module" src="assets/js/app.js?v=4.15.0"></script>
 </body>
 </html>

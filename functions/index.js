@@ -299,6 +299,63 @@ export const listGroupInvites = onCall({ region: "us-east1" }, async (request) =
   };
 });
 
+export const recoverStalledEvidenceAnalyses = onCall(
+  { region: "us-east1", memory: "1GiB", timeoutSeconds: 120 },
+  async (request) => {
+    const uid = requireAuth(request);
+    const { data: user } = await requireUser(uid);
+    const studentId = String(request.data?.studentId || "").trim();
+    if (!studentId || !linkedToStudent(user, studentId) || !["student", "teacher", "lead_teacher", "admin"].includes(user.role)) {
+      throw new HttpsError("permission-denied", "RECOVERY_NOT_ALLOWED");
+    }
+    const snapshot = await getFirestore().collection(`students/${studentId}/evidence_records`)
+      .where("aiAnalysisStatus", "in", ["queued", "processing"])
+      .limit(20)
+      .get();
+    const cutoff = Date.now() - 10 * 60 * 1000;
+    const stalled = snapshot.docs.filter((document) => {
+      const record = document.data();
+      const updated = record.aiAnalysisUpdatedAt?.toMillis?.()
+        || Date.parse(record.savedAt || record.submittedAt || "");
+      return Number.isFinite(updated) && updated < cutoff && record.evidenceStoragePath;
+    }).slice(0, 3);
+
+    let recovered = 0;
+    for (const document of stalled) {
+      const record = document.data();
+      const bucketName = `${process.env.GCLOUD_PROJECT || "cortex-limit-break"}.firebasestorage.app`;
+      const file = getStorage().bucket(bucketName).file(record.evidenceStoragePath);
+      try {
+        const [[buffer], [metadata]] = await Promise.all([file.download(), file.getMetadata()]);
+        await document.ref.set({
+          aiAnalysisStatus: "queued",
+          aiAnalysisError: "",
+          aiAnalysisRetryCount: FieldValue.increment(1),
+          aiAnalysisUpdatedAt: FieldValue.serverTimestamp()
+        }, { merge: true });
+        await file.save(buffer, {
+          resumable: false,
+          contentType: metadata.contentType || "image/jpeg",
+          metadata: {
+            metadata: {
+              ...(metadata.metadata || {}),
+              retry_id: String(Date.now())
+            }
+          }
+        });
+        recovered += 1;
+      } catch (_) {
+        await document.ref.set({
+          aiAnalysisStatus: "error",
+          aiAnalysisError: "AI_ANALYSIS_RECOVERY_FAILED",
+          aiAnalysisUpdatedAt: FieldValue.serverTimestamp()
+        }, { merge: true });
+      }
+    }
+    return { recovered, checked: snapshot.size };
+  }
+);
+
 const MATERIAL_HINTS = [
   ["数学", "中学総復習数学"],
   ["数学Ⅰ", "ベーシックレベル数学Ⅰ"],
@@ -454,6 +511,8 @@ export const analyzeEvidenceImage = onObjectFinalized(
       const openrouter = new OpenAI({
         apiKey: openRouterApiKey.value(),
         baseURL: "https://openrouter.ai/api/v1",
+        timeout: 90000,
+        maxRetries: 1,
         defaultHeaders: {
           "HTTP-Referer": "https://wit-ai-apps.github.io/limit-break-project/",
           "X-OpenRouter-Title": "CORTEX Limit Break"
