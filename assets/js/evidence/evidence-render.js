@@ -5,6 +5,9 @@ import {
   canViewEvidenceScore
 } from "./evidence-policy.js";
 
+let evidenceDraftFiles = [];
+let evidenceDraftObjectUrls = [];
+
 export function renderEvidenceLogs({
   logList,
   role,
@@ -178,24 +181,179 @@ export function renderEvidenceLogs({
 
 function renderRandomEvidenceUploader(container, role, onRandomEvidenceSubmit) {
   if (!canSubmitEvidence(role)) return;
+  evidenceDraftObjectUrls.forEach((url) => URL.revokeObjectURL(url));
+  evidenceDraftObjectUrls = [];
   const card = document.createElement("div");
   card.className = "log-card random-evidence-card";
   card.innerHTML = `
     <strong>AI確認テスト画像提出</strong>
-    <span>画像を選ぶだけで提出できます。AIが教科・教材・講座・単元・回答数・正答率を読み取り、保護者・先生の画面へ自動整理します。</span>
+    <span>写真・カメラ・Driveから選んだ画像を、提出前に並べて確認できます。</span>
     <form id="randomEvidenceForm" class="login-form" novalidate>
-      <div class="field">
-        <label for="randomEvidenceImage">確認テスト画像・PDF</label>
-        <input id="randomEvidenceImage" type="file" accept="image/png,image/jpeg,image/webp,application/pdf" multiple required>
-        <span class="button-note">画像は最大10枚、PDFは連続ページのまま提出できます。1ファイル10MB未満です。</span>
+      <input id="randomEvidenceImage" class="visually-hidden" type="file" accept="image/png,image/jpeg,image/webp,application/pdf" multiple required>
+      <input id="randomEvidencePhotoInput" class="visually-hidden" type="file" accept="image/*" multiple>
+      <input id="randomEvidenceCameraInput" class="visually-hidden" type="file" accept="image/*" capture="environment">
+      <input id="randomEvidenceDocumentInput" class="visually-hidden" type="file" accept="image/png,image/jpeg,image/webp,application/pdf" multiple>
+      <div class="evidence-source-actions" aria-label="画像の追加方法">
+        <button type="button" class="evidence-source-button" data-open-source="photo"><span aria-hidden="true">▧</span>写真から</button>
+        <button type="button" class="evidence-source-button" data-open-source="camera"><span aria-hidden="true">◎</span>カメラ</button>
+        <button type="button" class="evidence-source-button" data-open-source="document"><span aria-hidden="true">＋</span>PDF・Drive</button>
       </div>
-      <button type="submit" id="randomEvidenceSubmitButton">画像を提出してAI解析する</button>
+      <section class="evidence-composer" aria-labelledby="evidenceComposerTitle">
+        <div class="evidence-composer-head">
+          <strong id="evidenceComposerTitle">提出する画像</strong>
+          <span id="evidenceDraftSummary">0件 / 0MB</span>
+        </div>
+        <div id="evidenceDraftTray" class="evidence-draft-tray"></div>
+        <p id="evidenceDraftEmpty" class="evidence-draft-empty">上のボタンから画像またはPDFを追加してください。</p>
+      </section>
+      <span class="button-note">最大10件、1ファイル10MB未満。選択後も追加・削除・順番変更ができます。</span>
+      <button type="submit" id="randomEvidenceSubmitButton" disabled>画像を選んでください</button>
       <button type="button" id="randomEvidenceCancelButton" class="warning" hidden>アップロード・解析を中止</button>
       <p class="button-note" id="randomEvidenceStatus" role="status" aria-live="polite">提出後はAI解析待ちとして保存され、完了すると自動分類されます。</p>
+      <dialog id="evidenceDraftPreviewDialog" class="evidence-draft-preview-dialog">
+        <div class="evidence-draft-preview-panel">
+          <div class="evidence-composer-head">
+            <strong id="evidenceDraftPreviewTitle">画像確認</strong>
+            <button type="button" class="secondary" data-close-draft-preview>戻る</button>
+          </div>
+          <img id="evidenceDraftPreviewImage" alt="提出前の画像確認">
+          <iframe id="evidenceDraftPreviewPdf" title="提出前のPDF確認" hidden></iframe>
+          <span>戻ると、選択済み画像の一覧へ戻ります。</span>
+        </div>
+      </dialog>
     </form>
   `;
-  card.querySelector("#randomEvidenceForm").addEventListener("submit", onRandomEvidenceSubmit);
+  const form = card.querySelector("#randomEvidenceForm");
+  const masterInput = form.querySelector("#randomEvidenceImage");
+  const photoInput = form.querySelector("#randomEvidencePhotoInput");
+  const cameraInput = form.querySelector("#randomEvidenceCameraInput");
+  const documentInput = form.querySelector("#randomEvidenceDocumentInput");
+  const tray = form.querySelector("#evidenceDraftTray");
+  const empty = form.querySelector("#evidenceDraftEmpty");
+  const summary = form.querySelector("#evidenceDraftSummary");
+  const submitButton = form.querySelector("#randomEvidenceSubmitButton");
+  const previewDialog = form.querySelector("#evidenceDraftPreviewDialog");
+  const previewImage = form.querySelector("#evidenceDraftPreviewImage");
+  const previewPdf = form.querySelector("#evidenceDraftPreviewPdf");
+  const previewTitle = form.querySelector("#evidenceDraftPreviewTitle");
+
+  const syncMasterInput = () => {
+    const transfer = new DataTransfer();
+    evidenceDraftFiles.forEach((file) => transfer.items.add(file));
+    masterInput.files = transfer.files;
+  };
+
+  const renderDraftTray = () => {
+    evidenceDraftObjectUrls.forEach((url) => URL.revokeObjectURL(url));
+    evidenceDraftObjectUrls = [];
+    const totalBytes = evidenceDraftFiles.reduce((sum, file) => sum + file.size, 0);
+    summary.textContent = `${evidenceDraftFiles.length}件 / ${(totalBytes / 1024 / 1024).toFixed(1)}MB`;
+    empty.hidden = evidenceDraftFiles.length > 0;
+    submitButton.disabled = evidenceDraftFiles.length === 0;
+    submitButton.textContent = evidenceDraftFiles.length
+      ? `${evidenceDraftFiles.length}件を提出してAI解析する`
+      : "画像を選んでください";
+    tray.innerHTML = evidenceDraftFiles.map((file, index) => {
+      const objectUrl = URL.createObjectURL(file);
+      evidenceDraftObjectUrls.push(objectUrl);
+      const preview = file.type === "application/pdf"
+        ? `<span class="evidence-draft-pdf">PDF</span>`
+        : `<img src="${objectUrl}" alt="${escapeHtml(file.name)}">`;
+      return `
+        <article class="evidence-draft-card" data-draft-index="${index}">
+          <button type="button" class="evidence-draft-preview-button" data-preview-draft="${index}">
+            ${preview}
+            <span class="evidence-draft-number">${index + 1}</span>
+          </button>
+          <strong title="${escapeHtml(file.name)}">${escapeHtml(file.name)}</strong>
+          <div class="evidence-draft-actions">
+            <button type="button" class="secondary" data-move-draft="${index}" data-direction="-1" ${index === 0 ? "disabled" : ""} aria-label="前へ">←</button>
+            <button type="button" class="secondary" data-move-draft="${index}" data-direction="1" ${index === evidenceDraftFiles.length - 1 ? "disabled" : ""} aria-label="後ろへ">→</button>
+            <button type="button" class="warning" data-remove-draft="${index}">削除</button>
+          </div>
+        </article>
+      `;
+    }).join("");
+    syncMasterInput();
+    tray.querySelectorAll("[data-remove-draft]").forEach((button) => {
+      button.addEventListener("click", () => {
+        evidenceDraftFiles.splice(Number(button.dataset.removeDraft), 1);
+        renderDraftTray();
+      });
+    });
+    tray.querySelectorAll("[data-move-draft]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const from = Number(button.dataset.moveDraft);
+        const to = from + Number(button.dataset.direction);
+        if (to < 0 || to >= evidenceDraftFiles.length) return;
+        [evidenceDraftFiles[from], evidenceDraftFiles[to]] = [evidenceDraftFiles[to], evidenceDraftFiles[from]];
+        renderDraftTray();
+      });
+    });
+    tray.querySelectorAll("[data-preview-draft]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const file = evidenceDraftFiles[Number(button.dataset.previewDraft)];
+        if (!file) return;
+        const objectUrl = URL.createObjectURL(file);
+        evidenceDraftObjectUrls.push(objectUrl);
+        previewTitle.textContent = file.name;
+        const isPdf = file.type === "application/pdf";
+        previewImage.hidden = isPdf;
+        previewPdf.hidden = !isPdf;
+        if (isPdf) previewPdf.src = objectUrl;
+        else previewImage.src = objectUrl;
+        previewDialog.showModal();
+      });
+    });
+  };
+
+  const addSelectedFiles = (fileList) => {
+    const incoming = [...fileList];
+    const existing = new Set(evidenceDraftFiles.map(fileIdentity));
+    for (const file of incoming) {
+      if (evidenceDraftFiles.length >= 10) break;
+      if (!existing.has(fileIdentity(file))) {
+        evidenceDraftFiles.push(file);
+        existing.add(fileIdentity(file));
+      }
+    }
+    renderDraftTray();
+  };
+
+  form.querySelectorAll("[data-open-source]").forEach((button) => {
+    button.addEventListener("click", () => {
+      ({ photo: photoInput, camera: cameraInput, document: documentInput })[button.dataset.openSource]?.click();
+    });
+  });
+  [photoInput, cameraInput, documentInput].forEach((input) => {
+    input.addEventListener("change", () => {
+      addSelectedFiles(input.files);
+      input.value = "";
+    });
+  });
+  masterInput.addEventListener("change", () => {
+    evidenceDraftFiles = [...masterInput.files];
+    renderDraftTray();
+  });
+  form.querySelector("[data-close-draft-preview]").addEventListener("click", () => previewDialog.close());
+  previewDialog.addEventListener("close", () => {
+    previewImage.removeAttribute("src");
+    previewPdf.removeAttribute("src");
+  });
+  form.addEventListener("reset", () => {
+    evidenceDraftFiles = [];
+    queueMicrotask(renderDraftTray);
+  });
+  form.addEventListener("submit", (event) => {
+    onRandomEvidenceSubmit(event);
+    if (!event.defaultPrevented) return;
+  });
+  renderDraftTray();
   container.appendChild(card);
+}
+
+function fileIdentity(file) {
+  return `${file.name}:${file.size}:${file.lastModified}:${file.type}`;
 }
 
 function sortBySavedAtDesc(a, b) {

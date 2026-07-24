@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.17.0-dev";
-export const APP_RELEASE_NAME = "受信共有・横画面・採点安全化";
+export const APP_VERSION = "v4.17.1-dev";
+export const APP_RELEASE_NAME = "Discord型画像提出トレイ";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -41,6 +41,17 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.17.1-dev",
+    date: "2026-07-24",
+    title: "Discord型画像提出トレイ",
+    items: [
+      "写真・カメラ・PDF／Driveの入口を分かりやすく分離",
+      "選択した画像を提出前のサムネイル一覧に保持",
+      "拡大確認から戻っても選択内容を維持",
+      "複数画像の追加・削除・順番変更・合計容量確認に対応"
+    ]
+  },
   {
     version: "v4.17.0-dev",
     date: "2026-07-24",

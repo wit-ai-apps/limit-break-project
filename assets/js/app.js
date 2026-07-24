@@ -23,7 +23,7 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.17.0";
+} from "../../config/app_config.js?v=4.17.1";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -39,7 +39,7 @@ import {
   recordIdentity,
   saveEvidenceRecordRemote,
   saveEvidenceRecords
-} from "./evidence/evidence-store.js?v=4.17.0";
+} from "./evidence/evidence-store.js?v=4.17.1";
 import { renderAppNavigation } from "./ui/navigation.js";
 import {
   closeDevDrawerPanel,
@@ -56,9 +56,9 @@ import { fileToDataUrl } from "./evidence/evidence-upload.js";
 import {
   bindEvidencePreviewDialog,
   openEvidencePreviewRecord
-} from "./evidence/evidence-preview.js?v=4.17.0";
+} from "./evidence/evidence-preview.js?v=4.17.1";
 import { evidenceTypeForUnit, hasEvidence } from "./evidence/evidence-policy.js";
-import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.17.0";
+import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.17.1";
 import {
   canDeleteSchedule,
   downloadSchedulesIcs
@@ -324,6 +324,7 @@ import {
         const input = document.querySelector("#randomEvidenceImage");
         const status = document.querySelector("#randomEvidenceStatus");
         input.files = dataTransfer.files;
+        input.dispatchEvent(new Event("change", { bubbles: true }));
         if (status) status.textContent = `他のアプリから${dataTransfer.files.length}件を受け取りました。内容を確認して「提出」を押してください。`;
         sharedUploadConsumed = true;
         addDiagnosticLog("share.receive.ready", {
