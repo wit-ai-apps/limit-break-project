@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.17.5-dev";
-export const APP_RELEASE_NAME = "招待送信方法の拡張";
+export const APP_VERSION = "v4.17.6-dev";
+export const APP_RELEASE_NAME = "招待ログイン復旧";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -41,6 +41,17 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.17.6-dev",
+    date: "2026-07-24",
+    title: "招待ログイン状態の自動復旧",
+    items: [
+      "アプリ表示前にFirebaseのログイン復元完了を待つよう修正",
+      "招待API実行前に認証トークンを確認し、期限切れ時は一度だけ安全に再取得",
+      "画面だけログイン中になっている古いセッションを検出して再ログインへ案内",
+      "LOGIN_REQUIREDを技術表示のまま出さず、復旧ボタンを表示"
+    ]
+  },
   {
     version: "v4.17.5-dev",
     date: "2026-07-24",

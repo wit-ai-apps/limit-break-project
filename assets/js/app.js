@@ -23,7 +23,7 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.17.5";
+} from "../../config/app_config.js?v=4.17.6";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -39,8 +39,8 @@ import {
   recordIdentity,
   saveEvidenceRecordRemote,
   saveEvidenceRecords
-} from "./evidence/evidence-store.js?v=4.17.5";
-import { renderAppNavigation } from "./ui/navigation.js?v=4.17.5";
+} from "./evidence/evidence-store.js?v=4.17.6";
+import { renderAppNavigation } from "./ui/navigation.js?v=4.17.6";
 import {
   closeDevDrawerPanel,
   openDevDrawerPanel,
@@ -56,9 +56,9 @@ import { fileToDataUrl } from "./evidence/evidence-upload.js";
 import {
   bindEvidencePreviewDialog,
   openEvidencePreviewRecord
-} from "./evidence/evidence-preview.js?v=4.17.5";
+} from "./evidence/evidence-preview.js?v=4.17.6";
 import { evidenceTypeForUnit, hasEvidence } from "./evidence/evidence-policy.js";
-import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.17.5";
+import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.17.6";
 import {
   canDeleteSchedule,
   downloadSchedulesIcs
@@ -485,9 +485,20 @@ import {
         };
         firebaseBridge.diagnosticLog = addDiagnosticLog;
         addDiagnosticLog("firebase.ready", { projectId: config.firebase?.projectId || "" });
+        if (typeof auth.authStateReady === "function") {
+          await auth.authStateReady();
+        }
         if (pendingInviteToken) await inspectPendingInvite();
         if (auth.currentUser) {
           await applyFirebaseUser(auth.currentUser);
+        } else if (isLoggedIn) {
+          isLoggedIn = false;
+          localStorage.setItem(LOGIN_KEY, "false");
+          firebaseBridge.message = "安全のためログイン状態を確認できませんでした。登録済みのメールアドレスとパスワードで、もう一度ログインしてください。";
+          addDiagnosticLog("firebase.auth.restore_required", {
+            localSession: "cleared",
+            savedEmail: localStorage.getItem(LOGIN_EMAIL_KEY) ? "available" : "none"
+          });
         }
       } catch (error) {
         addDiagnosticLog("firebase.init.error", {
@@ -551,13 +562,53 @@ import {
       }
     }
 
+    function isGroupAuthenticationError(error) {
+      const code = String(error?.code || "").toLowerCase();
+      const message = String(error?.message || error || "").toUpperCase();
+      return code.includes("unauthenticated")
+        || code.includes("login_required")
+        || message.includes("LOGIN_REQUIRED");
+    }
+
+    function loginRequiredError() {
+      const error = new Error("ログインの有効期限が切れています。もう一度ログインしてください。");
+      error.code = "LOGIN_REQUIRED";
+      return error;
+    }
+
     async function callGroupFunction(name, data = {}) {
       if (!firebaseBridge.enabled || !firebaseBridge.httpsCallable || !firebaseBridge.functions) {
         throw new Error("招待機能はFirebase接続時のみ利用できます。");
       }
+      const requiresAuth = name !== "inspectGroupInvite";
+      if (requiresAuth && typeof firebaseBridge.auth?.authStateReady === "function") {
+        await firebaseBridge.auth.authStateReady();
+      }
+      const authenticatedUser = firebaseBridge.auth?.currentUser || firebaseBridge.currentUser;
+      if (requiresAuth && !authenticatedUser) throw loginRequiredError();
+      if (requiresAuth && !firebaseBridge.currentUser && authenticatedUser) {
+        await applyFirebaseUser(authenticatedUser);
+      }
+      if (requiresAuth && typeof authenticatedUser?.getIdToken === "function") {
+        await authenticatedUser.getIdToken();
+      }
       const callable = firebaseBridge.httpsCallable(firebaseBridge.functions, name);
-      const result = await callable(data);
-      return result.data;
+      try {
+        const result = await callable(data);
+        return result.data;
+      } catch (error) {
+        if (!requiresAuth || !isGroupAuthenticationError(error) || typeof authenticatedUser?.getIdToken !== "function") {
+          throw error;
+        }
+        try {
+          await authenticatedUser.getIdToken(true);
+          const retryResult = await callable(data);
+          return retryResult.data;
+        } catch (retryError) {
+          if (isGroupAuthenticationError(retryError)) throw loginRequiredError();
+          throw retryError;
+        }
+      }
     }
 
     async function inspectPendingInvite() {
@@ -1160,7 +1211,7 @@ import {
       adaptivePlan = null;
       linkDirectory = [];
       linkedStudentIdentity = null;
-      if (firebaseBridge.enabled && firebaseBridge.currentUser && firebaseBridge.signOut) {
+      if (firebaseBridge.enabled && (firebaseBridge.auth?.currentUser || firebaseBridge.currentUser) && firebaseBridge.signOut) {
         try {
           await firebaseBridge.signOut(firebaseBridge.auth);
         } catch (_) {
@@ -1182,6 +1233,20 @@ import {
       loginStatus.textContent = "ログアウトしました。切り替える利用者でログインしてください。";
       render();
       loginNameInput.focus();
+    }
+
+    async function prepareInviteRelogin() {
+      const savedEmail = firebaseBridge.auth?.currentUser?.email
+        || firebaseBridge.currentUser?.email
+        || localStorage.getItem(LOGIN_EMAIL_KEY)
+        || "";
+      await logoutUser();
+      if (savedEmail) {
+        localStorage.setItem(LOGIN_EMAIL_KEY, savedEmail);
+        loginNameInput.value = savedEmail;
+      }
+      loginStatus.textContent = "招待機能を利用するため、保存済みのメールアドレスで再ログインしてください。";
+      loginPasscodeInput.focus();
     }
 
     headerLogoutButton?.addEventListener("click", logoutUser);
@@ -2542,6 +2607,18 @@ function renderScheduleDrawer() {
 
     function renderGroupInviteManager() {
       if (!settingsList || !["parent", "lead_teacher"].includes(currentRole)) return;
+      if (!firebaseBridge.currentUser) {
+        const authCard = document.createElement("article");
+        authCard.className = "settings-card group-invite-manager invite-auth-required";
+        authCard.innerHTML = `
+          <strong>生徒支援グループ・招待管理</strong>
+          <span>招待リンクを安全に発行するため、Firebaseでの本人確認が必要です。</span>
+          <button type="button" id="inviteReloginButton">登録済みアカウントで再ログインする</button>
+        `;
+        settingsList.prepend(authCard);
+        authCard.querySelector("#inviteReloginButton")?.addEventListener("click", prepareInviteRelogin);
+        return;
+      }
       if (currentRole === "parent" && !firebaseBridge.studentId) {
         const setupCard = document.createElement("article");
         setupCard.className = "settings-card group-invite-manager";
@@ -2730,7 +2807,16 @@ function renderScheduleDrawer() {
           });
           await loadGroupInvites();
         } catch (error) {
-          resultBox.textContent = `招待を作成できませんでした。${error.message || error}`;
+          if (isGroupAuthenticationError(error)) {
+            resultBox.innerHTML = `
+              <strong>ログインの確認が必要です</strong>
+              <span>保存済みのメールアドレスで再ログインしてから、もう一度招待リンクを作成してください。</span>
+              <button type="button" id="inviteErrorReloginButton">再ログインする</button>
+            `;
+            resultBox.querySelector("#inviteErrorReloginButton")?.addEventListener("click", prepareInviteRelogin);
+          } else {
+            resultBox.textContent = `招待を作成できませんでした。${error.message || error}`;
+          }
         } finally {
           submitButton.disabled = false;
         }
