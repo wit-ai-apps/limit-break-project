@@ -22,7 +22,7 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.12.1";
+} from "../../config/app_config.js?v=4.12.2";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -2850,7 +2850,7 @@ function renderScheduleDrawer() {
     }
 
     function recordKey(record) {
-      return `${record.date}_${record.missionId}_${record.savedAt}`;
+      return record.firebaseDocumentId || `${record.date}_${record.missionId}_${String(record.savedAt || "")}`;
     }
 
     function openEvidencePreview(key) {

@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.12.1-dev";
-export const APP_RELEASE_NAME = "提出画像ボタン応答修正";
+export const APP_VERSION = "v4.12.2-dev";
+export const APP_RELEASE_NAME = "提出画像キー照合修正";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -40,6 +40,16 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.12.2-dev",
+    date: "2026-07-24",
+    title: "提出画像キー照合修正",
+    items: [
+      "Firestore文書IDを画像ボタンの固定キーとして使用",
+      "日時オブジェクトの表記差によるクリック無反応を解消",
+      "STU_0001の254.pngを対象に本番再現テストを追加"
+    ]
+  },
   {
     version: "v4.12.1-dev",
     date: "2026-07-24",
