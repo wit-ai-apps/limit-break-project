@@ -23,7 +23,7 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.17.1";
+} from "../../config/app_config.js?v=4.17.2";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -39,7 +39,7 @@ import {
   recordIdentity,
   saveEvidenceRecordRemote,
   saveEvidenceRecords
-} from "./evidence/evidence-store.js?v=4.17.1";
+} from "./evidence/evidence-store.js?v=4.17.2";
 import { renderAppNavigation } from "./ui/navigation.js";
 import {
   closeDevDrawerPanel,
@@ -56,9 +56,9 @@ import { fileToDataUrl } from "./evidence/evidence-upload.js";
 import {
   bindEvidencePreviewDialog,
   openEvidencePreviewRecord
-} from "./evidence/evidence-preview.js?v=4.17.1";
+} from "./evidence/evidence-preview.js?v=4.17.2";
 import { evidenceTypeForUnit, hasEvidence } from "./evidence/evidence-policy.js";
-import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.17.1";
+import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.17.2";
 import {
   canDeleteSchedule,
   downloadSchedulesIcs
@@ -205,6 +205,7 @@ import {
     const evidenceMarkLayer = document.querySelector("#evidenceMarkLayer");
     const appStartupGate = document.querySelector("#appStartupGate");
     const appStartupMessage = document.querySelector("#appStartupMessage");
+    const startupUpdateButton = document.querySelector("#startupUpdateButton");
     if (loginNameInput && !loginNameInput.value) {
       loginNameInput.value = localStorage.getItem(LOGIN_EMAIL_KEY) || loginName;
     }
@@ -745,31 +746,46 @@ import {
         const payload = await response.json();
         const latestVersion = String(payload.version || "");
         if (latestVersion && latestVersion !== APP_VERSION) {
-          if (appStartupMessage) appStartupMessage.textContent = `${latestVersion}へ更新しています...`;
+          if (appStartupMessage) appStartupMessage.textContent = `${latestVersion}へ自動更新しています...`;
+          if (startupUpdateButton) startupUpdateButton.hidden = false;
           if ("serviceWorker" in navigator) {
             const registrations = await navigator.serviceWorker.getRegistrations();
-            await Promise.all(registrations.map((registration) => registration.unregister()));
+            await Promise.all(registrations.map((registration) => registration.update().catch(() => undefined)));
           }
-          if ("caches" in window) {
-            const keys = await caches.keys();
-            await Promise.all(keys.map((key) => caches.delete(key)));
-          }
+          await clearApplicationCaches();
           const url = new URL(window.location.href);
           url.searchParams.set("v", latestVersion.replace("-dev", "").replace(/^v/, ""));
           url.searchParams.set("updated", Date.now().toString());
           window.location.replace(url.toString());
           return false;
         }
+        const canonicalUrl = new URL(window.location.href);
+        const hadUpdateParameter = ["v", "updated", "refresh"].some((name) => canonicalUrl.searchParams.has(name));
+        canonicalUrl.searchParams.delete("v");
+        canonicalUrl.searchParams.delete("updated");
+        canonicalUrl.searchParams.delete("refresh");
+        if (hadUpdateParameter) history.replaceState(history.state, "", canonicalUrl);
         document.body.dataset.updateStatus = "current";
         appStartupGate.hidden = true;
         return true;
       } catch (_) {
         document.body.dataset.updateStatus = "offline";
-        if (appStartupMessage) appStartupMessage.textContent = "更新確認ができないため、保存済みの版で起動します。";
+        if (appStartupMessage) appStartupMessage.textContent = "更新確認ができませんでした。保存済みの版で起動します。必要な場合は「最新版に更新」を押してください。";
+        if (startupUpdateButton) startupUpdateButton.hidden = false;
         await new Promise((resolve) => setTimeout(resolve, 900));
         appStartupGate.hidden = true;
         return true;
       }
+    }
+
+    async function clearApplicationCaches() {
+      if (!("caches" in window)) return;
+      const keys = await caches.keys();
+      await Promise.all(
+        keys
+          .filter((key) => key.startsWith("cortex-limit-break-v"))
+          .map((key) => caches.delete(key))
+      );
     }
 
     async function resolveEvidenceImageUrl(record, forceRefresh = false) {
@@ -3700,6 +3716,7 @@ function renderScheduleDrawer() {
     document.querySelector("#closeDialogButton").addEventListener("click", () => recordDialog.close());
         document.querySelector("#closeDevDrawerButton").addEventListener("click", closeDevDrawer);
     document.querySelector("#refreshAppCacheButton").addEventListener("click", refreshAppCache);
+    startupUpdateButton?.addEventListener("click", refreshAppCache);
     devDrawerBackdrop.addEventListener("click", closeDevDrawer);
     scheduleDrawerOpen?.addEventListener("click", openScheduleDrawer);
     scheduleDrawerClose?.addEventListener("click", closeScheduleDrawer);
@@ -3777,15 +3794,13 @@ function renderScheduleDrawer() {
       try {
         if ("serviceWorker" in navigator) {
           const registrations = await navigator.serviceWorker.getRegistrations();
-          await Promise.all(registrations.map((registration) => registration.unregister()));
+          await Promise.all(registrations.map((registration) => registration.update().catch(() => undefined)));
         }
-
-        if ("caches" in window) {
-          const keys = await caches.keys();
-          await Promise.all(keys.map((key) => caches.delete(key)));
-        }
+        await clearApplicationCaches();
       } finally {
         const url = new URL(window.location.href);
+        url.searchParams.delete("v");
+        url.searchParams.delete("updated");
         url.searchParams.set("refresh", Date.now().toString());
         window.location.replace(url.toString());
       }

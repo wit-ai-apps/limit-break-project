@@ -3,6 +3,7 @@
   "short_name": "Limit Break",
   "description": "CORTEX Limit Break learning navigation app.",
   "lang": "ja",
+  "id": "./",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

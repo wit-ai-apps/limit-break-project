@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.17.1-dev";
-export const APP_RELEASE_NAME = "Discord型画像提出トレイ";
+export const APP_VERSION = "v4.17.2-dev";
+export const APP_RELEASE_NAME = "固定URL・自動PWA更新";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -41,6 +41,17 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.17.2-dev",
+    date: "2026-07-24",
+    title: "固定URL・自動PWA更新",
+    items: [
+      "固定URLから起動するだけで本番バージョンを自動確認",
+      "古いアプリキャッシュだけを交換し、学習データと共有途中の画像を保護",
+      "更新完了後はURLから一時的なバージョン番号を自動除去",
+      "自動更新できない場合の「最新版に更新」ボタンを用意"
+    ]
+  },
   {
     version: "v4.17.1-dev",
     date: "2026-07-24",

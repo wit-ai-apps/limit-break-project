@@ -13,13 +13,14 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.svg">
-  <link rel="stylesheet" href="assets/css/style.css?v=4.17.1">
+  <link rel="stylesheet" href="assets/css/style.css?v=4.17.2">
 </head>
 <body data-role="student" data-auth="out">
   <div class="app-startup-gate" id="appStartupGate" role="status" aria-live="polite">
     <div class="app-startup-card">
       <strong>CORTEX Limit Break</strong>
       <span id="appStartupMessage">最新版を確認しています...</span>
+      <button type="button" id="startupUpdateButton" hidden>最新版に更新</button>
     </div>
   </div>
   <section class="login-screen" aria-labelledby="login-title">
@@ -145,7 +146,7 @@
         <span class="badge" id="devVersionBadge">v4.7.0-dev</span>
         <span class="badge">検証用</span>
       </div>
-      <button class="secondary" type="button" id="refreshAppCacheButton">キャッシュ更新</button>
+      <button class="secondary" type="button" id="refreshAppCacheButton">最新版に更新</button>
       <div class="diagnostic-log-panel">
         <div class="topline">
           <strong>検証ログ</strong>
@@ -470,6 +471,6 @@
     </div>
   </dialog>
 
-  <script type="module" src="assets/js/app.js?v=4.17.1"></script>
+  <script type="module" src="assets/js/app.js?v=4.17.2"></script>
 </body>
 </html>
