@@ -3246,6 +3246,7 @@
     @media (max-width: 700px) {
       body {
         font-size: 14px;
+        overflow-x: hidden;
       }
 
       .shell {
@@ -3362,6 +3363,80 @@
         min-width: 0;
       }
 
+      body[data-view="evidence"] .view-evidence,
+      #logList,
+      #logList > .log-card,
+      .evidence-gallery,
+      .missing-evidence-grid,
+      .evidence-gallery-card,
+      .missing-evidence-card {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+      }
+
+      .evidence-gallery,
+      .missing-evidence-grid {
+        grid-template-columns: minmax(0, 1fr);
+      }
+
+      .evidence-gallery-card,
+      .missing-evidence-card {
+        overflow: hidden;
+        overflow-wrap: anywhere;
+      }
+
+      .evidence-gallery-card > *,
+      .missing-evidence-card > * {
+        min-width: 0;
+        max-width: 100%;
+      }
+
+      .evidence-thumbnail-button {
+        display: grid;
+        min-height: 0;
+        place-items: center;
+      }
+
+      .evidence-thumbnail-button img {
+        width: 100%;
+        height: auto;
+        max-height: 58dvh;
+        object-fit: contain;
+      }
+
+      .evidence-preview-dialog {
+        width: calc(100vw - 12px);
+        max-width: none;
+        max-height: calc(100dvh - 12px);
+        margin: auto;
+        padding: 0;
+        overflow: auto;
+      }
+
+      .evidence-preview-panel {
+        width: 100%;
+        min-width: 0;
+        padding: 8px;
+      }
+
+      .evidence-preview-panel .topline {
+        flex-direction: row;
+        align-items: center;
+      }
+
+      .evidence-preview-image {
+        width: 100%;
+        height: auto;
+        max-height: none;
+        object-fit: contain;
+      }
+
+      .evidence-preview-pdf {
+        width: 100%;
+        height: 78dvh;
+      }
+
       section,
       aside,
       .navigation-card {
@@ -3472,6 +3547,12 @@
 
       .evidence-source-button {
         min-height: 48px;
+      }
+    }
+
+    @media (max-width: 420px) {
+      .evidence-draft-tray {
+        grid-template-columns: minmax(0, 1fr);
       }
     }
 

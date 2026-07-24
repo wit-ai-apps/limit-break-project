@@ -23,7 +23,7 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.18.1";
+} from "../../config/app_config.js?v=4.18.2";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -39,8 +39,8 @@ import {
   recordIdentity,
   saveEvidenceRecordRemote,
   saveEvidenceRecords
-} from "./evidence/evidence-store.js?v=4.18.1";
-import { renderAppNavigation } from "./ui/navigation.js?v=4.18.1";
+} from "./evidence/evidence-store.js?v=4.18.2";
+import { renderAppNavigation } from "./ui/navigation.js?v=4.18.2";
 import {
   closeDevDrawerPanel,
   openDevDrawerPanel,
@@ -56,9 +56,9 @@ import { fileToDataUrl } from "./evidence/evidence-upload.js";
 import {
   bindEvidencePreviewDialog,
   openEvidencePreviewRecord
-} from "./evidence/evidence-preview.js?v=4.18.1";
+} from "./evidence/evidence-preview.js?v=4.18.2";
 import { evidenceTypeForUnit, hasEvidence } from "./evidence/evidence-policy.js";
-import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.18.1";
+import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.18.2";
 import {
   canDeleteSchedule,
   downloadSchedulesIcs
@@ -120,7 +120,7 @@ import {
     let currentRole = localStorage.getItem(ROLE_KEY) || "student";
     if (currentRole === "counselor") currentRole = "supporter";
     let currentSupportType = localStorage.getItem(SUPPORT_TYPE_KEY) || "family";
-    let activeView = localStorage.getItem(VIEW_KEY) || "home";
+    let activeView = "home";
     let uiMode = localStorage.getItem(UI_MODE_KEY) || "detail";
     const mobileUiMigrationKey = "limitBreakMobileUiV4173";
     if (window.matchMedia("(max-width: 700px)").matches && !localStorage.getItem(mobileUiMigrationKey)) {
@@ -288,9 +288,7 @@ import {
     }
 
     function initializeViewHistory() {
-      const hashMatch = window.location.hash.match(/^#view=([^&]+)/);
-      const hashView = hashMatch ? decodeURIComponent(hashMatch[1]) : "";
-      if (APP_VIEWS.some((view) => view.id === hashView)) activeView = hashView;
+      activeView = pendingSharedUploadId ? "evidence" : "home";
       localStorage.setItem(VIEW_KEY, activeView);
       const url = new URL(window.location.href);
       url.hash = `view=${encodeURIComponent(activeView)}`;
@@ -1337,9 +1335,10 @@ import {
     }
 
     function visibleAppViews() {
-      if (uiMode !== "focus") return APP_VIEWS;
+      const menuViews = APP_VIEWS.filter((view) => view.id !== "admin");
+      if (uiMode !== "focus") return menuViews;
       const focusIds = new Set(["home", "today", "evidence", "progress", "ai"]);
-      return APP_VIEWS
+      return menuViews
         .filter((view) => focusIds.has(view.id))
         .map((view) => ({
           ...view,

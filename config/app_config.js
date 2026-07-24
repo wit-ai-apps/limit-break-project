@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.18.1-dev";
-export const APP_RELEASE_NAME = "Googleログイン";
+export const APP_VERSION = "v4.18.2-dev";
+export const APP_RELEASE_NAME = "スマホ画像表示・起動ホーム";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -41,6 +41,17 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.18.2-dev",
+    date: "2026-07-25",
+    title: "スマホ画像表示と起動画面を改善",
+    items: [
+      "スマホの未提出カードと提出画像を1列表示にして横切れを防止",
+      "提出画像の全体を縮小表示し、拡大画面では縦長画像もスクロール確認可能",
+      "通常起動時は前回開いていた画面に関係なくホームから開始",
+      "下部メニューから設定を外し、上部の歯車ボタンに統一"
+    ]
+  },
   {
     version: "v4.18.1-dev",
     date: "2026-07-25",
