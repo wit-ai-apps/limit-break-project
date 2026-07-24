@@ -23,7 +23,7 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.17.2";
+} from "../../config/app_config.js?v=4.17.3";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -39,8 +39,8 @@ import {
   recordIdentity,
   saveEvidenceRecordRemote,
   saveEvidenceRecords
-} from "./evidence/evidence-store.js?v=4.17.2";
-import { renderAppNavigation } from "./ui/navigation.js";
+} from "./evidence/evidence-store.js?v=4.17.3";
+import { renderAppNavigation } from "./ui/navigation.js?v=4.17.3";
 import {
   closeDevDrawerPanel,
   openDevDrawerPanel,
@@ -56,9 +56,9 @@ import { fileToDataUrl } from "./evidence/evidence-upload.js";
 import {
   bindEvidencePreviewDialog,
   openEvidencePreviewRecord
-} from "./evidence/evidence-preview.js?v=4.17.2";
+} from "./evidence/evidence-preview.js?v=4.17.3";
 import { evidenceTypeForUnit, hasEvidence } from "./evidence/evidence-policy.js";
-import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.17.2";
+import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.17.3";
 import {
   canDeleteSchedule,
   downloadSchedulesIcs
@@ -122,6 +122,12 @@ import {
     let currentSupportType = localStorage.getItem(SUPPORT_TYPE_KEY) || "family";
     let activeView = localStorage.getItem(VIEW_KEY) || "home";
     let uiMode = localStorage.getItem(UI_MODE_KEY) || "detail";
+    const mobileUiMigrationKey = "limitBreakMobileUiV4173";
+    if (window.matchMedia("(max-width: 700px)").matches && !localStorage.getItem(mobileUiMigrationKey)) {
+      uiMode = "focus";
+      localStorage.setItem(UI_MODE_KEY, uiMode);
+      localStorage.setItem(mobileUiMigrationKey, "done");
+    }
     let navigationStepIndex = Number(localStorage.getItem(NAV_STEP_KEY) || 0);
     let records = loadEvidenceRecords(STORAGE_KEY);
     let memoryResults = loadMemoryResults();
@@ -1279,11 +1285,17 @@ import {
       document.body.dataset.uiMode = uiMode;
       if (uiModeToggleButton) {
         const isFocus = uiMode === "focus";
-        uiModeToggleButton.textContent = isFocus ? "詳細表示へ" : "集中表示";
+        const isMobile = window.matchMedia("(max-width: 700px)").matches;
+        uiModeToggleButton.textContent = isMobile
+          ? (isFocus ? "全機能" : "主要5画面")
+          : (isFocus ? "詳細表示へ" : "集中表示");
         uiModeToggleButton.setAttribute("aria-pressed", String(isFocus));
         uiModeToggleButton.title = isFocus
           ? "全機能が見える詳細表示へ切り替えます"
           : "主要5画面だけの集中表示へ切り替えます";
+      }
+      if (headerLogoutButton) {
+        headerLogoutButton.textContent = window.matchMedia("(max-width: 700px)").matches ? "退出" : "ログアウト";
       }
       if (versionBadge) versionBadge.textContent = APP_VERSION;
       if (sessionRoleBadge) {

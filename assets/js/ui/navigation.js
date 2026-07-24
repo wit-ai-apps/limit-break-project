@@ -24,6 +24,15 @@ export function renderAppNavigation({
   devButton.setAttribute("aria-controls", "devDrawer");
   devButton.addEventListener("click", onOpenDevDrawer);
   container.appendChild(devButton);
+
+  requestAnimationFrame(() => {
+    const activeButton = container.querySelector(".nav-button.active");
+    if (!activeButton || container.scrollWidth <= container.clientWidth) return;
+    container.scrollTo({
+      left: Math.max(0, activeButton.offsetLeft - (container.clientWidth - activeButton.offsetWidth) / 2),
+      behavior: "auto"
+    });
+  });
 }
 
 export const navigationModule = {

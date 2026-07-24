@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.17.2-dev";
-export const APP_RELEASE_NAME = "固定URL・自動PWA更新";
+export const APP_VERSION = "v4.17.3-dev";
+export const APP_RELEASE_NAME = "スマホ専用レイアウト再設計";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -41,6 +41,18 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.17.3-dev",
+    date: "2026-07-24",
+    title: "スマホ専用レイアウト再設計",
+    items: [
+      "ヘッダー操作を小型化し、タイトルや本文との重なりを解消",
+      "巨大な縦型予定タブを右下の小さな予定ボタンへ変更",
+      "スマホ初回は主要5画面へ移行し、下部ナビを画面内へ収納",
+      "提出など各画面では不要なカウントダウンと案内を隠して本文を優先",
+      "予定画面をスマホ用の下から開くシートへ変更"
+    ]
+  },
   {
     version: "v4.17.2-dev",
     date: "2026-07-24",
