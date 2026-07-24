@@ -23,7 +23,7 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.15.3";
+} from "../../config/app_config.js?v=4.15.4";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -58,7 +58,7 @@ import {
   openEvidencePreviewRecord
 } from "./evidence/evidence-preview.js";
 import { evidenceTypeForUnit, hasEvidence } from "./evidence/evidence-policy.js";
-import { renderEvidenceLogs } from "./evidence/evidence-render.js";
+import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.15.4";
 import {
   canDeleteSchedule,
   downloadSchedulesIcs
@@ -129,6 +129,7 @@ import {
     const pendingInviteToken = new URLSearchParams(window.location.search).get("invite") || "";
     let inviteEntryState = null;
     let groupInvites = [];
+    let activeEvidenceUpload = null;
 
     const loginForm = document.querySelector("#loginForm");
     const loginNameInput = document.querySelector("#loginName");
@@ -3071,6 +3072,7 @@ function renderScheduleDrawer() {
       const form = event.currentTarget;
       const status = form.querySelector("#randomEvidenceStatus");
       const submitButton = form.querySelector("#randomEvidenceSubmitButton");
+      const cancelButton = form.querySelector("#randomEvidenceCancelButton");
       const evidenceFiles = [...form.querySelector("#randomEvidenceImage").files];
       if (!evidenceFiles.length) {
         status.textContent = "確認テスト画像を選んでください。";
@@ -3089,6 +3091,17 @@ function renderScheduleDrawer() {
 
       submitButton.disabled = true;
       submitButton.textContent = `${evidenceFiles.length}枚を処理中...`;
+      cancelButton.hidden = false;
+      cancelButton.disabled = false;
+      cancelButton.textContent = "アップロード・解析を中止";
+      activeEvidenceUpload = { cancelled: false };
+      const uploadState = activeEvidenceUpload;
+      cancelButton.onclick = () => {
+        uploadState.cancelled = true;
+        cancelButton.disabled = true;
+        cancelButton.textContent = "中止しています...";
+        status.textContent = "現在の画像保存が終了し次第、残りのアップロードとAI解析を中止します。";
+      };
       status.textContent = "画像を順番に読み込んでいます...";
 
       try {
@@ -3096,6 +3109,7 @@ function renderScheduleDrawer() {
         const submissionGroupId = `random_${Date.now()}`;
         const failedNames = [];
         for (let index = 0; index < evidenceFiles.length; index += 1) {
+          if (uploadState.cancelled) break;
           const evidenceFile = evidenceFiles[index];
           status.textContent = `${index + 1}/${evidenceFiles.length}枚目「${evidenceFile.name}」を保存中です...`;
           const submittedAt = new Date().toISOString();
@@ -3139,6 +3153,19 @@ function renderScheduleDrawer() {
           submittedRecord = await saveEvidenceRecordRemote(submittedRecord, evidenceFile, firebaseBridge);
           records.push(submittedRecord);
           saveEvidenceRecords(STORAGE_KEY, records);
+          if (uploadState.cancelled && submittedRecord.firebaseDocumentId) {
+            try {
+              await callGroupFunction("cancelEvidenceAnalysis", {
+                studentId: firebaseBridge.studentId,
+                recordId: submittedRecord.firebaseDocumentId
+              });
+              submittedRecord.aiAnalysisStatus = "cancelled";
+              saveEvidenceRecords(STORAGE_KEY, records);
+            } catch (_) {
+              // Keep the record visible so cancellation can be retried from the list.
+            }
+            break;
+          }
           if (submittedRecord.firebaseSyncStatus === "error") {
             failedNames.push(evidenceFile.name);
           } else {
@@ -3146,16 +3173,22 @@ function renderScheduleDrawer() {
           }
         }
         form.reset();
+        activeEvidenceUpload = null;
         render();
-        if (failedNames.length) {
+        if (uploadState.cancelled) {
+          window.alert("アップロードとAI解析の中止を受け付けました。保存済みの画像自体は削除しません。");
+        } else if (failedNames.length) {
           window.alert(`${evidenceFiles.length - failedNames.length}枚を提出しました。失敗: ${failedNames.join("、")}`);
         } else {
           window.alert(`${evidenceFiles.length}枚をまとめて提出しました。各ページのAI解析後に同じ提出グループとして整理されます。`);
         }
       } catch (error) {
+        activeEvidenceUpload = null;
         status.textContent = `画像を提出できませんでした: ${error.message || error}`;
         submitButton.disabled = false;
         submitButton.textContent = "画像を提出してAI解析する";
+        cancelButton.hidden = true;
+        cancelButton.textContent = "アップロード・解析を中止";
       }
     }
 

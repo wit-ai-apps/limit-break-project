@@ -183,6 +183,7 @@ function renderRandomEvidenceUploader(container, role, onRandomEvidenceSubmit) {
         <span class="button-note">2ページ以上はまとめて選択できます。最大10枚、1枚10MB未満です。</span>
       </div>
       <button type="submit" id="randomEvidenceSubmitButton">画像を提出してAI解析する</button>
+      <button type="button" id="randomEvidenceCancelButton" class="warning" hidden>アップロード・解析を中止</button>
       <p class="button-note" id="randomEvidenceStatus" role="status" aria-live="polite">提出後はAI解析待ちとして保存され、完了すると自動分類されます。</p>
     </form>
   `;
@@ -221,7 +222,10 @@ function analysisStatusLabel(record) {
 }
 
 function canCancelAnalysis(record) {
-  return ["queued", "processing", "stalled"].includes(record.aiAnalysisStatus);
+  const status = record.aiAnalysisStatus
+    || (String(record.autoGradingStatus || "").includes("processing") ? "processing" : "")
+    || (record.firebaseSyncStatus === "syncing" ? "queued" : "");
+  return ["queued", "processing", "stalled"].includes(status);
 }
 
 function bindCancelButtons(container, onCancelEvidenceAnalysis) {

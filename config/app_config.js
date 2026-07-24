@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.15.3-dev";
-export const APP_RELEASE_NAME = "PWA起動時バージョン確認";
+export const APP_VERSION = "v4.15.4-dev";
+export const APP_RELEASE_NAME = "処理中の画像を画面から中止";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -41,6 +41,16 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.15.4-dev",
+    date: "2026-07-24",
+    title: "処理中の画像を画面から中止",
+    items: [
+      "画像アップロード中にも生徒画面へ中止ボタンを表示",
+      "中止後は残りの複数画像を送信せず、開始済みのAI解析も停止",
+      "旧データの同期中・処理中状態にも提出一覧の中止ボタンを表示"
+    ]
+  },
   {
     version: "v4.15.3-dev",
     date: "2026-07-24",
