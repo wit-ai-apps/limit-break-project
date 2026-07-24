@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.svg">
-  <link rel="stylesheet" href="assets/css/style.css?v=4.18.0">
+  <link rel="stylesheet" href="assets/css/style.css?v=4.18.1">
 </head>
 <body data-role="student" data-auth="out">
   <div class="app-startup-gate" id="appStartupGate" role="status" aria-live="polite">
@@ -34,17 +34,9 @@
       <form class="login-form" id="loginForm">
         <div class="login-guide">
           <strong>はじめて使う人</strong>
-          <div>ログイン種別を選び、メールアドレスとパスワードを入れて「新規登録する」を押してください。</div>
+          <div>ログイン種別を選び、Googleまたはメールで登録してください。iPhone・iPad・Macでもメール登録を利用できます。</div>
           <strong>登録済みの人</strong>
-          <div>登録したメールアドレスとパスワードで「ログインする」を押してください。</div>
-        </div>
-        <div class="field">
-          <label for="loginName">メールアドレス</label>
-          <input id="loginName" type="email" autocomplete="email" placeholder="例: student@example.com">
-        </div>
-        <div class="field">
-          <label for="loginPasscode">パスワード</label>
-          <input id="loginPasscode" type="password" autocomplete="current-password" placeholder="検証用: Test1234">
+          <div>登録時と同じ方法でログインしてください。共有端末では利用後にログアウトしてください。</div>
         </div>
         <p class="button-note" id="loginStatus">新規登録またはログインを選んでください。</p>
         <div class="invite-entry-panel" id="inviteEntryPanel" role="status" aria-live="polite" hidden></div>
@@ -54,8 +46,22 @@
         </div>
         <div class="support-type-panel" id="loginSupportTypePanel" hidden></div>
         <div class="login-actions">
-          <button type="submit">登録済みの人：ログインする</button>
-          <button class="secondary" type="button" id="registerAccountButton">はじめて使う人：新規登録する</button>
+          <button class="google-login-button" type="button" id="googleLoginButton">
+            <span class="google-mark" aria-hidden="true">G</span>
+            Googleで登録・ログイン
+          </button>
+          <div class="login-separator" aria-hidden="true"><span>またはメール</span></div>
+          <p class="email-login-note">Apple端末・Googleアカウントを使わない方も、メールアドレスで利用できます。</p>
+          <div class="field">
+            <label for="loginName">メールアドレス</label>
+            <input id="loginName" type="email" autocomplete="email" placeholder="例: student@example.com">
+          </div>
+          <div class="field">
+            <label for="loginPasscode">パスワード</label>
+            <input id="loginPasscode" type="password" autocomplete="current-password" placeholder="6文字以上">
+          </div>
+          <button type="submit">メールでログインする</button>
+          <button class="secondary" type="button" id="registerAccountButton">メールで新規登録する</button>
           <button class="secondary" type="button" id="resetPasswordButton">パスワードを忘れた方</button>
         </div>
       </form>
@@ -471,6 +477,6 @@
     </div>
   </dialog>
 
-  <script type="module" src="assets/js/app.js?v=4.18.0"></script>
+  <script type="module" src="assets/js/app.js?v=4.18.1"></script>
 </body>
 </html>

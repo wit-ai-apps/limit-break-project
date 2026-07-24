@@ -166,6 +166,64 @@
       width: 100%;
     }
 
+    .google-login-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      background: #fff;
+      color: #202124;
+      border-color: #dadce0;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
+    }
+
+    .google-login-button:hover {
+      background: #f8fafd;
+      color: #202124;
+    }
+
+    .google-login-button:disabled {
+      cursor: wait;
+      opacity: 0.68;
+    }
+
+    .google-mark {
+      display: inline-grid;
+      width: 24px;
+      height: 24px;
+      place-items: center;
+      border-radius: 50%;
+      color: #4285f4;
+      background: #fff;
+      border: 2px solid #4285f4;
+      font: 900 0.9rem/1 system-ui, sans-serif;
+    }
+
+    .login-separator {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 800;
+    }
+
+    .login-separator::before,
+    .login-separator::after {
+      content: "";
+      height: 1px;
+      flex: 1;
+      background: var(--line);
+    }
+
+    .email-login-note {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.82rem;
+      font-weight: 720;
+      line-height: 1.5;
+    }
+
     .login-form {
       display: grid;
       gap: 12px;

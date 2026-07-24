@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.18.0-dev";
-export const APP_RELEASE_NAME = "弱点データベース";
+export const APP_VERSION = "v4.18.1-dev";
+export const APP_RELEASE_NAME = "Googleログイン";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -41,6 +41,18 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.18.1-dev",
+    date: "2026-07-25",
+    title: "GoogleログインとApple端末向けメール登録案内",
+    items: [
+      "Googleアカウントでの新規登録・ログインを追加",
+      "初回Google登録時も選択した生徒・保護者・サポーター・教師の役割で利用者データを作成",
+      "登録済みGoogle利用者は既存の役割と連携生徒を維持",
+      "iPhone・iPad・Macを含む利用者がメールアドレスでも登録できることを明記",
+      "共有端末でGoogleアカウントを選び直せるようアカウント選択画面を毎回表示"
+    ]
+  },
   {
     version: "v4.18.0-dev",
     date: "2026-07-24",

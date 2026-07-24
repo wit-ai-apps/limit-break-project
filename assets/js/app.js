@@ -23,7 +23,7 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.18.0";
+} from "../../config/app_config.js?v=4.18.1";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -39,8 +39,8 @@ import {
   recordIdentity,
   saveEvidenceRecordRemote,
   saveEvidenceRecords
-} from "./evidence/evidence-store.js?v=4.18.0";
-import { renderAppNavigation } from "./ui/navigation.js?v=4.18.0";
+} from "./evidence/evidence-store.js?v=4.18.1";
+import { renderAppNavigation } from "./ui/navigation.js?v=4.18.1";
 import {
   closeDevDrawerPanel,
   openDevDrawerPanel,
@@ -56,9 +56,9 @@ import { fileToDataUrl } from "./evidence/evidence-upload.js";
 import {
   bindEvidencePreviewDialog,
   openEvidencePreviewRecord
-} from "./evidence/evidence-preview.js?v=4.18.0";
+} from "./evidence/evidence-preview.js?v=4.18.1";
 import { evidenceTypeForUnit, hasEvidence } from "./evidence/evidence-policy.js";
-import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.18.0";
+import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.18.1";
 import {
   canDeleteSchedule,
   downloadSchedulesIcs
@@ -107,7 +107,7 @@ import {
     let firebaseBridge = {
       enabled: false,
       status: "not_configured",
-      message: "公開検証では、メールアドレスとパスワードで新規登録またはログインできます。",
+      message: "Googleまたはメールアドレスで新規登録・ログインできます。",
       studentId: "STU_0001",
       currentUser: null,
       userDoc: null
@@ -147,6 +147,7 @@ import {
     const loginPasscodeInput = document.querySelector("#loginPasscode");
     const loginVersionBadge = document.querySelector("#loginVersionBadge");
     const loginStatus = document.querySelector("#loginStatus");
+    const googleLoginButton = document.querySelector("#googleLoginButton");
     const inviteEntryPanel = document.querySelector("#inviteEntryPanel");
     const loginRoleOptions = document.querySelector("#loginRoleOptions");
     const loginSupportTypePanel = document.querySelector("#loginSupportTypePanel");
@@ -452,7 +453,7 @@ import {
         firebaseBridge = {
           enabled: true,
           status: "connected",
-          message: "登録済みの人はログイン、はじめて使う人は新規登録してください。",
+          message: "Googleまたはメールを選び、登録済みの人はログイン、はじめて使う人は新規登録してください。",
           studentId: config.student_id || "STU_0001",
           currentUser: null,
           userDoc: null,
@@ -473,6 +474,8 @@ import {
           deleteDoc: firebaseFirestore.deleteDoc,
           serverTimestamp: firebaseFirestore.serverTimestamp,
           signInWithEmailAndPassword: firebaseAuth.signInWithEmailAndPassword,
+          signInWithPopup: firebaseAuth.signInWithPopup,
+          googleProvider: new firebaseAuth.GoogleAuthProvider(),
           sendPasswordResetEmail: firebaseAuth.sendPasswordResetEmail,
           createUserWithEmailAndPassword: firebaseAuth.createUserWithEmailAndPassword,
           signOut: firebaseAuth.signOut,
@@ -484,6 +487,7 @@ import {
           httpsCallable: firebaseFunctions.httpsCallable
         };
         firebaseBridge.diagnosticLog = addDiagnosticLog;
+        firebaseBridge.googleProvider.setCustomParameters({ prompt: "select_account" });
         addDiagnosticLog("firebase.ready", { projectId: config.firebase?.projectId || "" });
         if (typeof auth.authStateReady === "function") {
           await auth.authStateReady();
@@ -683,6 +687,7 @@ import {
       }
       const credential = await firebaseBridge.createUserWithEmailAndPassword(firebaseBridge.auth, email, password);
       const user = credential.user;
+      firebaseBridge.currentUser = user;
       await callGroupFunction("createUserOnboarding", {
         role: currentRole,
         displayName: loginName || String(email).split("@")[0],
@@ -690,6 +695,42 @@ import {
       });
       await applyFirebaseUser(user);
       return user;
+    }
+
+    async function ensureGoogleUserOnboarding(user) {
+      const userRef = firebaseBridge.doc(firebaseBridge.db, "users", user.uid);
+      const userSnap = await firebaseBridge.getDoc(userRef);
+      if (userSnap.exists()) return false;
+      firebaseBridge.currentUser = user;
+      await callGroupFunction("createUserOnboarding", {
+        role: currentRole,
+        displayName: user.displayName || String(user.email || "").split("@")[0],
+        supporterType: currentSupportType
+      });
+      return true;
+    }
+
+    function googleLoginErrorMessage(error) {
+      const code = String(error?.code || "").toLowerCase();
+      if (code.includes("popup-closed-by-user") || code.includes("cancelled-popup-request")) {
+        return "Googleログインを中止しました。もう一度押すと再開できます。";
+      }
+      if (code.includes("popup-blocked")) {
+        return "Googleログイン画面がブロックされました。ブラウザでポップアップを許可して、もう一度お試しください。";
+      }
+      if (code.includes("account-exists-with-different-credential")) {
+        return "このメールアドレスはメール方式で登録済みです。今回はメールとパスワードでログインしてください。";
+      }
+      if (code.includes("operation-not-allowed")) {
+        return "Googleログインのサーバー設定がまだ有効になっていません。管理者へお知らせください。";
+      }
+      if (code.includes("unauthorized-domain")) {
+        return "現在のURLはGoogleログインの許可対象になっていません。管理者へお知らせください。";
+      }
+      if (code.includes("network-request-failed")) {
+        return "通信できませんでした。ネット接続を確認して、もう一度お試しください。";
+      }
+      return "Googleでログインできませんでした。時間を置いて、もう一度お試しください。";
     }
 
     async function writeLoginLog(user, userData) {
@@ -3854,6 +3895,54 @@ function renderScheduleDrawer() {
       activeView = "home";
       localStorage.setItem(VIEW_KEY, activeView);
       render();
+    });
+
+    googleLoginButton?.addEventListener("click", async () => {
+      if (!firebaseBridge.enabled || !firebaseBridge.signInWithPopup || !firebaseBridge.googleProvider) {
+        loginStatus.textContent = "Firebaseへ接続できません。通信を確認してページを再読み込みしてください。";
+        return;
+      }
+      googleLoginButton.disabled = true;
+      loginStatus.textContent = "Googleログイン画面を開いています...";
+      let googleUser = null;
+      try {
+        const credential = await firebaseBridge.signInWithPopup(
+          firebaseBridge.auth,
+          firebaseBridge.googleProvider
+        );
+        googleUser = credential.user;
+        const created = await ensureGoogleUserOnboarding(credential.user);
+        await applyFirebaseUser(credential.user);
+        localStorage.setItem(LOGIN_NAME_KEY, loginName);
+        localStorage.setItem(ROLE_KEY, currentRole);
+        localStorage.setItem(SUPPORT_TYPE_KEY, currentSupportType);
+        localStorage.setItem(LOGIN_KEY, "true");
+        isLoggedIn = true;
+        activeView = "home";
+        localStorage.setItem(VIEW_KEY, activeView);
+        loginStatus.textContent = created
+          ? "Googleアカウントで新規登録してログインしました。"
+          : "Googleアカウントでログインしました。";
+        addDiagnosticLog("firebase.google_login.success", {
+          onboarding: created ? "created" : "existing"
+        });
+        render();
+      } catch (error) {
+        addDiagnosticLog("firebase.google_login.error", {
+          code: String(error?.code || "GOOGLE_LOGIN_FAILED")
+        });
+        if (googleUser && !isLoggedIn) {
+          try {
+            await firebaseBridge.signOut(firebaseBridge.auth);
+          } catch (_) {
+            // A partially completed first login must not hide the original error.
+          }
+          firebaseBridge.currentUser = null;
+        }
+        loginStatus.textContent = googleLoginErrorMessage(error);
+      } finally {
+        googleLoginButton.disabled = false;
+      }
     });
 
     document.querySelector("#registerAccountButton").addEventListener("click", async () => {
