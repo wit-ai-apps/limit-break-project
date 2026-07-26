@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.18.4-dev";
-export const APP_RELEASE_NAME = "実験AI仮採点プレビュー";
+export const APP_VERSION = "v4.18.5-dev";
+export const APP_RELEASE_NAME = "提出画像フォルダ・進捗管理";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -41,6 +41,18 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.18.5-dev",
+    date: "2026-07-26",
+    title: "提出画像フォルダ・進捗管理",
+    items: [
+      "提出中の割合とAI待機・解析中を新しい光点アニメーションで表示",
+      "同じテストの複数画像を1つのフォルダへ整理",
+      "提出画像を日付・教科・解析状態で並べ替え、状態で絞り込み",
+      "生徒が先生確認前の誤提出画像を安全に削除できる処理を追加",
+      "提出済みテストへ不足ページを後から追加し、既存の仮採点を再確認状態へ戻す"
+    ]
+  },
   {
     version: "v4.18.4-dev",
     date: "2026-07-26",

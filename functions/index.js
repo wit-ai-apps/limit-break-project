@@ -403,6 +403,44 @@ export const deleteFailedEvidenceRecord = onCall({ region: "us-east1" }, async (
   return { deleted: true };
 });
 
+export const deleteEvidenceSubmission = onCall({ region: "us-east1" }, async (request) => {
+  const uid = requireAuth(request);
+  const { data: user } = await requireUser(uid);
+  const studentId = String(request.data?.studentId || "").trim();
+  const recordId = String(request.data?.recordId || "").trim();
+  if (!studentId || !recordId || !linkedToStudent(user, studentId)) {
+    throw new HttpsError("permission-denied", "DELETE_EVIDENCE_NOT_ALLOWED");
+  }
+  if (!["student", "teacher", "lead_teacher", "admin"].includes(user.role)) {
+    throw new HttpsError("permission-denied", "DELETE_EVIDENCE_NOT_ALLOWED");
+  }
+  const recordRef = getFirestore().doc(`students/${studentId}/evidence_records/${recordId}`);
+  const snapshot = await recordRef.get();
+  if (!snapshot.exists) return { deleted: true };
+  const record = snapshot.data();
+  if (record.gradingReviewStatus === "confirmed" && !["teacher", "lead_teacher", "admin"].includes(user.role)) {
+    throw new HttpsError("failed-precondition", "CONFIRMED_EVIDENCE_REQUIRES_TEACHER");
+  }
+  if (user.role === "student" && record.created_by_uid && record.created_by_uid !== uid) {
+    throw new HttpsError("permission-denied", "NOT_EVIDENCE_OWNER");
+  }
+  if (record.evidenceStoragePath) {
+    try {
+      await getStorage().bucket().file(record.evidenceStoragePath).delete({ ignoreNotFound: true });
+    } catch (error) {
+      if (Number(error?.code) !== 404) {
+        throw new HttpsError("internal", "EVIDENCE_FILE_DELETE_FAILED");
+      }
+    }
+  }
+  await recordRef.delete();
+  return {
+    deleted: true,
+    submissionGroupId: record.submissionGroupId || "",
+    pageNumber: Number(record.pageNumber || 1)
+  };
+});
+
 const MATERIAL_HINTS = [
   ["数学", "中学総復習数学"],
   ["数学Ⅰ", "ベーシックレベル数学Ⅰ"],

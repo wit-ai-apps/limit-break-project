@@ -2945,6 +2945,200 @@
       margin-top: 10px;
     }
 
+    .evidence-organizer-controls,
+    .evidence-folder-head,
+    .evidence-live-progress {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .evidence-organizer-controls {
+      flex-wrap: wrap;
+    }
+
+    .evidence-organizer-controls label {
+      display: grid;
+      gap: 5px;
+      min-width: 180px;
+      color: var(--muted);
+      font-weight: 800;
+    }
+
+    .evidence-folder-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 12px;
+      margin-top: 10px;
+    }
+
+    .evidence-folder-card {
+      display: grid;
+      gap: 10px;
+      padding: 14px;
+      border: 1px solid rgba(125, 211, 252, 0.2);
+      border-radius: 16px;
+      background: rgba(15, 23, 42, 0.66);
+    }
+
+    .evidence-folder-head > div {
+      display: grid;
+      gap: 3px;
+      flex: 1;
+      min-width: 0;
+    }
+
+    .evidence-folder-icon {
+      width: 32px;
+      height: 24px;
+      border-radius: 5px;
+      background: linear-gradient(145deg, #38bdf8, #2563eb);
+      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.28);
+      position: relative;
+    }
+
+    .evidence-folder-icon::before {
+      content: "";
+      position: absolute;
+      width: 14px;
+      height: 6px;
+      left: 3px;
+      top: -4px;
+      border-radius: 4px 4px 0 0;
+      background: #7dd3fc;
+    }
+
+    .evidence-folder-pages {
+      display: grid;
+      gap: 6px;
+    }
+
+    .evidence-folder-pages button {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-start;
+      text-align: left;
+      background: rgba(15, 23, 42, 0.82);
+    }
+
+    .evidence-folder-pages button span {
+      color: #7dd3fc;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .evidence-append-button {
+      display: inline-flex;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    .evidence-status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      width: fit-content;
+      padding: 5px 9px;
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.14);
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 900;
+      white-space: nowrap;
+    }
+
+    .evidence-status-pill i {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .evidence-status-pill.active {
+      color: #38bdf8;
+    }
+
+    .evidence-status-pill.active i {
+      animation: evidencePulse 1.3s ease-in-out infinite;
+      box-shadow: 0 0 0 0 rgba(56, 189, 248, 0.55);
+    }
+
+    .evidence-status-pill.completed { color: #34d399; }
+    .evidence-status-pill.needs_review { color: #fbbf24; }
+    .evidence-status-pill.error,
+    .evidence-status-pill.stalled { color: #fb7185; }
+
+    .evidence-live-progress {
+      min-height: 54px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      background: linear-gradient(120deg, rgba(14, 165, 233, 0.12), rgba(99, 102, 241, 0.14));
+      overflow: hidden;
+      position: relative;
+    }
+
+    .evidence-live-progress::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      width: 40%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.12), transparent);
+      animation: evidenceScan 1.8s ease-in-out infinite;
+    }
+
+    .evidence-live-progress > span {
+      display: grid;
+      gap: 2px;
+      z-index: 1;
+    }
+
+    .evidence-live-progress small {
+      color: #7dd3fc;
+    }
+
+    .evidence-activity-orbit {
+      position: relative;
+      width: 34px;
+      height: 34px;
+      flex: 0 0 34px;
+      animation: evidenceOrbit 1.4s linear infinite;
+    }
+
+    .evidence-activity-orbit b {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #38bdf8;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.75);
+    }
+
+    .evidence-activity-orbit b:nth-child(1) { left: 13px; top: 0; }
+    .evidence-activity-orbit b:nth-child(2) { right: 1px; bottom: 4px; opacity: 0.7; }
+    .evidence-activity-orbit b:nth-child(3) { left: 1px; bottom: 4px; opacity: 0.4; }
+
+    @keyframes evidenceOrbit {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes evidenceScan {
+      from { transform: translateX(-140%); }
+      to { transform: translateX(350%); }
+    }
+
+    @keyframes evidencePulse {
+      70% { box-shadow: 0 0 0 8px rgba(56, 189, 248, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(56, 189, 248, 0); }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .evidence-status-pill.active i,
+      .evidence-live-progress::after,
+      .evidence-activity-orbit {
+        animation: none;
+      }
+    }
+
     .evidence-gallery-card,
     .missing-evidence-card {
       display: grid;

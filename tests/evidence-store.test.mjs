@@ -46,6 +46,7 @@ test("同じ提出の複数ページを固有missionIdで保持する", () => {
 
 test("creates the queued record before upload and never overwrites AI fields afterward", async () => {
   const calls = [];
+  const stages = [];
   const bridge = {
     enabled: true,
     currentUser: { uid: "test-user" },
@@ -69,10 +70,13 @@ test("creates the queued record before upload and never overwrites AI fields aft
   };
   const file = { name: "test.png", type: "image/png" };
 
-  const result = await saveEvidenceRecordRemote(record, file, bridge);
+  const result = await saveEvidenceRecordRemote(record, file, bridge, {
+    onStage: (stage) => stages.push(stage)
+  });
 
   assert.equal(calls[0][0], "setDoc");
   assert.equal(calls[0][1].aiAnalysisStatus, "queued");
+  assert.equal(calls[0][1].created_by_uid, "test-user");
   assert.equal(calls[1][0], "uploadBytes");
   assert.equal(calls[2][0], "setDoc");
   assert.equal("aiAnalysisStatus" in calls[2][1], false);
@@ -80,4 +84,5 @@ test("creates the queued record before upload and never overwrites AI fields aft
   assert.equal("course" in calls[2][1], false);
   assert.equal(result.firebaseSyncStatus, "synced");
   assert.equal(result.evidenceImageData, "");
+  assert.deepEqual(stages, ["uploading", "queued"]);
 });

@@ -39,7 +39,7 @@ import {
   recordIdentity,
   saveEvidenceRecordRemote,
   saveEvidenceRecords
-} from "./evidence/evidence-store.js?v=4.18.3";
+} from "./evidence/evidence-store.js?v=4.18.5";
 import { renderAppNavigation } from "./ui/navigation.js?v=4.18.3";
 import { renderDevDrawerPanel } from "./ui/dev-drawer.js";
 import {
@@ -54,7 +54,7 @@ import {
   openEvidencePreviewRecord
 } from "./evidence/evidence-preview.js?v=4.18.4";
 import { evidenceTypeForUnit, hasEvidence } from "./evidence/evidence-policy.js";
-import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.18.3";
+import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.18.5";
 import {
   canDeleteSchedule,
   downloadSchedulesIcs
@@ -3631,7 +3631,16 @@ function renderScheduleDrawer() {
         cancelButton.textContent = "中止しています...";
         status.textContent = "現在の画像保存が終了し次第、残りのアップロードとAI解析を中止します。";
       };
-      status.textContent = "画像を順番に読み込んでいます...";
+      const setUploadStatus = (stage, message, progress = null) => {
+        const progressText = Number.isFinite(progress) ? `${progress}%` : "";
+        status.innerHTML = `
+          <span class="evidence-live-progress ${stage}">
+            <i class="evidence-activity-orbit" aria-hidden="true"><b></b><b></b><b></b></i>
+            <span><strong>${message}</strong>${progressText ? `<small>${progressText}</small>` : ""}</span>
+          </span>
+        `;
+      };
+      setUploadStatus("preparing", "画像を確認しています");
 
       try {
         const dateKey = todayJapanKey();
@@ -3640,7 +3649,7 @@ function renderScheduleDrawer() {
         for (let index = 0; index < evidenceFiles.length; index += 1) {
           if (uploadState.cancelled) break;
           const evidenceFile = evidenceFiles[index];
-          status.textContent = `${index + 1}/${evidenceFiles.length}枚目「${evidenceFile.name}」を保存中です...`;
+          setUploadStatus("preparing", `${index + 1}/${evidenceFiles.length}枚目を準備中`);
           const submittedAt = new Date().toISOString();
           const evidenceImageData = await fileToDataUrl(evidenceFile);
           let submittedRecord = {
@@ -3679,7 +3688,17 @@ function renderScheduleDrawer() {
             submittedAt,
             savedAt: submittedAt
           };
-          submittedRecord = await saveEvidenceRecordRemote(submittedRecord, evidenceFile, firebaseBridge);
+          submittedRecord = await saveEvidenceRecordRemote(submittedRecord, evidenceFile, firebaseBridge, {
+            onStage: (stage) => setUploadStatus(
+              stage,
+              stage === "queued" ? "保存完了・AI解析を待っています" : `${index + 1}/${evidenceFiles.length}枚目をアップロード中`
+            ),
+            onProgress: (progress) => setUploadStatus(
+              "uploading",
+              `${index + 1}/${evidenceFiles.length}枚目をアップロード中`,
+              progress
+            )
+          });
           records.push(submittedRecord);
           saveEvidenceRecords(STORAGE_KEY, records);
           if (uploadState.cancelled && submittedRecord.firebaseDocumentId) {
@@ -3750,7 +3769,8 @@ function renderScheduleDrawer() {
         openEvidencePreview,
         onRandomEvidenceSubmit: handleRandomEvidenceSubmit,
         onCancelEvidenceAnalysis: cancelEvidenceAnalysis,
-        onDeleteEvidenceRecord: deleteEvidenceRecord
+        onDeleteEvidenceRecord: deleteEvidenceRecord,
+        onAppendEvidenceFiles: appendEvidenceFiles
       });
     }
 
@@ -3759,15 +3779,20 @@ function renderScheduleDrawer() {
       if (!record) return;
       const isFailedRecord = record.firebaseSyncStatus === "error"
         || (!record.evidenceStoragePath && record.aiAnalysisStatus !== "completed");
-      if (!isFailedRecord) return;
-      if (!confirm(`${record.evidenceImageName || "この提出"}の失敗記録を削除しますか？`)) return;
+      if (!isFailedRecord && currentRole !== "student") return;
+      const confirmed = record.gradingReviewStatus === "confirmed";
+      if (confirmed) {
+        alert("先生確認済みの提出は生徒から削除できません。先生へ削除を依頼してください。");
+        return;
+      }
+      if (!confirm(`${record.evidenceImageName || "この提出"}を削除しますか？この操作は画像本体も削除します。`)) return;
       if (button) {
         button.disabled = true;
         button.textContent = "削除中...";
       }
       try {
         if (record.firebaseDocumentId) {
-          await callGroupFunction("deleteFailedEvidenceRecord", {
+          await callGroupFunction(isFailedRecord ? "deleteFailedEvidenceRecord" : "deleteEvidenceSubmission", {
             studentId: firebaseBridge.studentId,
             recordId: record.firebaseDocumentId
           });
@@ -3782,6 +3807,94 @@ function renderScheduleDrawer() {
         }
         alert(`提出を削除できませんでした。${error.message || error}`);
       }
+    }
+
+    async function appendEvidenceFiles(submissionGroupId, files) {
+      const groupRecords = records
+        .filter((record) => record.submissionGroupId === submissionGroupId)
+        .sort((a, b) => Number(a.pageNumber || 1) - Number(b.pageNumber || 1));
+      if (!groupRecords.length || !files.length) return;
+      if (groupRecords.some((record) => record.gradingReviewStatus === "confirmed")) {
+        alert("先生確認済みのテストには直接追加できません。先生へ再確認を依頼してください。");
+        return;
+      }
+      if (groupRecords.length + files.length > 10) {
+        alert("同じテストに保存できる画像は最大10枚です。");
+        return;
+      }
+      const first = groupRecords[0];
+      const total = groupRecords.length + files.length;
+      const invalid = files.find((file) =>
+        (!file.type.startsWith("image/") && file.type !== "application/pdf")
+        || file.size >= 10 * 1024 * 1024
+      );
+      if (invalid) {
+        alert(`${invalid.name}は画像・PDF形式または10MB未満か確認してください。`);
+        return;
+      }
+      for (let index = 0; index < files.length; index += 1) {
+        const file = files[index];
+        const pageNumber = groupRecords.length + index + 1;
+        const submittedAt = new Date().toISOString();
+        let record = {
+          ...first,
+          missionId: `${submissionGroupId}_p${pageNumber}_${Date.now()}`,
+          submissionGroupId,
+          pageNumber,
+          pageCount: total,
+          missionTitle: `${first.testType || "確認テスト"} ${pageNumber}/${total} ${file.name}`,
+          evidenceImageName: file.name,
+          evidenceImageType: file.type,
+          evidenceImageData: await fileToDataUrl(file),
+          evidenceImageUrl: "",
+          evidenceStoragePath: "",
+          firebaseDocumentId: "",
+          firebaseSyncStatus: "syncing",
+          aiAnalysisStatus: "queued",
+          gradingMarks: [],
+          proposedGradingMarks: [],
+          gradingReviewStatus: "not_available",
+          aiAnalysis: {},
+          strengthAnalysis: "",
+          weaknessAnalysis: "",
+          nextLearningAction: "",
+          learningIssueIds: [],
+          learningIssueCount: 0,
+          answeredCount: "",
+          score: "",
+          submittedAt,
+          savedAt: submittedAt
+        };
+        record = await saveEvidenceRecordRemote(record, file, firebaseBridge);
+        records.push(record);
+      }
+      groupRecords.forEach((record) => {
+        record.pageCount = total;
+        record.gradingMarks = [];
+        record.proposedGradingMarks = [];
+        record.gradingReviewStatus = "not_available";
+      });
+      await Promise.all(groupRecords.map(async (record) => {
+        if (!record.firebaseDocumentId || !firebaseBridge.enabled) return;
+        const ref = firebaseBridge.doc(
+          firebaseBridge.db,
+          "students",
+          firebaseBridge.studentId,
+          "evidence_records",
+          record.firebaseDocumentId
+        );
+        await firebaseBridge.setDoc(ref, {
+          pageCount: total,
+          gradingMarks: [],
+          proposedGradingMarks: [],
+          gradingReviewStatus: "not_available",
+          aiAnalysisStatus: "needs_review",
+          aiAnalysisUpdatedAt: firebaseBridge.serverTimestamp()
+        }, { merge: true });
+      }));
+      saveEvidenceRecords(STORAGE_KEY, records);
+      render();
+      alert(`${files.length}枚を同じテストへ追加しました。全${total}ページとして再確認してください。`);
     }
 
     async function cancelEvidenceAnalysis(key, button) {

@@ -17,7 +17,15 @@ async function withRetry(operation, attempts = 3) {
   throw lastError;
 }
 
-function uploadWithTimeout(imageRef, evidenceFile, metadata, firebaseBridge, log, timeoutMs = 45000) {
+function uploadWithTimeout(
+  imageRef,
+  evidenceFile,
+  metadata,
+  firebaseBridge,
+  log,
+  timeoutMs = 45000,
+  onProgress = () => {}
+) {
   if (!firebaseBridge.uploadBytesResumable) {
     return firebaseBridge.uploadBytes(imageRef, evidenceFile, metadata);
   }
@@ -33,6 +41,7 @@ function uploadWithTimeout(imageRef, evidenceFile, metadata, firebaseBridge, log
         const progress = snapshot.totalBytes
           ? Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100)
           : 0;
+        onProgress(progress);
         const bucket = Math.floor(progress / 10);
         if (bucket !== lastProgressBucket) {
           lastProgressBucket = bucket;
@@ -99,7 +108,7 @@ export function recordForFirestore(record) {
   return copy;
 }
 
-export async function saveEvidenceRecordRemote(record, evidenceFile, firebaseBridge) {
+export async function saveEvidenceRecordRemote(record, evidenceFile, firebaseBridge, options = {}) {
   if (!firebaseBridge?.enabled || !firebaseBridge.currentUser) return record;
   const log = (event, details = {}) => firebaseBridge.diagnosticLog?.(event, details);
   const recordId = firebaseSafeId(recordIdentity(record));
@@ -111,6 +120,8 @@ export async function saveEvidenceRecordRemote(record, evidenceFile, firebaseBri
     await withRetry(() => firebaseBridge.setDoc(docRef, {
       ...recordForFirestore(remoteRecord),
       student_id: firebaseBridge.studentId,
+      created_by_uid: firebaseBridge.currentUser.uid,
+      created_by_role: record.createdByRole || "student",
       visible_to: ["student", "parent", "supporter", "teacher"],
       firebaseSyncStatus: "syncing",
       updated_at: firebaseBridge.serverTimestamp()
@@ -126,6 +137,7 @@ export async function saveEvidenceRecordRemote(record, evidenceFile, firebaseBri
         fileType: evidenceFile.type,
         fileSize: evidenceFile.size
       });
+      options.onStage?.("uploading");
       await withRetry(() => uploadWithTimeout(imageRef, evidenceFile, {
         contentType: evidenceFile.type || "image/jpeg",
         customMetadata: {
@@ -138,7 +150,7 @@ export async function saveEvidenceRecordRemote(record, evidenceFile, firebaseBri
           page_number: String(record.pageNumber || 1),
           page_count: String(record.pageCount || 1)
         }
-      }, firebaseBridge, log), 2);
+      }, firebaseBridge, log, 45000, (progress) => options.onProgress?.(progress)), 2);
       log("evidence.storage.complete", { recordId, storagePath });
       remoteRecord.evidenceImageUrl = await withRetry(() => firebaseBridge.getDownloadURL(imageRef));
       remoteRecord.evidenceStoragePath = storagePath;
@@ -151,6 +163,7 @@ export async function saveEvidenceRecordRemote(record, evidenceFile, firebaseBri
       updated_at: firebaseBridge.serverTimestamp()
     };
     await withRetry(() => firebaseBridge.setDoc(docRef, uploadResult, { merge: true }));
+    options.onStage?.("queued");
     log("evidence.sync.complete", { recordId });
 
     return {

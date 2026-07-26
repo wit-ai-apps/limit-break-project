@@ -7,6 +7,8 @@ import {
 
 let evidenceDraftFiles = [];
 let evidenceDraftObjectUrls = [];
+let evidenceSortMode = "newest";
+let evidenceStatusFilter = "all";
 
 export function renderEvidenceLogs({
   logList,
@@ -18,7 +20,8 @@ export function renderEvidenceLogs({
   openEvidencePreview,
   onRandomEvidenceSubmit,
   onCancelEvidenceAnalysis,
-  onDeleteEvidenceRecord
+  onDeleteEvidenceRecord,
+  onAppendEvidenceFiles
 }) {
   logList.innerHTML = "";
   const canSubmit = canSubmitEvidence(role);
@@ -40,10 +43,61 @@ export function renderEvidenceLogs({
     return;
   }
 
-  const evidenceRecords = sortEvidenceRecords(
+  let evidenceRecords = sortEvidenceRecords(
     [...records].filter(canRenderEvidenceRecord),
-    roleKey
+    roleKey,
+    evidenceSortMode
   );
+  if (evidenceStatusFilter !== "all") {
+    evidenceRecords = evidenceRecords.filter((record) => normalizedAnalysisStatus(record) === evidenceStatusFilter);
+  }
+
+  const rerender = () => renderEvidenceLogs({
+    logList,
+    role,
+    roleKey,
+    records,
+    expectedMissions,
+    recordKey,
+    openEvidencePreview,
+    onRandomEvidenceSubmit,
+    onCancelEvidenceAnalysis,
+    onDeleteEvidenceRecord,
+    onAppendEvidenceFiles
+  });
+  logList.insertAdjacentHTML("beforeend", `
+    <div class="log-card evidence-organizer">
+      <strong>提出画像を整理</strong>
+      <div class="evidence-organizer-controls">
+        <label>並べ替え
+          <select id="evidenceSortMode">
+            <option value="newest" ${evidenceSortMode === "newest" ? "selected" : ""}>新しい順</option>
+            <option value="oldest" ${evidenceSortMode === "oldest" ? "selected" : ""}>古い順</option>
+            <option value="subject" ${evidenceSortMode === "subject" ? "selected" : ""}>教科・教材順</option>
+            <option value="status" ${evidenceSortMode === "status" ? "selected" : ""}>解析状態順</option>
+          </select>
+        </label>
+        <label>表示
+          <select id="evidenceStatusFilter">
+            <option value="all" ${evidenceStatusFilter === "all" ? "selected" : ""}>すべて</option>
+            <option value="queued" ${evidenceStatusFilter === "queued" ? "selected" : ""}>待機中</option>
+            <option value="processing" ${evidenceStatusFilter === "processing" ? "selected" : ""}>解析中</option>
+            <option value="needs_review" ${evidenceStatusFilter === "needs_review" ? "selected" : ""}>要確認</option>
+            <option value="completed" ${evidenceStatusFilter === "completed" ? "selected" : ""}>完了</option>
+            <option value="error" ${evidenceStatusFilter === "error" ? "selected" : ""}>エラー</option>
+          </select>
+        </label>
+      </div>
+    </div>
+  `);
+  logList.querySelector("#evidenceSortMode")?.addEventListener("change", (event) => {
+    evidenceSortMode = event.target.value;
+    rerender();
+  });
+  logList.querySelector("#evidenceStatusFilter")?.addEventListener("change", (event) => {
+    evidenceStatusFilter = event.target.value;
+    rerender();
+  });
 
   const submittedMissionIds = new Set(evidenceRecords.map((record) => record.sourceMissionId || record.missionId));
   const missingMissions = expectedMissions.filter((mission) => !submittedMissionIds.has(mission.missionId));
@@ -62,6 +116,53 @@ export function renderEvidenceLogs({
   `);
 
   if (evidenceRecords.length) {
+    const folders = groupEvidenceRecords(evidenceRecords);
+    const folderCard = document.createElement("div");
+    folderCard.className = "log-card";
+    folderCard.innerHTML = `
+      <strong>テスト別フォルダ</strong>
+      <span>同じ提出で選んだ複数ページを、1つのテストとしてまとめています。</span>
+      <div class="evidence-folder-grid">
+        ${folders.map((folder) => `
+          <article class="evidence-folder-card">
+            <div class="evidence-folder-head">
+              <span class="evidence-folder-icon" aria-hidden="true"></span>
+              <div>
+                <strong>${escapeHtml(folder.subject)} / ${escapeHtml(folder.course)}</strong>
+                <small>${escapeHtml(folder.title)} / ${folder.records.length}ページ</small>
+              </div>
+              ${statusIndicator(folder.status)}
+            </div>
+            <div class="evidence-folder-pages">
+              ${folder.records.map((record) => `
+                <button type="button" data-evidence-key="${recordKey(record)}">
+                  <span>${Number(record.pageNumber || 1)}/${Math.max(folder.records.length, Number(record.pageCount || 1))}</span>
+                  ${escapeHtml(record.evidenceImageName || "画像")}
+                </button>
+              `).join("")}
+            </div>
+            ${roleKey === "student" ? `
+              <label class="secondary evidence-append-button">
+                不足ページを追加
+                <input type="file" accept="image/png,image/jpeg,image/webp,application/pdf" multiple
+                  data-append-group="${escapeHtml(folder.id)}" class="visually-hidden">
+              </label>
+            ` : ""}
+          </article>
+        `).join("")}
+      </div>
+    `;
+    folderCard.querySelectorAll("[data-evidence-key]").forEach((button) => {
+      button.addEventListener("click", () => openEvidencePreview(button.dataset.evidenceKey));
+    });
+    folderCard.querySelectorAll("[data-append-group]").forEach((input) => {
+      input.addEventListener("change", () => {
+        if (input.files?.length) onAppendEvidenceFiles?.(input.dataset.appendGroup, [...input.files]);
+        input.value = "";
+      });
+    });
+    logList.appendChild(folderCard);
+
     const gallery = document.createElement("div");
     gallery.className = "log-card";
     gallery.innerHTML = `
@@ -77,12 +178,14 @@ export function renderEvidenceLogs({
             <strong>${escapeHtml(record.subject || "未分類")} / ${escapeHtml(record.course || "教材不明")}</strong>
             <span>${escapeHtml(record.lesson || "")} ${escapeHtml(record.part || "")}</span>
             <span>${canViewEvidenceScore(role) ? `正答率 ${escapeHtml(record.score || "-")}%` : "採点結果あり"}</span>
+            ${statusIndicator(normalizedAnalysisStatus(record))}
             ${record.strengthAnalysis ? `<small><b>できた：</b>${escapeHtml(record.strengthAnalysis)}</small>` : ""}
             ${record.weaknessAnalysis ? `<small><b>弱点：</b>${escapeHtml(record.weaknessAnalysis)}</small>` : ""}
             ${record.nextLearningAction ? `<small><b>次：</b>${escapeHtml(record.nextLearningAction)}</small>` : ""}
             ${Number(record.learningIssueCount) > 0 ? `<small><b>弱点DB：</b>${escapeHtml(record.learningIssueCount)}件を分野・単元別に保存</small>` : ""}
             ${canCancelAnalysis(record) ? `<button type="button" class="warning evidence-cancel-button" data-cancel-evidence-key="${recordKey(record)}">解析を中止</button>` : ""}
             ${canSubmit && isFailedEvidenceRecord(record) ? `<button type="button" class="warning evidence-delete-button" data-delete-evidence-key="${recordKey(record)}">失敗記録を削除</button>` : ""}
+            ${roleKey === "student" && !isFailedEvidenceRecord(record) ? `<button type="button" class="warning evidence-delete-button" data-delete-evidence-key="${recordKey(record)}">この画像を削除</button>` : ""}
           </article>
         `).join("")}
       </div>
@@ -361,8 +464,12 @@ function sortBySavedAtDesc(a, b) {
   return String(b.savedAt || "").localeCompare(String(a.savedAt || ""));
 }
 
-function sortEvidenceRecords(records, roleKey) {
-  if (roleKey === "student") return records.sort(sortBySavedAtDesc);
+function sortEvidenceRecords(records, roleKey, mode = "newest") {
+  if (mode === "oldest") return records.sort((a, b) => -sortBySavedAtDesc(a, b));
+  if (mode === "status") return records.sort((a, b) =>
+    normalizedAnalysisStatus(a).localeCompare(normalizedAnalysisStatus(b)) || sortBySavedAtDesc(a, b)
+  );
+  if (mode === "newest") return records.sort(sortBySavedAtDesc);
   return records.sort((a, b) =>
     String(a.subject || "未分類").localeCompare(String(b.subject || "未分類"), "ja") ||
     String(a.course || "").localeCompare(String(b.course || ""), "ja") ||
@@ -385,6 +492,59 @@ function analysisStatusLabel(record) {
   const confidence = Number(record.aiAnalysis?.confidence);
   const confidenceText = Number.isFinite(confidence) ? ` ${Math.round(confidence * 100)}%` : "";
   return escapeHtml(`${labels[status] || "未解析"}${confidenceText}`);
+}
+
+function groupEvidenceRecords(records) {
+  const groups = new Map();
+  records.forEach((record) => {
+    const id = record.submissionGroupId || `single_${recordKeyFallback(record)}`;
+    if (!groups.has(id)) groups.set(id, []);
+    groups.get(id).push(record);
+  });
+  return [...groups.entries()].map(([id, groupRecords]) => {
+    groupRecords.sort((a, b) => Number(a.pageNumber || 1) - Number(b.pageNumber || 1));
+    const first = groupRecords[0];
+    const statuses = groupRecords.map(normalizedAnalysisStatus);
+    const status = statuses.includes("error") ? "error"
+      : statuses.includes("processing") ? "processing"
+        : statuses.includes("queued") ? "queued"
+          : statuses.includes("needs_review") ? "needs_review"
+            : "completed";
+    return {
+      id,
+      records: groupRecords,
+      subject: first.subject || "未分類",
+      course: first.course || "教材不明",
+      title: first.lesson || first.testType || formatSavedAt(first.submittedAt || first.savedAt),
+      status
+    };
+  });
+}
+
+function recordKeyFallback(record) {
+  return `${record.date || ""}_${record.missionId || ""}_${record.savedAt || ""}`;
+}
+
+function normalizedAnalysisStatus(record) {
+  const status = record.aiAnalysisStatus || (record.firebaseSyncStatus === "synced" ? "queued" : "error");
+  if (status === "processing" && isAnalysisStalled(record)) return "stalled";
+  return status;
+}
+
+function statusIndicator(status) {
+  const active = ["queued", "processing"].includes(status);
+  const labels = {
+    queued: "AI待機中",
+    processing: "AI解析中",
+    completed: "完了",
+    needs_review: "要確認",
+    error: "エラー",
+    stalled: "停止中",
+    cancelled: "中止済み"
+  };
+  return `<span class="evidence-status-pill ${escapeHtml(status)}${active ? " active" : ""}">
+    <i aria-hidden="true"></i>${escapeHtml(labels[status] || "未解析")}
+  </span>`;
 }
 
 function canCancelAnalysis(record) {
