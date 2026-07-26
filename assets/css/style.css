@@ -1505,6 +1505,17 @@
       line-height: 1.55;
     }
 
+    .evidence-grading-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .evidence-grading-actions[hidden] {
+      display: none;
+    }
+
     .evidence-preview-image {
       display: block;
       width: 100%;
@@ -2911,16 +2922,20 @@
 
     .evidence-mark {
       position: absolute;
-      transform: translate(-50%, -50%);
       font-size: clamp(28px, 5vw, 64px);
-      font-weight: 950;
+      font-family: "Segoe Print", "Yu Gothic", cursive;
+      font-weight: 800;
       line-height: 1;
-      text-shadow: 0 2px 4px white;
+      text-shadow: 0 1px 3px rgba(255, 255, 255, 0.95);
+      opacity: 0.94;
     }
 
     .evidence-mark.correct { color: #ef4444; }
-    .evidence-mark.incorrect { color: #2563eb; }
+    .evidence-mark.incorrect { color: #ef4444; }
     .evidence-mark.unknown { color: #f59e0b; }
+    .evidence-mark.experimental {
+      filter: saturate(1.08);
+    }
 
     .evidence-gallery,
     .missing-evidence-grid {

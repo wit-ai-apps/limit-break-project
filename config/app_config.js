@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.18.3-dev";
-export const APP_RELEASE_NAME = "設定画面・支援者招待整理";
+export const APP_VERSION = "v4.18.4-dev";
+export const APP_RELEASE_NAME = "実験AI仮採点プレビュー";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -41,6 +41,17 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.18.4-dev",
+    date: "2026-07-26",
+    title: "実験AI仮採点プレビュー",
+    items: [
+      "保護者・支援者・先生向けにAI採点候補の〇×を画像上へ試験表示",
+      "〇×を人が採点したように位置ごとに傾きと形を変えて表示",
+      "仮採点はボタンを押した時だけ表示し、成績・弱点データへは反映しない",
+      "先生確認済みの採点表示と未確認の実験表示を明確に分離"
+    ]
+  },
   {
     version: "v4.18.3-dev",
     date: "2026-07-25",

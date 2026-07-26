@@ -52,7 +52,7 @@ import { fileToDataUrl } from "./evidence/evidence-upload.js";
 import {
   bindEvidencePreviewDialog,
   openEvidencePreviewRecord
-} from "./evidence/evidence-preview.js?v=4.18.3";
+} from "./evidence/evidence-preview.js?v=4.18.4";
 import { evidenceTypeForUnit, hasEvidence } from "./evidence/evidence-policy.js";
 import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.18.3";
 import {
@@ -208,6 +208,8 @@ import {
     const evidencePreviewImage = document.querySelector("#evidencePreviewImage");
     const evidencePreviewPdf = document.querySelector("#evidencePreviewPdf");
     const evidenceMarkLayer = document.querySelector("#evidenceMarkLayer");
+    const evidenceGradingActions = document.querySelector("#evidenceGradingActions");
+    const toggleExperimentalGradingButton = document.querySelector("#toggleExperimentalGradingButton");
     const appStartupGate = document.querySelector("#appStartupGate");
     const appStartupMessage = document.querySelector("#appStartupMessage");
     const startupUpdateButton = document.querySelector("#startupUpdateButton");
@@ -3825,10 +3827,15 @@ function renderScheduleDrawer() {
           meta: evidencePreviewMeta,
           image: evidencePreviewImage,
           pdf: evidencePreviewPdf,
-          markLayer: evidenceMarkLayer
+          markLayer: evidenceMarkLayer,
+          gradingActions: evidenceGradingActions,
+          experimentalButton: toggleExperimentalGradingButton
         },
         recordKey,
-        resolveEvidenceImageUrl
+        resolveEvidenceImageUrl,
+        {
+          allowExperimentalPreview: ["parent", "supporter", "teacher", "lead_teacher"].includes(currentRole)
+        }
       );
     }
 

@@ -729,19 +729,9 @@ export const analyzeEvidenceImage = onObjectFinalized(
       const proposedMarks = Array.isArray(analysis.answerMarks)
         ? analysis.answerMarks.filter((mark) => mark.result !== "unknown" && Number(mark.markConfidence) >= 0.98)
         : [];
-      const learningIssueIds = await saveLearningIssuesForEvidence({
-        db,
-        studentId: path.studentId,
-        recordId,
-        storagePath: object.name,
-        analysis,
-        recordContext: {
-          subject: analysis.subject,
-          course: analysis.course,
-          lesson: analysis.lesson,
-          part: analysis.part
-        }
-      });
+      // AI grading remains a proposal until a teacher confirms it.
+      // Do not let experimental marks alter weakness records or study plans.
+      const learningIssueIds = [];
       await recordRef.set({
         subject: analysis.subject || "未分類",
         course: analysis.course || "教材不明",
@@ -756,6 +746,9 @@ export const analyzeEvidenceImage = onObjectFinalized(
         nextLearningAction: analysis.nextLearningAction || "",
         learningIssueIds,
         learningIssueCount: learningIssueIds.length,
+        proposedLearningIssueCount: Array.isArray(analysis.learningIssues)
+          ? analysis.learningIssues.length
+          : 0,
         proposedGradingMarks: proposedMarks,
         gradingMarks: [],
         gradingReviewStatus: proposedMarks.length ? "teacher_confirmation_required" : "not_available",

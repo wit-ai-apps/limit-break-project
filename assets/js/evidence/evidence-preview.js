@@ -1,4 +1,31 @@
-export async function openEvidencePreviewRecord(key, records, elements, recordKey, resolveImageUrl) {
+function markTransform(mark, index) {
+  const x = Number(mark.x) || 0;
+  const y = Number(mark.y) || 0;
+  const seed = Math.round((x * 7) + (y * 11) + (index * 13));
+  const rotation = (seed % 17) - 8;
+  const scaleX = 0.9 + ((seed % 7) * 0.025);
+  const scaleY = 0.88 + ((seed % 5) * 0.035);
+  return `translate(-50%, -50%) rotate(${rotation}deg) scale(${scaleX}, ${scaleY})`;
+}
+
+export function renderEvidenceMarks(markLayer, marks = [], experimental = false) {
+  if (!markLayer) return;
+  markLayer.innerHTML = marks.map((mark, index) => `
+    <span class="evidence-mark ${mark.result === "correct" ? "correct" : mark.result === "incorrect" ? "incorrect" : "unknown"}${experimental ? " experimental" : ""}"
+      style="left:${Number(mark.x) || 0}%;top:${Number(mark.y) || 0}%;transform:${markTransform(mark, index)}">
+      ${mark.result === "correct" ? "〇" : mark.result === "incorrect" ? "×" : "?"}
+    </span>
+  `).join("");
+}
+
+export async function openEvidencePreviewRecord(
+  key,
+  records,
+  elements,
+  recordKey,
+  resolveImageUrl,
+  options = {}
+) {
   const record = records.find((item) => recordKey(item) === key);
   if (!record) return;
   elements.title.textContent = record.evidenceImageName || "提出画像";
@@ -20,8 +47,14 @@ export async function openEvidencePreviewRecord(key, records, elements, recordKe
 
   const gradingNote = record.gradingReviewStatus === "confirmed"
     ? "先生確認済み"
-    : "AIの〇×は先生確認前のため表示していません";
+    : "AI採点は未確認";
   elements.meta.textContent = `${record.subject || ""} ${record.course || ""} ${record.lesson || ""} ${record.part || ""} / ${record.testType || ""} / 回答数 ${record.answeredCount || "-"} / 正答率 ${record.score ? `${record.score}%` : "-"} / ${gradingNote} / 保存先 ${record.firebaseSyncStatus === "synced" ? "Firebase" : "端末内"}`;
+  if (elements.gradingActions) elements.gradingActions.hidden = true;
+  if (elements.experimentalButton) {
+    elements.experimentalButton.onclick = null;
+    elements.experimentalButton.textContent = "AI仮採点を表示";
+    elements.experimentalButton.setAttribute("aria-pressed", "false");
+  }
   const isPdf = record.evidenceImageType === "application/pdf" || /\.pdf$/i.test(record.evidenceImageName || "");
   if (isPdf && elements.pdf) {
     elements.image.hidden = true;
@@ -54,15 +87,25 @@ export async function openEvidencePreviewRecord(key, records, elements, recordKe
   };
   elements.image.src = src;
   if (elements.markLayer) {
-    const marks = record.gradingReviewStatus === "confirmed" && Array.isArray(record.gradingMarks)
+    const confirmedMarks = record.gradingReviewStatus === "confirmed" && Array.isArray(record.gradingMarks)
       ? record.gradingMarks
       : [];
-    elements.markLayer.innerHTML = marks.map((mark) => `
-      <span class="evidence-mark ${mark.result === "correct" ? "correct" : mark.result === "incorrect" ? "incorrect" : "unknown"}"
-        style="left:${Number(mark.x) || 0}%;top:${Number(mark.y) || 0}%">
-        ${mark.result === "correct" ? "〇" : mark.result === "incorrect" ? "×" : "?"}
-      </span>
-    `).join("");
+    renderEvidenceMarks(elements.markLayer, confirmedMarks);
+    const proposedMarks = Array.isArray(record.proposedGradingMarks) ? record.proposedGradingMarks : [];
+    const canExperiment = options.allowExperimentalPreview && !confirmedMarks.length && proposedMarks.length > 0;
+    if (canExperiment && elements.experimentalButton) {
+      if (elements.gradingActions) elements.gradingActions.hidden = false;
+      let showing = false;
+      elements.experimentalButton.onclick = () => {
+        showing = !showing;
+        renderEvidenceMarks(elements.markLayer, showing ? proposedMarks : [], showing);
+        elements.experimentalButton.textContent = showing ? "AI仮採点を隠す" : "AI仮採点を表示";
+        elements.experimentalButton.setAttribute("aria-pressed", String(showing));
+        elements.meta.textContent = showing
+          ? `${record.subject || ""} ${record.course || ""} / AI仮採点を実験表示中（未確定・記録へ反映なし）`
+          : `${record.subject || ""} ${record.course || ""} / AI採点は未確認`;
+      };
+    }
   }
 }
 
@@ -78,5 +121,7 @@ export function bindEvidencePreviewDialog({ dialog, image, pdf, closeButton }) {
       pdf.hidden = true;
     }
     dialog.querySelector(".evidence-mark-layer")?.replaceChildren();
+    const gradingActions = dialog.querySelector("#evidenceGradingActions");
+    if (gradingActions) gradingActions.hidden = true;
   });
 }
