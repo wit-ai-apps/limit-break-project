@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.svg">
-  <link rel="stylesheet" href="assets/css/style.css?v=4.18.6">
+  <link rel="stylesheet" href="assets/css/style.css?v=4.18.7">
 </head>
 <body data-role="student" data-auth="out">
   <div class="app-startup-gate" id="appStartupGate" role="status" aria-live="polite">
@@ -492,6 +492,7 @@
       <div class="evidence-preview-meta" id="evidencePreviewMeta"></div>
       <div class="evidence-grading-actions" id="evidenceGradingActions" hidden>
         <button class="secondary" type="button" id="toggleExperimentalGradingButton">AI仮採点を表示</button>
+        <button class="secondary" type="button" id="regradeEvidenceButton">二重AIで再採点</button>
         <span class="button-note" id="experimentalGradingNote">実験表示です。成績・弱点データには反映されません。</span>
       </div>
       <div class="evidence-preview-stage">
@@ -502,6 +503,6 @@
     </div>
   </dialog>
 
-  <script type="module" src="assets/js/app.js?v=4.18.6"></script>
+  <script type="module" src="assets/js/app.js?v=4.18.7"></script>
 </body>
 </html>

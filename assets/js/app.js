@@ -52,7 +52,7 @@ import { fileToDataUrl } from "./evidence/evidence-upload.js";
 import {
   bindEvidencePreviewDialog,
   openEvidencePreviewRecord
-} from "./evidence/evidence-preview.js?v=4.18.6";
+} from "./evidence/evidence-preview.js?v=4.18.7";
 import { evidenceTypeForUnit, hasEvidence } from "./evidence/evidence-policy.js";
 import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.18.5";
 import {
@@ -210,6 +210,7 @@ import {
     const evidenceMarkLayer = document.querySelector("#evidenceMarkLayer");
     const evidenceGradingActions = document.querySelector("#evidenceGradingActions");
     const toggleExperimentalGradingButton = document.querySelector("#toggleExperimentalGradingButton");
+    const regradeEvidenceButton = document.querySelector("#regradeEvidenceButton");
     const appStartupGate = document.querySelector("#appStartupGate");
     const appStartupMessage = document.querySelector("#appStartupMessage");
     const startupUpdateButton = document.querySelector("#startupUpdateButton");
@@ -3926,6 +3927,40 @@ function renderScheduleDrawer() {
       }
     }
 
+    async function regradeEvidence(record, button) {
+      if (!record?.firebaseDocumentId || !record.evidenceStoragePath) {
+        alert("Firebaseに保存された画像だけ再採点できます。画像を再提出してください。");
+        return;
+      }
+      if (!confirm(`${record.evidenceImageName || "この画像"}をGeminiとTerraで再採点しますか？`)) return;
+      if (button) {
+        button.disabled = true;
+        button.textContent = "再採点を依頼中...";
+      }
+      try {
+        await callGroupFunction("regradeEvidenceAnalysis", {
+          studentId: firebaseBridge.studentId,
+          recordId: record.firebaseDocumentId
+        });
+        record.aiAnalysisStatus = "queued";
+        record.aiAnalysisError = "";
+        record.gradingReviewStatus = "not_available";
+        record.proposedGradingMarks = [];
+        record.gradingDisagreements = [];
+        record.aiConsensusSummary = null;
+        saveEvidenceRecords(STORAGE_KEY, records);
+        evidencePreviewDialog.close();
+        render();
+        alert("二重AIで再採点を開始しました。完了後に結果が更新されます。");
+      } catch (error) {
+        if (button) {
+          button.disabled = false;
+          button.textContent = "二重AIで再採点";
+        }
+        alert(`再採点を開始できませんでした。${error.message || error}`);
+      }
+    }
+
     function recordKey(record) {
       return record.firebaseDocumentId || `${record.date}_${record.missionId}_${String(record.savedAt || "")}`;
     }
@@ -3942,12 +3977,14 @@ function renderScheduleDrawer() {
           pdf: evidencePreviewPdf,
           markLayer: evidenceMarkLayer,
           gradingActions: evidenceGradingActions,
-          experimentalButton: toggleExperimentalGradingButton
+          experimentalButton: toggleExperimentalGradingButton,
+          regradeButton: regradeEvidenceButton
         },
         recordKey,
         resolveEvidenceImageUrl,
         {
-          allowExperimentalPreview: ["parent", "supporter", "teacher", "lead_teacher"].includes(currentRole)
+          allowExperimentalPreview: ["parent", "supporter", "teacher", "lead_teacher"].includes(currentRole),
+          onRegrade: regradeEvidence
         }
       );
     }
