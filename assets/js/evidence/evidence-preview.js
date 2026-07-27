@@ -47,6 +47,67 @@ export function gradingReviewReasonText(record = {}) {
   return `要確認理由 ${details.join(" / ")}`;
 }
 
+function escapeReviewText(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+function proposedReferenceAnswer(item = {}) {
+  const primary = String(item.primary?.correctAnswer || "").trim();
+  const reviewer = String(item.reviewer?.correctAnswer || "").trim();
+  return primary && primary === reviewer ? primary : primary || reviewer;
+}
+
+export function humanGradingPanelHtml(record = {}) {
+  const disagreements = Array.isArray(record.gradingDisagreements)
+    ? record.gradingDisagreements
+    : [];
+  if (!disagreements.length) return "";
+  const items = disagreements.map((item, index) => {
+    const referenceAnswer = proposedReferenceAnswer(item);
+    return `
+      <article class="human-review-item" data-review-index="${index}">
+        <strong>${escapeReviewText(item.label || `設問${index + 1}`)}：${escapeReviewText(item.reason || "AI判定が一致しません")}</strong>
+        <div class="human-review-comparison">
+          <span>Gemini 読取: ${escapeReviewText(item.primary?.detectedAnswer || "未検出")} ／ 模範解答案: ${escapeReviewText(item.primary?.correctAnswer || "不明")}</span>
+          <span>Terra 読取: ${escapeReviewText(item.reviewer?.detectedAnswer || "未検出")} ／ 模範解答案: ${escapeReviewText(item.reviewer?.correctAnswer || "不明")}</span>
+        </div>
+        <div class="human-review-controls">
+          <label>人間が確認した模範解答
+            <input type="text" data-human-correct-answer value="${escapeReviewText(referenceAnswer)}" placeholder="正答を入力">
+          </label>
+          <label><input type="radio" name="human-result-${index}" value="correct"> 〇</label>
+          <label><input type="radio" name="human-result-${index}" value="incorrect"> ×</label>
+        </div>
+      </article>
+    `;
+  }).join("");
+  return `
+    <h3>再採点結果：人間による確認が必要です</h3>
+    <p class="button-note">不一致理由と2つのAIの模範解答案を確認し、各設問へ〇または×を付けてください。</p>
+    ${items}
+    <button class="primary" type="button" data-confirm-human-grading>人間の採点を確定</button>
+  `;
+}
+
+function humanGradingDecisions(panel, record) {
+  const disagreements = Array.isArray(record.gradingDisagreements)
+    ? record.gradingDisagreements
+    : [];
+  return disagreements.map((item, index) => {
+    const container = panel.querySelector(`[data-review-index="${index}"]`);
+    return {
+      index,
+      label: item.label || `設問${index + 1}`,
+      result: container?.querySelector(`input[name="human-result-${index}"]:checked`)?.value || "",
+      correctAnswer: container?.querySelector("[data-human-correct-answer]")?.value?.trim() || ""
+    };
+  });
+}
+
 export async function openEvidencePreviewRecord(
   key,
   records,
@@ -154,6 +215,24 @@ export async function openEvidencePreviewRecord(
       elements.experimentalButton.hidden = true;
     }
   }
+  if (elements.humanGradingPanel) {
+    const canHumanGrade = Boolean(
+      options.onConfirmHumanGrading
+      && record.gradingReviewStatus !== "confirmed"
+      && Array.isArray(record.gradingDisagreements)
+      && record.gradingDisagreements.length
+    );
+    elements.humanGradingPanel.hidden = !canHumanGrade;
+    elements.humanGradingPanel.innerHTML = canHumanGrade ? humanGradingPanelHtml(record) : "";
+    if (canHumanGrade) {
+      const confirmButton = elements.humanGradingPanel.querySelector("[data-confirm-human-grading]");
+      confirmButton.onclick = () => options.onConfirmHumanGrading(
+        record,
+        humanGradingDecisions(elements.humanGradingPanel, record),
+        confirmButton
+      );
+    }
+  }
 }
 
 export function bindEvidencePreviewDialog({ dialog, image, pdf, closeButton }) {
@@ -174,6 +253,11 @@ export function bindEvidencePreviewDialog({ dialog, image, pdf, closeButton }) {
     if (regradeButton) {
       regradeButton.onclick = null;
       regradeButton.disabled = false;
+    }
+    const humanGradingPanel = dialog.querySelector("#humanGradingPanel");
+    if (humanGradingPanel) {
+      humanGradingPanel.replaceChildren();
+      humanGradingPanel.hidden = true;
     }
   });
 }

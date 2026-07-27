@@ -52,7 +52,7 @@ import { fileToDataUrl } from "./evidence/evidence-upload.js";
 import {
   bindEvidencePreviewDialog,
   openEvidencePreviewRecord
-} from "./evidence/evidence-preview.js?v=4.18.8";
+} from "./evidence/evidence-preview.js?v=4.18.9";
 import { evidenceTypeForUnit, hasEvidence } from "./evidence/evidence-policy.js";
 import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.18.5";
 import {
@@ -211,6 +211,7 @@ import {
     const evidenceGradingActions = document.querySelector("#evidenceGradingActions");
     const toggleExperimentalGradingButton = document.querySelector("#toggleExperimentalGradingButton");
     const regradeEvidenceButton = document.querySelector("#regradeEvidenceButton");
+    const humanGradingPanel = document.querySelector("#humanGradingPanel");
     const appStartupGate = document.querySelector("#appStartupGate");
     const appStartupMessage = document.querySelector("#appStartupMessage");
     const startupUpdateButton = document.querySelector("#startupUpdateButton");
@@ -3961,6 +3962,42 @@ function renderScheduleDrawer() {
       }
     }
 
+    async function confirmHumanGrading(record, decisions, button) {
+      const incomplete = decisions.find((decision) =>
+        !["correct", "incorrect"].includes(decision.result) || !decision.correctAnswer
+      );
+      if (incomplete) {
+        alert(`${incomplete.label}の模範解答と〇・×を入力してください。`);
+        return;
+      }
+      if (!confirm("入力した人間の採点を正式結果として確定しますか？")) return;
+      if (button) {
+        button.disabled = true;
+        button.textContent = "採点を保存中...";
+      }
+      try {
+        const response = await callGroupFunction("confirmEvidenceGrading", {
+          studentId: firebaseBridge.studentId,
+          recordId: record.firebaseDocumentId,
+          decisions
+        });
+        record.gradingMarks = Array.isArray(response.gradingMarks) ? response.gradingMarks : [];
+        record.gradingReviewStatus = "confirmed";
+        record.aiAnalysisStatus = "completed";
+        record.humanGradingConfirmedAt = new Date().toISOString();
+        saveEvidenceRecords(STORAGE_KEY, records);
+        evidencePreviewDialog.close();
+        render();
+        alert("人間の採点を正式結果として保存しました。");
+      } catch (error) {
+        if (button) {
+          button.disabled = false;
+          button.textContent = "人間の採点を確定";
+        }
+        alert(`採点を保存できませんでした。${error.message || error}`);
+      }
+    }
+
     function recordKey(record) {
       return record.firebaseDocumentId || `${record.date}_${record.missionId}_${String(record.savedAt || "")}`;
     }
@@ -3978,13 +4015,17 @@ function renderScheduleDrawer() {
           markLayer: evidenceMarkLayer,
           gradingActions: evidenceGradingActions,
           experimentalButton: toggleExperimentalGradingButton,
-          regradeButton: regradeEvidenceButton
+          regradeButton: regradeEvidenceButton,
+          humanGradingPanel
         },
         recordKey,
         resolveEvidenceImageUrl,
         {
           allowExperimentalPreview: ["parent", "supporter", "teacher", "lead_teacher"].includes(currentRole),
-          onRegrade: regradeEvidence
+          onRegrade: regradeEvidence,
+          onConfirmHumanGrading: ["parent", "teacher", "lead_teacher"].includes(currentRole)
+            ? confirmHumanGrading
+            : null
         }
       );
     }
