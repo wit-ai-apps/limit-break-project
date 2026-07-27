@@ -427,6 +427,72 @@ export const regradeEvidenceAnalysis = onCall(
   }
 );
 
+export const confirmEvidenceGrading = onCall({ region: "us-east1" }, async (request) => {
+  const uid = requireAuth(request);
+  const { data: user } = await requireUser(uid);
+  const studentId = String(request.data?.studentId || "").trim();
+  const recordId = String(request.data?.recordId || "").trim();
+  const decisions = Array.isArray(request.data?.decisions) ? request.data.decisions : [];
+  if (!studentId || !recordId || !linkedToStudent(user, studentId)
+    || !["parent", "teacher", "lead_teacher", "admin"].includes(user.role)) {
+    throw new HttpsError("permission-denied", "GRADING_CONFIRMATION_NOT_ALLOWED");
+  }
+  const recordRef = getFirestore().doc(`students/${studentId}/evidence_records/${recordId}`);
+  const snapshot = await recordRef.get();
+  if (!snapshot.exists) throw new HttpsError("not-found", "EVIDENCE_NOT_FOUND");
+  const record = snapshot.data();
+  const disagreements = Array.isArray(record.gradingDisagreements)
+    ? record.gradingDisagreements
+    : [];
+  if (!disagreements.length) {
+    throw new HttpsError("failed-precondition", "NO_GRADING_DISAGREEMENTS");
+  }
+  if (decisions.length !== disagreements.length) {
+    throw new HttpsError("invalid-argument", "ALL_DISAGREEMENTS_REQUIRE_DECISIONS");
+  }
+
+  const humanMarks = disagreements.map((item, index) => {
+    const decision = decisions.find((candidate) => Number(candidate?.index) === index);
+    const result = String(decision?.result || "");
+    const correctAnswer = String(decision?.correctAnswer || "").trim().slice(0, 120);
+    if (!["correct", "incorrect"].includes(result) || !correctAnswer) {
+      throw new HttpsError("invalid-argument", "INVALID_HUMAN_GRADING_DECISION");
+    }
+    return {
+      label: String(item.label || `設問${index + 1}`).slice(0, 80),
+      x: Number(item.x) || 0,
+      y: Number(item.y) || 0,
+      result,
+      detectedAnswer: item.primary?.detectedAnswer || item.reviewer?.detectedAnswer || "",
+      correctAnswer,
+      markConfidence: 1,
+      verification: "human_confirmed",
+      evidenceBasis: "人間が答案画像とAIの模範解答案を確認して確定"
+    };
+  });
+  const consensusMarks = Array.isArray(record.proposedGradingMarks)
+    ? record.proposedGradingMarks
+    : [];
+  const gradingMarks = [...consensusMarks, ...humanMarks];
+  await recordRef.set({
+    gradingMarks,
+    gradingReviewStatus: "confirmed",
+    aiAnalysisStatus: "completed",
+    humanGradingReview: {
+      confirmedBy: uid,
+      confirmerRole: user.role,
+      decisions: humanMarks.map((mark) => ({
+        label: mark.label,
+        result: mark.result,
+        correctAnswer: mark.correctAnswer
+      }))
+    },
+    humanGradingConfirmedAt: FieldValue.serverTimestamp(),
+    aiAnalysisUpdatedAt: FieldValue.serverTimestamp()
+  }, { merge: true });
+  return { status: "confirmed", gradingMarks };
+});
+
 export const cancelEvidenceAnalysis = onCall({ region: "us-east1" }, async (request) => {
   const uid = requireAuth(request);
   const { data: user } = await requireUser(uid);

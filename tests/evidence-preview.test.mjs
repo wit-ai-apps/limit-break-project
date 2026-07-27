@@ -4,6 +4,7 @@ import { canRenderEvidenceRecord } from "../assets/js/evidence/evidence-policy.j
 import {
   gradingReviewReasonText,
   gradingSummaryText,
+  humanGradingPanelHtml,
   openEvidencePreviewRecord,
   renderEvidenceMarks
 } from "../assets/js/evidence/evidence-preview.js";
@@ -165,4 +166,20 @@ test("Firebase保存済みの未確定画像は二重AIで再採点できる", a
   assert.equal(gradingActions.hidden, false);
   regradeButton.onclick();
   assert.equal(requestedRecord, record);
+});
+
+test("AI不一致理由と模範解答案を人間採点画面へ表示する", () => {
+  const html = humanGradingPanelHtml({
+    gradingDisagreements: [{
+      label: "(2)x",
+      reason: "計算した正答が一致しません",
+      primary: { detectedAnswer: "75", correctAnswer: "75" },
+      reviewer: { detectedAnswer: "75", correctAnswer: "70" }
+    }]
+  });
+  assert.match(html, /計算した正答が一致しません/);
+  assert.match(html, /Gemini 読取: 75/);
+  assert.match(html, /模範解答案: 75/);
+  assert.match(html, /模範解答案: 70/);
+  assert.match(html, /人間の採点を確定/);
 });

@@ -1516,6 +1516,46 @@
       display: none;
     }
 
+    .human-grading-panel {
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid rgba(245, 158, 11, 0.32);
+      border-radius: 14px;
+      background: rgba(245, 158, 11, 0.07);
+    }
+
+    .human-grading-panel[hidden] {
+      display: none;
+    }
+
+    .human-review-item {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+      border-radius: 12px;
+      background: rgba(255, 255, 255, 0.72);
+    }
+
+    .human-review-comparison {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 8px;
+      font-size: 0.9rem;
+    }
+
+    .human-review-controls {
+      display: flex;
+      gap: 10px;
+      align-items: end;
+      flex-wrap: wrap;
+    }
+
+    .human-review-controls label {
+      display: grid;
+      gap: 4px;
+    }
+
     .evidence-preview-image {
       display: block;
       width: 100%;

@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.18.8-dev";
-export const APP_RELEASE_NAME = "二重AI再採点の耐障害化";
+export const APP_VERSION = "v4.18.9-dev";
+export const APP_RELEASE_NAME = "模範解答付き人間採点";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -41,6 +41,16 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.18.9-dev",
+    date: "2026-07-27",
+    title: "模範解答付き人間採点",
+    items: [
+      "再採点後のAI不一致理由を設問ごとに表示",
+      "GeminiとTerraの読取結果・模範解答案を並べて表示",
+      "保護者・講師が模範解答を確認し〇×を正式確定できる画面を追加"
+    ]
+  },
   {
     version: "v4.18.8-dev",
     date: "2026-07-27",
