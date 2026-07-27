@@ -768,7 +768,7 @@ async function requestEvidenceAnalysis({
   reasoningEffort
 }) {
   const startedAt = Date.now();
-  const response = await openrouter.chat.completions.create({
+  const request = {
     model,
     messages: [{
       role: "user",
@@ -793,9 +793,22 @@ async function requestEvidenceAnalysis({
         schema: ANALYSIS_SCHEMA
       }
     },
-    reasoning_effort: reasoningEffort,
+    ...(reasoningEffort ? { reasoning_effort: reasoningEffort } : {}),
     stream: false
-  });
+  };
+  let response;
+  try {
+    response = await openrouter.chat.completions.create(request);
+  } catch (error) {
+    // Some OpenRouter providers reject reasoning_effort even when the routed
+    // model otherwise supports image analysis. Retry once without that hint.
+    if (reasoningEffort && Number(error?.status) === 400) {
+      const { reasoning_effort: _ignored, ...compatibleRequest } = request;
+      response = await openrouter.chat.completions.create(compatibleRequest);
+    } else {
+      throw error;
+    }
+  }
   const output = response.choices?.[0]?.message?.content;
   if (!output) throw new Error(`${model} returned an empty analysis response.`);
   return {
@@ -878,8 +891,18 @@ export const analyzeEvidenceImage = onObjectFinalized(
           reasoningEffort: "medium"
         })
       ]);
-      if (primaryRun.status === "rejected") throw primaryRun.reason;
-      const primaryResult = primaryRun.value;
+      if (primaryRun.status === "rejected" && reviewerRun.status === "rejected") {
+        throw primaryRun.reason;
+      }
+      const primaryResult = primaryRun.status === "fulfilled"
+        ? primaryRun.value
+        : {
+            model: primaryVisionModel.value(),
+            analysis: { answerMarks: [] },
+            elapsedMs: null,
+            usage: null,
+            error: "PRIMARY_AI_UNAVAILABLE"
+          };
       const reviewerResult = reviewerRun.status === "fulfilled"
         ? reviewerRun.value
         : {
@@ -889,14 +912,17 @@ export const analyzeEvidenceImage = onObjectFinalized(
             usage: null,
             error: "REVIEW_AI_UNAVAILABLE"
           };
-      const analysis = primaryResult.analysis;
+      const analysis = primaryRun.status === "fulfilled"
+        ? primaryResult.analysis
+        : reviewerResult.analysis;
       const reviewAnalysis = reviewerResult.analysis;
-      const reconciliation = reconcileGradingAnalyses(analysis, reviewAnalysis, {
+      const reconciliation = reconcileGradingAnalyses(primaryResult.analysis, reviewAnalysis, {
         minimumConfidence: 0.9
       });
       const latestSnapshot = await recordRef.get();
       if (latestSnapshot.data()?.aiAnalysisStatus === "cancelled") return;
-      const classificationConfident = analysis.confidence >= 0.9 && !analysis.needsReview;
+      const bothModelsCompleted = primaryRun.status === "fulfilled" && reviewerRun.status === "fulfilled";
+      const classificationConfident = bothModelsCompleted && analysis.confidence >= 0.9 && !analysis.needsReview;
       const resultScreenConfident = analysis.documentType === "result_screen" && classificationConfident;
       const proposedMarks = reconciliation.consensusMarks;
       // AI grading remains a proposal until a teacher confirms it.
@@ -910,8 +936,13 @@ export const analyzeEvidenceImage = onObjectFinalized(
         testType: analysis.testType || "確認テスト",
         answeredCount: resultScreenConfident ? (analysis.answeredCount ?? "") : "",
         score: resultScreenConfident ? (analysis.correctRate ?? "") : "",
-        aiAnalysis: analysis,
+        aiAnalysis: primaryRun.status === "fulfilled" ? analysis : null,
         aiReviewAnalysis: reviewerRun.status === "fulfilled" ? reviewAnalysis : null,
+        aiAnalysisError: bothModelsCompleted
+          ? ""
+          : primaryRun.status === "rejected"
+            ? "PRIMARY_AI_UNAVAILABLE"
+            : "REVIEW_AI_UNAVAILABLE",
         strengthAnalysis: analysis.strengthAnalysis || "",
         weaknessAnalysis: analysis.weaknessAnalysis || "",
         nextLearningAction: analysis.nextLearningAction || "",
@@ -937,7 +968,8 @@ export const analyzeEvidenceImage = onObjectFinalized(
             role: "primary",
             model: primaryResult.model,
             elapsedMs: primaryResult.elapsedMs,
-            usage: primaryResult.usage
+            usage: primaryResult.usage,
+            status: primaryRun.status === "fulfilled" ? "completed" : "unavailable"
           },
           {
             role: "reviewer",
