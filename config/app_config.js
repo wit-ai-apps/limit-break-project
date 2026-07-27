@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.18.7-dev";
-export const APP_RELEASE_NAME = "提出画像の二重AI再採点";
+export const APP_VERSION = "v4.18.8-dev";
+export const APP_RELEASE_NAME = "二重AI再採点の耐障害化";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -41,6 +41,16 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.18.8-dev",
+    date: "2026-07-27",
+    title: "二重AI再採点の耐障害化",
+    items: [
+      "OpenRouterが推論設定を拒否した場合に互換設定で自動再試行",
+      "片方のAIが一時停止しても全体を解析エラーにせず要確認として保存",
+      "利用できなかったモデルを答案の実行履歴へ記録"
+    ]
+  },
   {
     version: "v4.18.7-dev",
     date: "2026-07-27",
