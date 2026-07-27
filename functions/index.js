@@ -363,6 +363,70 @@ export const recoverStalledEvidenceAnalyses = onCall(
   }
 );
 
+export const regradeEvidenceAnalysis = onCall(
+  { region: "us-east1", memory: "1GiB", timeoutSeconds: 120 },
+  async (request) => {
+    const uid = requireAuth(request);
+    const { data: user } = await requireUser(uid);
+    const studentId = String(request.data?.studentId || "").trim();
+    const recordId = String(request.data?.recordId || "").trim();
+    const allowedRoles = ["student", "parent", "supporter", "teacher", "lead_teacher", "admin"];
+    if (!studentId || !recordId || !linkedToStudent(user, studentId) || !allowedRoles.includes(user.role)) {
+      throw new HttpsError("permission-denied", "REGRADE_NOT_ALLOWED");
+    }
+    const recordRef = getFirestore().doc(`students/${studentId}/evidence_records/${recordId}`);
+    const snapshot = await recordRef.get();
+    if (!snapshot.exists) throw new HttpsError("not-found", "EVIDENCE_NOT_FOUND");
+    const record = snapshot.data();
+    if (!record.evidenceStoragePath) {
+      throw new HttpsError("failed-precondition", "EVIDENCE_IMAGE_NOT_STORED");
+    }
+    if (record.gradingReviewStatus === "confirmed") {
+      throw new HttpsError("failed-precondition", "CONFIRMED_GRADING_CANNOT_BE_REPLACED");
+    }
+    if (["queued", "processing"].includes(record.aiAnalysisStatus)) {
+      return { status: record.aiAnalysisStatus, changed: false };
+    }
+
+    const bucketName = `${process.env.GCLOUD_PROJECT || "cortex-limit-break"}.firebasestorage.app`;
+    const file = getStorage().bucket(bucketName).file(record.evidenceStoragePath);
+    try {
+      const [[buffer], [metadata]] = await Promise.all([file.download(), file.getMetadata()]);
+      await recordRef.set({
+        aiAnalysisStatus: "queued",
+        aiAnalysisError: "",
+        aiAnalysisRetryCount: FieldValue.increment(1),
+        aiAnalysisRequestedBy: uid,
+        aiAnalysisUpdatedAt: FieldValue.serverTimestamp(),
+        gradingMarks: [],
+        proposedGradingMarks: [],
+        gradingDisagreements: [],
+        aiConsensusSummary: null,
+        gradingReviewStatus: "not_available"
+      }, { merge: true });
+      await file.save(buffer, {
+        resumable: false,
+        contentType: metadata.contentType || record.evidenceImageType || "image/jpeg",
+        metadata: {
+          metadata: {
+            ...(metadata.metadata || {}),
+            retry_id: String(Date.now()),
+            retry_requested_by: uid
+          }
+        }
+      });
+      return { status: "queued", changed: true };
+    } catch (_) {
+      await recordRef.set({
+        aiAnalysisStatus: "error",
+        aiAnalysisError: "AI_REGRADE_REQUEST_FAILED",
+        aiAnalysisUpdatedAt: FieldValue.serverTimestamp()
+      }, { merge: true });
+      throw new HttpsError("internal", "AI_REGRADE_REQUEST_FAILED");
+    }
+  }
+);
+
 export const cancelEvidenceAnalysis = onCall({ region: "us-east1" }, async (request) => {
   const uid = requireAuth(request);
   const { data: user } = await requireUser(uid);

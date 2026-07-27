@@ -131,3 +131,38 @@ test("2つのAIの一致件数と要確認件数を表示する", () => {
     ]
   }), "要確認理由 (2)x: 計算した正答が一致しません");
 });
+
+test("Firebase保存済みの未確定画像は二重AIで再採点できる", async () => {
+  const record = {
+    id: "record-4",
+    firebaseDocumentId: "record-4",
+    evidenceImageName: "needs-review.png",
+    evidenceImageUrl: "https://example.invalid/needs-review.png",
+    evidenceStoragePath: "students/STU_1/evidence/needs-review.png",
+    aiAnalysisStatus: "needs_review",
+    gradingReviewStatus: "ai_disagreement",
+    firebaseSyncStatus: "synced"
+  };
+  const regradeButton = { hidden: true, disabled: false, textContent: "", onclick: null };
+  const gradingActions = { hidden: true };
+  let requestedRecord = null;
+  await openEvidencePreviewRecord(
+    "record-4",
+    [record],
+    {
+      title: { textContent: "" },
+      meta: { textContent: "" },
+      image: { src: "", hidden: false },
+      gradingActions,
+      regradeButton,
+      dialog: { open: true, showModal() {} }
+    },
+    (item) => item.id,
+    undefined,
+    { onRegrade: (item) => { requestedRecord = item; } }
+  );
+  assert.equal(regradeButton.hidden, false);
+  assert.equal(gradingActions.hidden, false);
+  regradeButton.onclick();
+  assert.equal(requestedRecord, record);
+});

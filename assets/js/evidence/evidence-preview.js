@@ -78,7 +78,24 @@ export async function openEvidencePreviewRecord(
   const reviewReason = gradingReviewReasonText(record);
   elements.meta.textContent = `${record.subject || ""} ${record.course || ""} ${record.lesson || ""} ${record.part || ""} / ${record.testType || ""} / 回答数 ${record.answeredCount || "-"} / 正答率 ${record.score ? `${record.score}%` : "-"} / ${gradingNote}${reviewReason ? ` / ${reviewReason}` : ""} / 保存先 ${record.firebaseSyncStatus === "synced" ? "Firebase" : "端末内"}`;
   if (elements.gradingActions) elements.gradingActions.hidden = true;
+  if (elements.regradeButton) {
+    const canRegrade = Boolean(
+      options.onRegrade
+      && record.firebaseDocumentId
+      && record.evidenceStoragePath
+      && record.gradingReviewStatus !== "confirmed"
+      && !["queued", "processing"].includes(record.aiAnalysisStatus)
+    );
+    elements.regradeButton.hidden = !canRegrade;
+    elements.regradeButton.disabled = false;
+    elements.regradeButton.textContent = "二重AIで再採点";
+    elements.regradeButton.onclick = canRegrade
+      ? () => options.onRegrade(record, elements.regradeButton)
+      : null;
+    if (canRegrade && elements.gradingActions) elements.gradingActions.hidden = false;
+  }
   if (elements.experimentalButton) {
+    elements.experimentalButton.hidden = false;
     elements.experimentalButton.onclick = null;
     elements.experimentalButton.textContent = "AI仮採点を表示";
     elements.experimentalButton.setAttribute("aria-pressed", "false");
@@ -133,6 +150,8 @@ export async function openEvidencePreviewRecord(
           ? `${record.subject || ""} ${record.course || ""} / 2つのAIが一致した仮採点だけ表示中（未確定・記録へ反映なし）`
           : `${record.subject || ""} ${record.course || ""} / ${gradingSummaryText(record)}${gradingReviewReasonText(record) ? ` / ${gradingReviewReasonText(record)}` : ""}`;
       };
+    } else if (elements.experimentalButton) {
+      elements.experimentalButton.hidden = true;
     }
   }
 }
@@ -151,5 +170,10 @@ export function bindEvidencePreviewDialog({ dialog, image, pdf, closeButton }) {
     dialog.querySelector(".evidence-mark-layer")?.replaceChildren();
     const gradingActions = dialog.querySelector("#evidenceGradingActions");
     if (gradingActions) gradingActions.hidden = true;
+    const regradeButton = dialog.querySelector("#regradeEvidenceButton");
+    if (regradeButton) {
+      regradeButton.onclick = null;
+      regradeButton.disabled = false;
+    }
   });
 }

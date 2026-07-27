@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.18.6-dev";
-export const APP_RELEASE_NAME = "2つのAIによる仮採点照合";
+export const APP_VERSION = "v4.18.7-dev";
+export const APP_RELEASE_NAME = "提出画像の二重AI再採点";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -41,6 +41,16 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.18.7-dev",
+    date: "2026-07-27",
+    title: "提出画像の二重AI再採点",
+    items: [
+      "画像詳細から既存画像を再アップロードせず再採点可能",
+      "Gemini 3.6 FlashとGPT-5.6 Terraによる二重判定を再実行",
+      "先生確認済みや解析中の答案は再採点できない安全制御を追加"
+    ]
+  },
   {
     version: "v4.18.6-dev",
     date: "2026-07-27",
