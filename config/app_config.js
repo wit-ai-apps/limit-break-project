@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.18.5-dev";
-export const APP_RELEASE_NAME = "提出画像フォルダ・進捗管理";
+export const APP_VERSION = "v4.18.6-dev";
+export const APP_RELEASE_NAME = "2つのAIによる仮採点照合";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -41,6 +41,18 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.18.6-dev",
+    date: "2026-07-27",
+    title: "2つのAIによる仮採点照合",
+    items: [
+      "Gemini 3.6 Flashを第一採点、GPT-5.6 Terraを独立再判定として使用",
+      "手書き解答・計算した正答・〇×が一致した設問だけを仮採点候補に採用",
+      "2つのAIの読取・正答・判定が違う設問を理由付きの要確認へ振り分け",
+      "再判定AIが利用できない場合は誤採点を表示せず要確認として停止",
+      "答案ごとにモデル名・処理時間・トークン・費用を記録"
+    ]
+  },
   {
     version: "v4.18.5-dev",
     date: "2026-07-26",

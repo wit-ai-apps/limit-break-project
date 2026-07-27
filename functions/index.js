@@ -9,6 +9,7 @@ import { onSchedule } from "firebase-functions/v2/scheduler";
 import { HttpsError, onCall } from "firebase-functions/v2/https";
 import OpenAI from "openai";
 import { buildAdaptivePlan, dateKeyJst, DEFAULT_DEADLINE } from "./adaptive-scheduler.js";
+import { reconcileGradingAnalyses } from "./dual-ai-grading.js";
 import {
   INVITE_PERMISSIONS,
   INVITE_ROLES,
@@ -25,7 +26,12 @@ import { buildVerifiedLearningIssues } from "./learning-issues.js";
 initializeApp();
 
 const openRouterApiKey = defineSecret("OPENROUTER_API_KEY");
-const visionModel = defineString("OPENROUTER_VISION_MODEL", { default: "openai/gpt-4o-mini" });
+const primaryVisionModel = defineString("OPENROUTER_PRIMARY_VISION_MODEL", {
+  default: "google/gemini-3.6-flash"
+});
+const reviewVisionModel = defineString("OPENROUTER_REVIEW_VISION_MODEL", {
+  default: "openai/gpt-5.6-terra"
+});
 const adaptiveDeadline = defineString("ADAPTIVE_PLAN_DEADLINE", { default: DEFAULT_DEADLINE });
 
 function requireAuth(request) {
@@ -666,6 +672,81 @@ export const rebuildAdaptiveScheduleOnEvidence = onDocumentWritten(
   async (event) => rebuildPlanForStudent(event.params.studentId)
 );
 
+function evidenceAnalysisPrompt(role) {
+  return [
+    `あなたは日本の学習答案を採点する${role}です。ほかのAIの回答は見ず、独立して判定してください。`,
+    "教科、教材名、講、PART/Chapter、単元、テスト種別、回答数、正答率を抽出してください。",
+    "次の登録教材を優先して照合してください。完全一致しなければ画像内表記を使ってください。",
+    JSON.stringify(MATERIAL_HINTS),
+    "読めない値は空文字またはnullにし、推測が強い場合はneedsReview=trueにしてください。",
+    "問題文や解答本文は保存せず、detectedTextSummaryは識別に必要な短い見出しだけにしてください。",
+    "最初にdocumentTypeを結果画面・答案・問題用紙・不明へ分類してください。",
+    "答案の採点は、問題文・生徒解答・数学的に検証した正答の3点がそろう設問だけ行ってください。",
+    "正答表が画像にない場合も、計算・論証できる問題は自分で解いて正答を検証してください。",
+    "図形、角度、根号、分数、選択肢、複数解答枠を別々に確認してください。",
+    "1点でも不明ならresult=unknownとし、ページ全体ではなく設問単位で判定してください。",
+    "answerMarksのx,yは実際の解答記入欄の中心を画像左上基準の百分率で返してください。",
+    "見出し、余白、印刷例、得点欄、アプリ操作欄、サムネイルには採点位置を置かないでください。",
+    "各markConfidenceと、正誤判断の短い根拠evidenceBasisを返してください。",
+    "できた点、弱点、次の学習は短く返してください。答案から正答率を推測計算しないでください。",
+    "learningIssuesはresult=incorrectで、問題・生徒解答・正答が明瞭な設問だけ返してください。",
+    "個人情報や問題文全体は出力しないでください。"
+  ].join("\n");
+}
+
+async function requestEvidenceAnalysis({
+  openrouter,
+  model,
+  role,
+  dataUrl,
+  isPdf,
+  fileName,
+  reasoningEffort
+}) {
+  const startedAt = Date.now();
+  const response = await openrouter.chat.completions.create({
+    model,
+    messages: [{
+      role: "user",
+      content: [
+        { type: "text", text: evidenceAnalysisPrompt(role) },
+        isPdf
+          ? { type: "file", file: { filename: fileName, file_data: dataUrl } }
+          : { type: "image_url", image_url: { url: dataUrl, detail: "high" } }
+      ]
+    }],
+    ...(isPdf ? {
+      plugins: [{
+        id: "file-parser",
+        pdf: { engine: "cloudflare-ai" }
+      }]
+    } : {}),
+    response_format: {
+      type: "json_schema",
+      json_schema: {
+        name: "evidence_analysis",
+        strict: true,
+        schema: ANALYSIS_SCHEMA
+      }
+    },
+    reasoning_effort: reasoningEffort,
+    stream: false
+  });
+  const output = response.choices?.[0]?.message?.content;
+  if (!output) throw new Error(`${model} returned an empty analysis response.`);
+  return {
+    model,
+    analysis: JSON.parse(output),
+    elapsedMs: Date.now() - startedAt,
+    usage: response.usage ? {
+      promptTokens: response.usage.prompt_tokens ?? null,
+      completionTokens: response.usage.completion_tokens ?? null,
+      totalTokens: response.usage.total_tokens ?? null,
+      cost: response.usage.cost ?? null
+    } : null
+  };
+}
+
 export const analyzeEvidenceImage = onObjectFinalized(
   {
     region: "us-east1",
@@ -712,61 +793,48 @@ export const analyzeEvidenceImage = onObjectFinalized(
           "X-OpenRouter-Title": "CORTEX Limit Break"
         }
       });
-      const response = await openrouter.chat.completions.create({
-        model: visionModel.value(),
-        messages: [{
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: [
-                "日本の高校学習用の確認テスト・答案・結果画面を解析してください。",
-                "教科、教材名、講、PART/Chapter、単元、テスト種別、回答数、正答率を抽出してください。",
-                "次の登録教材を優先して照合してください。完全一致しなければ画像内表記を使ってください。",
-                JSON.stringify(MATERIAL_HINTS),
-                "読めない値は空文字またはnullにし、推測が強い場合はneedsReview=trueにしてください。",
-                "問題文や解答本文は保存せず、detectedTextSummaryは識別に必要な短い見出しだけにしてください。"
-                ,"最初にdocumentTypeを結果画面・答案・問題用紙・不明へ分類してください。"
-                ,"答案の採点は、同じ設問の問題文・生徒の解答・検証可能な正解の3点がすべて明瞭に読める場合だけ行ってください。1点でも欠ける場合はresult=unknownとし、決して推測で正誤を決めないでください。"
-                ,"answerMarksのx,yは実際の解答記入欄の中心だけを画像左上基準の百分率で返してください。見出し、余白、印刷例、得点欄、問題ではない場所には置かないでください。"
-                ,"各markConfidenceと、正誤判断の短い根拠evidenceBasisを返してください。3点が完全に読めない場合markConfidenceは0.98未満にしてください。"
-                ,"できた点、弱点、次の学習は短く返してください。結果画面に表示済みの正答率は抽出できますが、答案から正答率を推測計算しないでください。"
-                ,"learningIssuesは、answerMarksでresult=incorrectかつ問題・生徒解答・正解が明瞭な設問だけを返してください。"
-                ,"各learningIssueには教科内の分野domain、単元unit、技能タグ、誤りの種類、80文字以内の問題要約を入れてください。問題文全体や氏名などの個人情報は入れないでください。"
-              ].join("\n")
-            },
-            isPdf
-              ? { type: "file", file: { filename: object.metadata?.original_file_name || path.fileName, file_data: dataUrl } }
-              : { type: "image_url", image_url: { url: dataUrl, detail: "high" } }
-          ]
-        }],
-        ...(isPdf ? {
-          plugins: [{
-            id: "file-parser",
-            pdf: { engine: "cloudflare-ai" }
-          }]
-        } : {}),
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            name: "evidence_analysis",
-            strict: true,
-            schema: ANALYSIS_SCHEMA
-          }
-        },
-        stream: false
+      const fileName = object.metadata?.original_file_name || path.fileName;
+      const [primaryRun, reviewerRun] = await Promise.allSettled([
+        requestEvidenceAnalysis({
+          openrouter,
+          model: primaryVisionModel.value(),
+          role: "第一採点AI",
+          dataUrl,
+          isPdf,
+          fileName,
+          reasoningEffort: "minimal"
+        }),
+        requestEvidenceAnalysis({
+          openrouter,
+          model: reviewVisionModel.value(),
+          role: "独立再判定AI",
+          dataUrl,
+          isPdf,
+          fileName,
+          reasoningEffort: "medium"
+        })
+      ]);
+      if (primaryRun.status === "rejected") throw primaryRun.reason;
+      const primaryResult = primaryRun.value;
+      const reviewerResult = reviewerRun.status === "fulfilled"
+        ? reviewerRun.value
+        : {
+            model: reviewVisionModel.value(),
+            analysis: { answerMarks: [] },
+            elapsedMs: null,
+            usage: null,
+            error: "REVIEW_AI_UNAVAILABLE"
+          };
+      const analysis = primaryResult.analysis;
+      const reviewAnalysis = reviewerResult.analysis;
+      const reconciliation = reconcileGradingAnalyses(analysis, reviewAnalysis, {
+        minimumConfidence: 0.9
       });
-
-      const output = response.choices?.[0]?.message?.content;
-      if (!output) throw new Error("OpenRouter returned an empty analysis response.");
-      const analysis = JSON.parse(output);
       const latestSnapshot = await recordRef.get();
       if (latestSnapshot.data()?.aiAnalysisStatus === "cancelled") return;
       const classificationConfident = analysis.confidence >= 0.9 && !analysis.needsReview;
       const resultScreenConfident = analysis.documentType === "result_screen" && classificationConfident;
-      const proposedMarks = Array.isArray(analysis.answerMarks)
-        ? analysis.answerMarks.filter((mark) => mark.result !== "unknown" && Number(mark.markConfidence) >= 0.98)
-        : [];
+      const proposedMarks = reconciliation.consensusMarks;
       // AI grading remains a proposal until a teacher confirms it.
       // Do not let experimental marks alter weakness records or study plans.
       const learningIssueIds = [];
@@ -779,6 +847,7 @@ export const analyzeEvidenceImage = onObjectFinalized(
         answeredCount: resultScreenConfident ? (analysis.answeredCount ?? "") : "",
         score: resultScreenConfident ? (analysis.correctRate ?? "") : "",
         aiAnalysis: analysis,
+        aiReviewAnalysis: reviewerRun.status === "fulfilled" ? reviewAnalysis : null,
         strengthAnalysis: analysis.strengthAnalysis || "",
         weaknessAnalysis: analysis.weaknessAnalysis || "",
         nextLearningAction: analysis.nextLearningAction || "",
@@ -788,10 +857,32 @@ export const analyzeEvidenceImage = onObjectFinalized(
           ? analysis.learningIssues.length
           : 0,
         proposedGradingMarks: proposedMarks,
+        gradingDisagreements: reconciliation.disagreements,
+        aiConsensusSummary: reconciliation.summary,
         gradingMarks: [],
-        gradingReviewStatus: proposedMarks.length ? "teacher_confirmation_required" : "not_available",
+        gradingReviewStatus: reconciliation.disagreements.length
+          ? "ai_disagreement"
+          : proposedMarks.length
+            ? "teacher_confirmation_required"
+            : "not_available",
         aiAnalysisStatus: resultScreenConfident ? "completed" : "needs_review",
-        aiAnalysisModel: visionModel.value(),
+        aiAnalysisModel: primaryResult.model,
+        aiReviewModel: reviewerResult.model,
+        aiModelRuns: [
+          {
+            role: "primary",
+            model: primaryResult.model,
+            elapsedMs: primaryResult.elapsedMs,
+            usage: primaryResult.usage
+          },
+          {
+            role: "reviewer",
+            model: reviewerResult.model,
+            elapsedMs: reviewerResult.elapsedMs,
+            usage: reviewerResult.usage,
+            status: reviewerRun.status === "fulfilled" ? "completed" : "unavailable"
+          }
+        ],
         aiAnalysisUpdatedAt: FieldValue.serverTimestamp()
       }, { merge: true });
     } catch (error) {
