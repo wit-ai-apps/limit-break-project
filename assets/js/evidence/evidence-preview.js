@@ -18,6 +18,35 @@ export function renderEvidenceMarks(markLayer, marks = [], experimental = false)
   `).join("");
 }
 
+export function gradingSummaryText(record = {}) {
+  const summary = record.aiConsensusSummary;
+  if (!summary) {
+    return record.gradingReviewStatus === "confirmed" ? "先生確認済み" : "AI採点は未確認";
+  }
+  const consensus = Number(summary.consensusCount || 0);
+  const disagreements = Number(summary.disagreementCount || 0);
+  if (disagreements > 0) {
+    return `AI一致 ${consensus}件 / 要確認 ${disagreements}件`;
+  }
+  return consensus > 0
+    ? `2つのAIが一致 ${consensus}件（先生確認前）`
+    : "AI採点候補なし";
+}
+
+export function gradingReviewReasonText(record = {}) {
+  const disagreements = Array.isArray(record.gradingDisagreements)
+    ? record.gradingDisagreements
+    : [];
+  if (!disagreements.length) return "";
+  const details = disagreements.slice(0, 3).map((item) =>
+    `${item.label || "設問"}: ${item.reason || "2つのAIの判定が一致しません"}`
+  );
+  if (disagreements.length > details.length) {
+    details.push(`ほか${disagreements.length - details.length}件`);
+  }
+  return `要確認理由 ${details.join(" / ")}`;
+}
+
 export async function openEvidencePreviewRecord(
   key,
   records,
@@ -45,10 +74,9 @@ export async function openEvidencePreviewRecord(
     return;
   }
 
-  const gradingNote = record.gradingReviewStatus === "confirmed"
-    ? "先生確認済み"
-    : "AI採点は未確認";
-  elements.meta.textContent = `${record.subject || ""} ${record.course || ""} ${record.lesson || ""} ${record.part || ""} / ${record.testType || ""} / 回答数 ${record.answeredCount || "-"} / 正答率 ${record.score ? `${record.score}%` : "-"} / ${gradingNote} / 保存先 ${record.firebaseSyncStatus === "synced" ? "Firebase" : "端末内"}`;
+  const gradingNote = gradingSummaryText(record);
+  const reviewReason = gradingReviewReasonText(record);
+  elements.meta.textContent = `${record.subject || ""} ${record.course || ""} ${record.lesson || ""} ${record.part || ""} / ${record.testType || ""} / 回答数 ${record.answeredCount || "-"} / 正答率 ${record.score ? `${record.score}%` : "-"} / ${gradingNote}${reviewReason ? ` / ${reviewReason}` : ""} / 保存先 ${record.firebaseSyncStatus === "synced" ? "Firebase" : "端末内"}`;
   if (elements.gradingActions) elements.gradingActions.hidden = true;
   if (elements.experimentalButton) {
     elements.experimentalButton.onclick = null;
@@ -102,8 +130,8 @@ export async function openEvidencePreviewRecord(
         elements.experimentalButton.textContent = showing ? "AI仮採点を隠す" : "AI仮採点を表示";
         elements.experimentalButton.setAttribute("aria-pressed", String(showing));
         elements.meta.textContent = showing
-          ? `${record.subject || ""} ${record.course || ""} / AI仮採点を実験表示中（未確定・記録へ反映なし）`
-          : `${record.subject || ""} ${record.course || ""} / AI採点は未確認`;
+          ? `${record.subject || ""} ${record.course || ""} / 2つのAIが一致した仮採点だけ表示中（未確定・記録へ反映なし）`
+          : `${record.subject || ""} ${record.course || ""} / ${gradingSummaryText(record)}${gradingReviewReasonText(record) ? ` / ${gradingReviewReasonText(record)}` : ""}`;
       };
     }
   }

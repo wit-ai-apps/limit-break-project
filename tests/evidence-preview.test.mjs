@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { canRenderEvidenceRecord } from "../assets/js/evidence/evidence-policy.js";
 import {
+  gradingReviewReasonText,
+  gradingSummaryText,
   openEvidencePreviewRecord,
   renderEvidenceMarks
 } from "../assets/js/evidence/evidence-preview.js";
@@ -114,4 +116,18 @@ test("手書き風採点マークは位置ごとに傾きを変える", () => {
   assert.match(markLayer.innerHTML, /rotate\(/);
   assert.match(markLayer.innerHTML, /〇/);
   assert.match(markLayer.innerHTML, /×/);
+});
+
+test("2つのAIの一致件数と要確認件数を表示する", () => {
+  assert.equal(gradingSummaryText({
+    aiConsensusSummary: { consensusCount: 8, disagreementCount: 2 }
+  }), "AI一致 8件 / 要確認 2件");
+  assert.equal(gradingSummaryText({
+    aiConsensusSummary: { consensusCount: 10, disagreementCount: 0 }
+  }), "2つのAIが一致 10件（先生確認前）");
+  assert.equal(gradingReviewReasonText({
+    gradingDisagreements: [
+      { label: "(2)x", reason: "計算した正答が一致しません" }
+    ]
+  }), "要確認理由 (2)x: 計算した正答が一致しません");
 });

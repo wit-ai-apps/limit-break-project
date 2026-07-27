@@ -52,7 +52,7 @@ import { fileToDataUrl } from "./evidence/evidence-upload.js";
 import {
   bindEvidencePreviewDialog,
   openEvidencePreviewRecord
-} from "./evidence/evidence-preview.js?v=4.18.4";
+} from "./evidence/evidence-preview.js?v=4.18.6";
 import { evidenceTypeForUnit, hasEvidence } from "./evidence/evidence-policy.js";
 import { renderEvidenceLogs } from "./evidence/evidence-render.js?v=4.18.5";
 import {
