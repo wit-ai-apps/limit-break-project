@@ -3881,6 +3881,56 @@
       font-weight: 850;
     }
 
+    .material-planner-form {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .material-planner-form label {
+      display: grid;
+      gap: 5px;
+      color: var(--text);
+      font-weight: 850;
+    }
+
+    .material-planner-form input,
+    .material-planner-form select {
+      width: 100%;
+    }
+
+    .material-goal-field,
+    .material-planner-form button,
+    .material-planner-form .button-note {
+      grid-column: 1 / -1;
+    }
+
+    .material-plan-list {
+      display: grid;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .material-plan-result,
+    .material-plan-summary {
+      display: grid;
+      gap: 7px;
+      padding: 12px;
+      border: 1px solid #dbe7ef;
+      border-radius: 12px;
+      background: #f8fbfd;
+    }
+
+    .material-plan-summary {
+      background: #fff;
+    }
+
+    .material-plan-summary ol {
+      margin: 0;
+      padding-left: 22px;
+    }
+
     .ai-text-search input {
       width: 100%;
     }
@@ -3945,6 +3995,14 @@
     }
 
     @media (max-width: 700px) {
+      .material-planner-form {
+        grid-template-columns: 1fr;
+      }
+
+      .material-planner-form > * {
+        grid-column: 1;
+      }
+
       .ai-text-row {
         grid-template-columns: 1fr;
       }

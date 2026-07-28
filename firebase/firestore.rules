@@ -60,6 +60,18 @@ service cloud.firestore {
       );
     }
 
+    function canWriteStudentMaterial(studentId) {
+      return signedIn() && (
+        userRole() == "admin" ||
+        userRole() == "lead_teacher" ||
+        studentId in linkedStudentIds() && (
+          userRole() == "student" ||
+          userRole() == "parent" ||
+          userRole() == "teacher"
+        )
+      );
+    }
+
     match /users/{uid} {
       allow read: if signedIn() && (
         request.auth.uid == uid ||
@@ -89,6 +101,17 @@ service cloud.firestore {
         allow read: if canReadStudent(studentId);
         allow create, update: if canWriteStudentEvidence(studentId);
         allow delete: if signedIn() && (userRole() == "admin" || userRole() == "teacher");
+      }
+
+      match /materials/{materialId} {
+        allow read: if canReadStudent(studentId);
+        allow create: if canWriteStudentMaterial(studentId)
+          && request.resource.data.createdByUid == request.auth.uid
+          && request.resource.data.analysisStatus == "uploading";
+        allow update: if canWriteStudentMaterial(studentId)
+          && request.resource.data.createdByUid == resource.data.createdByUid
+          && request.resource.data.createdByUid == request.auth.uid;
+        allow delete: if canWriteStudentMaterial(studentId);
       }
 
       match /missions/{missionId} {
