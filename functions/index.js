@@ -22,6 +22,7 @@ import {
   normalizedEmail
 } from "./invite-policy.js";
 import { buildVerifiedLearningIssues } from "./learning-issues.js";
+import { buildMaterialStudyPlan } from "./material-planner.js";
 
 initializeApp();
 
@@ -824,6 +825,54 @@ function evidenceAnalysisPrompt(role) {
   ].join("\n");
 }
 
+function parseMaterialPath(name) {
+  const match = String(name || "").match(/^students\/([^/]+)\/materials\/([^/]+)\/([^/]+)$/);
+  if (!match) return null;
+  return { studentId: match[1], materialId: match[2], fileName: match[3] };
+}
+
+const MATERIAL_ANALYSIS_SCHEMA = {
+  type: "object",
+  additionalProperties: false,
+  properties: {
+    materialName: { type: "string" },
+    subject: { type: "string" },
+    materialType: { type: "string", enum: ["reference", "workbook", "combined", "school_text", "unknown"] },
+    detectedPageCount: { type: "integer", minimum: 1 },
+    difficulty: { type: "string", enum: ["foundation", "basic", "standard", "advanced"] },
+    estimatedUnits: { type: "integer", minimum: 1 },
+    overallLearningGoals: { type: "array", maxItems: 8, items: { type: "string" } },
+    recommendedUse: { type: "string" },
+    warnings: { type: "array", maxItems: 8, items: { type: "string" } },
+    confidence: { type: "number", minimum: 0, maximum: 1 },
+    needsReview: { type: "boolean" },
+    unitStructure: {
+      type: "array",
+      maxItems: 100,
+      items: {
+        type: "object",
+        additionalProperties: false,
+        properties: {
+          order: { type: "integer", minimum: 1 },
+          title: { type: "string" },
+          pageStart: { type: ["integer", "null"] },
+          pageEnd: { type: ["integer", "null"] },
+          estimatedProblems: { type: ["integer", "null"] },
+          difficulty: { type: "string", enum: ["foundation", "basic", "standard", "advanced"] },
+          prerequisites: { type: "array", maxItems: 6, items: { type: "string" } },
+          learningGoals: { type: "array", maxItems: 6, items: { type: "string" } }
+        },
+        required: ["order", "title", "pageStart", "pageEnd", "estimatedProblems", "difficulty", "prerequisites", "learningGoals"]
+      }
+    }
+  },
+  required: [
+    "materialName", "subject", "materialType", "detectedPageCount", "difficulty",
+    "estimatedUnits", "overallLearningGoals", "recommendedUse", "warnings",
+    "confidence", "needsReview", "unitStructure"
+  ]
+};
+
 async function requestEvidenceAnalysis({
   openrouter,
   model,
@@ -1054,6 +1103,104 @@ export const analyzeEvidenceImage = onObjectFinalized(
         aiAnalysisUpdatedAt: FieldValue.serverTimestamp()
       }, { merge: true });
       throw error;
+    }
+  }
+);
+
+export const analyzeUploadedMaterial = onObjectFinalized(
+  {
+    region: "us-east1",
+    memory: "1GiB",
+    timeoutSeconds: 300,
+    secrets: [openRouterApiKey]
+  },
+  async (event) => {
+    const object = event.data;
+    const path = parseMaterialPath(object.name);
+    if (!path || String(object.contentType || "") !== "application/pdf") return;
+    const db = getFirestore();
+    const materialRef = db.doc(`students/${path.studentId}/materials/${path.materialId}`);
+    const snapshot = await materialRef.get();
+    if (!snapshot.exists) return;
+    const material = snapshot.data();
+    await materialRef.set({
+      analysisStatus: "processing",
+      analysisError: "",
+      updatedAt: FieldValue.serverTimestamp()
+    }, { merge: true });
+    try {
+      const [buffer] = await getStorage().bucket(object.bucket).file(object.name).download();
+      const dataUrl = `data:application/pdf;base64,${buffer.toString("base64")}`;
+      const openrouter = new OpenAI({
+        apiKey: openRouterApiKey.value(),
+        baseURL: "https://openrouter.ai/api/v1",
+        timeout: 240000,
+        maxRetries: 1,
+        defaultHeaders: {
+          "HTTP-Referer": "https://wit-ai-apps.github.io/limit-break-project/",
+          "X-OpenRouter-Title": "CORTEX Limit Break Material Planner"
+        }
+      });
+      const response = await openrouter.chat.completions.create({
+        model: primaryVisionModel.value(),
+        messages: [{
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: [
+                "日本の生徒向け教材PDFの学習計画を作るため、教材の構造だけを分析してください。",
+                "著作権保護のため、問題文・解説・解答・長い本文は転記しないでください。",
+                "教材名、教科、教材種別、推定ページ数、難易度、短い章見出し、学習目標、前提単元だけを返してください。",
+                "判別できない場合は推測で埋めずneedsReview=trueにしてください。",
+                `利用者入力: ${JSON.stringify({
+                  materialName: material.materialName || "",
+                  subject: material.subject || "",
+                  designation: material.designation || "",
+                  goal: material.goal || ""
+                })}`
+              ].join("\n")
+            },
+            { type: "file", file: { filename: material.originalFileName || path.fileName, file_data: dataUrl } }
+          ]
+        }],
+        plugins: [{ id: "file-parser", pdf: { engine: "cloudflare-ai" } }],
+        response_format: {
+          type: "json_schema",
+          json_schema: { name: "material_profile", strict: true, schema: MATERIAL_ANALYSIS_SCHEMA }
+        },
+        stream: false
+      });
+      const output = response.choices?.[0]?.message?.content;
+      if (!output) throw new Error("MATERIAL_ANALYSIS_EMPTY");
+      const profile = JSON.parse(output);
+      const studyPlan = buildMaterialStudyPlan(profile, {
+        deadline: material.deadline,
+        weeklyStudyDays: material.weeklyStudyDays,
+        dailyMinutes: material.dailyMinutes,
+        designation: material.designation
+      });
+      await materialRef.set({
+        analysisStatus: profile.needsReview ? "needs_review" : "completed",
+        materialProfile: profile,
+        studyPlan,
+        analysisModel: primaryVisionModel.value(),
+        analysisUsage: response.usage ? {
+          promptTokens: response.usage.prompt_tokens ?? null,
+          completionTokens: response.usage.completion_tokens ?? null,
+          totalTokens: response.usage.total_tokens ?? null,
+          cost: response.usage.cost ?? null
+        } : null,
+        analyzedAt: FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp()
+      }, { merge: true });
+    } catch (error) {
+      console.error("Material analysis failed", path.studentId, path.materialId, error);
+      await materialRef.set({
+        analysisStatus: "error",
+        analysisError: "MATERIAL_ANALYSIS_FAILED",
+        updatedAt: FieldValue.serverTimestamp()
+      }, { merge: true });
     }
   }
 );

@@ -23,7 +23,7 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.18.3";
+} from "../../config/app_config.js?v=4.19.0";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -97,6 +97,7 @@ import {
     let noticeQueue = loadNoticeQueue();
     let customCountdowns = loadCustomCountdowns();
     let adaptivePlan = null;
+    let personalMaterials = [];
     let linkDirectory = [];
     let linkedStudentIdentity = null;
     let studyStartDate = localStorage.getItem(STUDY_START_DATE_KEY) || DEFAULT_STUDY_START_DATE;
@@ -111,6 +112,7 @@ import {
     let evidenceUnsubscribe = null;
     let scheduleUnsubscribe = null;
     let adaptivePlanUnsubscribe = null;
+    let materialUnsubscribe = null;
     let isLoggedIn = localStorage.getItem(LOGIN_KEY) === "true";
     let loginName = localStorage.getItem(LOGIN_NAME_KEY) || "";
     let currentRole = localStorage.getItem(ROLE_KEY) || "student";
@@ -546,6 +548,7 @@ import {
       subscribeFirebaseRecords();
       subscribeFirebaseSchedules();
       subscribeAdaptivePlan();
+      subscribePersonalMaterials();
       await loadLinkedStudentIdentity();
       await loadLinkDirectory();
       if (pendingInviteToken) await claimPendingInvite();
@@ -833,6 +836,7 @@ import {
       subscribeFirebaseRecords();
       subscribeFirebaseSchedules();
       subscribeAdaptivePlan();
+      subscribePersonalMaterials();
       render();
     }
 
@@ -954,6 +958,21 @@ import {
       }, () => {
         adaptivePlan = null;
         if (isLoggedIn) render();
+      });
+    }
+
+    function subscribePersonalMaterials() {
+      if (materialUnsubscribe) {
+        materialUnsubscribe();
+        materialUnsubscribe = null;
+      }
+      if (!firebaseBridge.enabled || !firebaseBridge.currentUser || !firebaseBridge.onSnapshot || !firebaseBridge.studentId) return;
+      const collectionRef = firebaseBridge.collection(firebaseBridge.db, "students", firebaseBridge.studentId, "materials");
+      materialUnsubscribe = firebaseBridge.onSnapshot(collectionRef, (snapshot) => {
+        personalMaterials = snapshot.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
+        if (isLoggedIn) render();
+      }, () => {
+        personalMaterials = [];
       });
     }
 
@@ -1249,7 +1268,12 @@ import {
         adaptivePlanUnsubscribe();
         adaptivePlanUnsubscribe = null;
       }
+      if (materialUnsubscribe) {
+        materialUnsubscribe();
+        materialUnsubscribe = null;
+      }
       adaptivePlan = null;
+      personalMaterials = [];
       linkDirectory = [];
       linkedStudentIdentity = null;
       if (firebaseBridge.enabled && (firebaseBridge.auth?.currentUser || firebaseBridge.currentUser) && firebaseBridge.signOut) {
@@ -2923,6 +2947,7 @@ function renderScheduleDrawer() {
         card.innerHTML = `<strong>${item.title}</strong><span>${item.body}</span>`;
         settingsList.appendChild(card);
       });
+      renderPersonalMaterialPlanner();
       renderAiReferenceTextIndex();
       renderGroupInviteManager();
       const startDateCard = document.createElement("article");
@@ -2975,6 +3000,140 @@ function renderScheduleDrawer() {
       countdownCard.querySelector("#customCountdownForm")?.addEventListener("submit", addCustomCountdown);
       countdownCard.querySelectorAll("[data-delete-countdown]").forEach((button) => {
         button.addEventListener("click", () => deleteCustomCountdown(button.dataset.deleteCountdown));
+      });
+    }
+
+    function renderPersonalMaterialPlanner() {
+      const statusLabels = {
+        uploading: "アップロード中",
+        queued: "解析待ち",
+        processing: "教材構造を解析中",
+        completed: "計画作成済み",
+        needs_review: "構造の確認が必要",
+        error: "解析エラー"
+      };
+      const feasibilityLabels = {
+        comfortable: "余裕あり",
+        tight: "期限内・余裕少なめ",
+        overloaded: "時間不足"
+      };
+      const rows = personalMaterials.length
+        ? personalMaterials.map((item) => {
+            const profile = item.materialProfile || {};
+            const plan = item.studyPlan || {};
+            const taskPreview = (plan.dailyTasks || []).slice(0, 3).map((task) =>
+              `<li>${escapeHtml(`学習日${task.studyDay}: ${(task.unitTitles || []).join("・")}（${task.minutes}分）`)}</li>`
+            ).join("");
+            return `
+              <article class="material-plan-result">
+                <div class="topline">
+                  <div>
+                    <strong>${escapeHtml(profile.materialName || item.materialName || item.originalFileName || "教材")}</strong>
+                    <span>${escapeHtml(profile.subject || item.subject || "教科未設定")} / ${escapeHtml(item.designation === "school_required" ? "学校指定" : item.designation === "student_preferred" ? "本人希望" : "補助教材")}</span>
+                  </div>
+                  <span class="badge">${escapeHtml(statusLabels[item.analysisStatus] || item.analysisStatus || "準備中")}</span>
+                </div>
+                ${plan.feasibility ? `
+                  <div class="material-plan-summary">
+                    <strong>${escapeHtml(feasibilityLabels[plan.feasibility] || plan.feasibility)} / 期限 ${escapeHtml(plan.deadline || "")}</strong>
+                    <span>${escapeHtml(plan.recommendation || "")}</span>
+                    <span>${escapeHtml(plan.priorityPolicy || "")}</span>
+                    <small>必要目安 ${escapeHtml(plan.requiredMinutes)}分 / 確保 ${escapeHtml(plan.availableMinutes)}分 / 復習: 翌日・3日後・7日後</small>
+                    ${taskPreview ? `<ol>${taskPreview}</ol>` : ""}
+                  </div>
+                ` : `<span>PDFの目次・単元・難易度を解析後、ここに学習計画が表示されます。</span>`}
+              </article>
+            `;
+          }).join("")
+        : `<p class="button-note">まだ個人教材は登録されていません。</p>`;
+      const card = document.createElement("article");
+      card.className = "settings-card material-planner-card";
+      card.innerHTML = `
+        <strong>教材PDFから個別学習プランを作成</strong>
+        <span>学校指定・本人の好みを尊重し、期限と学習可能時間から計画を作ります。PDF本文は公開せず、章構造と学習目標だけを保存します。</span>
+        <form class="material-planner-form" id="materialPlannerForm">
+          <label>教材PDF<input id="materialPdfInput" type="file" accept="application/pdf,.pdf" required></label>
+          <label>教材名<input id="materialNameInput" maxlength="100" placeholder="例: 学校指定 数学問題集" required></label>
+          <label>教科<input id="materialSubjectInput" maxlength="40" placeholder="例: 数学" required></label>
+          <label>位置づけ
+            <select id="materialDesignationInput">
+              <option value="school_required">学校指定</option>
+              <option value="student_preferred">本人が選んだ教材</option>
+              <option value="supplementary">補助教材</option>
+            </select>
+          </label>
+          <label>完了期限<input id="materialDeadlineInput" type="date" required></label>
+          <label>週の学習日数<input id="materialDaysInput" type="number" min="1" max="7" value="6" required></label>
+          <label>1日の学習時間（分）<input id="materialMinutesInput" type="number" min="15" max="240" step="5" value="60" required></label>
+          <label class="material-goal-field">目標・学校の指定範囲<input id="materialGoalInput" maxlength="200" placeholder="例: 8月末までに全範囲、定期テストは第1〜4章"></label>
+          <button type="submit">PDFを解析して計画を作る</button>
+          <p class="button-note" id="materialUploadStatus">PDFは30MBまで。問題文・解答本文は計画データへ保存しません。</p>
+        </form>
+        <div class="material-plan-list">${rows}</div>
+      `;
+      aiSettingsList.appendChild(card);
+      const deadlineInput = card.querySelector("#materialDeadlineInput");
+      if (deadlineInput && !deadlineInput.value) {
+        const deadline = new Date();
+        deadline.setDate(deadline.getDate() + 30);
+        deadlineInput.value = deadline.toISOString().slice(0, 10);
+      }
+      card.querySelector("#materialPlannerForm")?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const status = card.querySelector("#materialUploadStatus");
+        const file = card.querySelector("#materialPdfInput")?.files?.[0];
+        if (!file || file.type !== "application/pdf" || file.size >= 30 * 1024 * 1024) {
+          status.textContent = "30MB未満のPDFを選択してください。";
+          return;
+        }
+        if (!firebaseBridge.enabled || !firebaseBridge.currentUser || !firebaseBridge.studentId) {
+          status.textContent = "教材の安全な保存にはFirebaseログインが必要です。";
+          return;
+        }
+        const submitButton = event.currentTarget.querySelector("button[type='submit']");
+        submitButton.disabled = true;
+        status.textContent = "PDFを安全にアップロードしています…";
+        const materialId = `MAT_${Date.now()}_${crypto.randomUUID().slice(0, 8)}`;
+        const materialRef = firebaseBridge.doc(firebaseBridge.db, "students", firebaseBridge.studentId, "materials", materialId);
+        const safeName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-120) || "material.pdf";
+        const storagePath = `students/${firebaseBridge.studentId}/materials/${materialId}/${Date.now()}-${safeName}`;
+        try {
+          await firebaseBridge.setDoc(materialRef, {
+            materialName: card.querySelector("#materialNameInput").value.trim(),
+            subject: card.querySelector("#materialSubjectInput").value.trim(),
+            designation: card.querySelector("#materialDesignationInput").value,
+            deadline: deadlineInput.value,
+            weeklyStudyDays: Number(card.querySelector("#materialDaysInput").value),
+            dailyMinutes: Number(card.querySelector("#materialMinutesInput").value),
+            goal: card.querySelector("#materialGoalInput").value.trim(),
+            originalFileName: file.name,
+            storagePath,
+            analysisStatus: "uploading",
+            createdByUid: firebaseBridge.currentUser.uid,
+            createdAt: firebaseBridge.serverTimestamp(),
+            updatedAt: firebaseBridge.serverTimestamp()
+          });
+          const uploadRef = firebaseBridge.storageRef(firebaseBridge.storage, storagePath);
+          await firebaseBridge.uploadBytes(uploadRef, file, {
+            contentType: "application/pdf",
+            customMetadata: {
+              student_id: firebaseBridge.studentId,
+              material_id: materialId,
+              original_file_name: file.name
+            }
+          });
+          await firebaseBridge.setDoc(materialRef, {
+            analysisStatus: "queued",
+            uploadedAt: firebaseBridge.serverTimestamp(),
+            updatedAt: firebaseBridge.serverTimestamp()
+          }, { merge: true });
+          status.textContent = "アップロード完了。教材構造を解析しています。";
+          event.currentTarget.reset();
+        } catch (error) {
+          status.textContent = `アップロードできませんでした。${error.message || error}`;
+        } finally {
+          submitButton.disabled = false;
+        }
       });
     }
 

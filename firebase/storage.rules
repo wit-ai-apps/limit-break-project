@@ -41,6 +41,18 @@ service firebase.storage {
       );
     }
 
+    function canWriteStudentMaterial(studentId) {
+      return signedIn() && (
+        userRole() == "admin" ||
+        userRole() == "lead_teacher" ||
+        studentId in linkedStudentIds() && (
+          userRole() == "student" ||
+          userRole() == "parent" ||
+          userRole() == "teacher"
+        )
+      );
+    }
+
     match /students/{studentId}/evidence/{date}/{fileName} {
       allow read: if canReadStudent(studentId);
       allow create, update: if canWriteStudentEvidence(studentId)
@@ -52,6 +64,23 @@ service firebase.storage {
       allow delete: if signedIn() && (
         userRole() == "admin" ||
         userRole() == "teacher"
+      );
+    }
+
+    match /students/{studentId}/materials/{materialId}/{fileName} {
+      allow read: if canReadStudent(studentId);
+      allow create: if canWriteStudentMaterial(studentId)
+        && request.resource.size < 30 * 1024 * 1024
+        && request.resource.contentType == 'application/pdf';
+      allow update: if false;
+      allow delete: if signedIn() && (
+        userRole() == "admin" ||
+        userRole() == "lead_teacher" ||
+        studentId in linkedStudentIds() && (
+          userRole() == "student" ||
+          userRole() == "parent" ||
+          userRole() == "teacher"
+        )
       );
     }
 

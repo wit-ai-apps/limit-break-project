@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.18.9-dev";
-export const APP_RELEASE_NAME = "模範解答付き人間採点";
+export const APP_VERSION = "v4.19.0-dev";
+export const APP_RELEASE_NAME = "教材PDF個別学習プラン";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -41,6 +41,16 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.19.0-dev",
+    date: "2026-07-28",
+    title: "教材PDFから個別学習プラン",
+    items: [
+      "学校指定・本人希望・補助教材のPDFを非公開で登録",
+      "教材の章構造・難易度・前提単元をAIが抽出",
+      "期限・週の日数・1日の学習時間から実行可能性を計算し、復習込みの計画を作成"
+    ]
+  },
   {
     version: "v4.18.9-dev",
     date: "2026-07-27",
