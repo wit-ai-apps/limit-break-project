@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.19.3-dev";
-export const APP_RELEASE_NAME = "数式英字フォント統一";
+export const APP_VERSION = "v4.19.4-dev";
+export const APP_RELEASE_NAME = "指数位置の微調整";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -42,6 +42,15 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.19.4-dev",
+    date: "2026-07-29",
+    title: "指数の配置調整",
+    items: [
+      "指数の文字サイズを維持したまま基準位置を上方へ調整",
+      "底の文字と指数の間隔を日本の教科書に近い配置へ修正"
+    ]
+  },
   {
     version: "v4.19.3-dev",
     date: "2026-07-29",

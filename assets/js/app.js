@@ -23,8 +23,8 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.19.3";
-import { initMathTraining } from "./training/math-training.js?v=4.19.3";
+} from "../../config/app_config.js?v=4.19.4";
+import { initMathTraining } from "./training/math-training.js?v=4.19.4";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
