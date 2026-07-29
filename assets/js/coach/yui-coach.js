@@ -112,7 +112,7 @@ export function buildYuiBriefing(context = {}, role = "student") {
 }
 
 export function renderYuiCoachCard({
-  messageElement, actionsElement, role, context, onNavigate, onDialogueChange
+  messageElement, actionsElement, role, context, onNavigate, onDialogueChange, onGuardianQuestion
 }) {
   if (!messageElement || !actionsElement) return;
   const briefing = buildYuiBriefing(context, role);
@@ -187,6 +187,39 @@ export function renderYuiCoachCard({
       status.className = "yui-response";
       status.textContent = "ユイ先生：教えてくれてありがとう。今日の学習判断に記録しました。";
       form.replaceWith(status);
+    });
+    actionsElement.appendChild(form);
+  }
+
+  if (role === "parent" && onGuardianQuestion) {
+    const form = document.createElement("form");
+    form.className = "yui-free-form yui-guardian-question";
+    form.innerHTML = `
+      <label>ユイ先生に質問する
+        <input type="text" name="question" maxlength="300"
+          placeholder="例：今日の提出状況はどうでしたか？" required>
+      </label>
+      <button type="submit" class="secondary">質問する</button>
+      <small>生徒本人の共有設定の範囲内で回答します。本人とユイ先生との会話内容は回答しません。</small>`;
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const question = new FormData(form).get("question")?.toString().trim() || "";
+      if (!question) return;
+      const button = form.querySelector("button[type=submit]");
+      button.disabled = true;
+      button.textContent = "確認中";
+      try {
+        const result = await onGuardianQuestion(question);
+        const response = document.createElement("p");
+        response.className = "yui-response";
+        response.textContent = `ユイ先生：${result?.answer || "回答を保存しました。"}`;
+        form.replaceWith(response);
+      } catch (error) {
+        button.disabled = false;
+        button.textContent = "質問する";
+        const status = form.querySelector("small");
+        status.textContent = `回答できませんでした。${error?.message || error}`;
+      }
     });
     actionsElement.appendChild(form);
   }

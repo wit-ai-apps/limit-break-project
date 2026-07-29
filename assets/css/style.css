@@ -4519,6 +4519,25 @@
   gap: 6px;
 }
 
+.guardian-question-list {
+  display: grid;
+  gap: 8px;
+}
+
+.guardian-question-row {
+  display: grid;
+  gap: 5px;
+  padding: 10px 12px;
+  border: 1px solid #dce5ef;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.yui-guardian-question small {
+  display: block;
+  grid-column: 1 / -1;
+}
+
 .sharing-access-row {
   display: grid;
   grid-template-columns: minmax(100px, 0.8fr) minmax(180px, 1.6fr) auto;

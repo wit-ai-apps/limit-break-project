@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.19.10-dev";
-export const APP_RELEASE_NAME = "支援者向け安全な要約";
+export const APP_VERSION = "v4.19.11-dev";
+export const APP_RELEASE_NAME = "保護者からユイ先生へ質問";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -42,6 +42,17 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.19.11-dev",
+    date: "2026-07-29",
+    title: "保護者質問と共有範囲内回答を追加",
+    items: [
+      "保護者画面のユイ先生カードへ質問入力欄を追加",
+      "共有設定で許可された学習要約だけから回答",
+      "本人とユイ先生の会話・個人メモ・非公開項目は回答に利用しない",
+      "質問・回答・使用情報を保存し、生徒本人と保護者の双方へ表示"
+    ]
+  },
   {
     version: "v4.19.10-dev",
     date: "2026-07-29",

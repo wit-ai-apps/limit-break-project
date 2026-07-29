@@ -184,6 +184,11 @@ service cloud.firestore {
           && (userRole() == "student" || userRole() == "parent");
         allow write: if false;
       }
+
+      // 保護者の質問と回答はCloud Functionsで共有範囲を確認してから保存する。
+      match /guardian_questions/{questionId} {
+        allow read, write: if false;
+      }
     }
 
     // 招待トークンと承認状態はCloud Functionsだけが扱う。

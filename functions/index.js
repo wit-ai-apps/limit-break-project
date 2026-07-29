@@ -30,6 +30,7 @@ import {
   normalizeSharingPreferences
 } from "./sharing-policy.js";
 import { filterSupportSummary, supportSummaryAccessFields } from "./support-summary.js";
+import { buildGuardianAnswer } from "./guardian-answer.js";
 
 initializeApp();
 
@@ -229,15 +230,7 @@ async function sharingContext(uid, user, studentId) {
   return { role, permissions: effectiveSharing(student, guardian, role) };
 }
 
-export const getSupportSummary = onCall({ region: "us-east1" }, async (request) => {
-  const uid = requireAuth(request);
-  const { data: user } = await requireUser(uid);
-  const studentId = String(request.data?.studentId || "").trim();
-  const { role, permissions } = await sharingContext(uid, user, studentId);
-  if (!["parent", "supporter", "teacher"].includes(role)) {
-    throw new HttpsError("permission-denied", "SUPPORT_ROLE_REQUIRED");
-  }
-  const db = getFirestore();
+async function loadSupportSummaryData(db, studentId, permissions) {
   const [evidenceSnapshot, schedulesSnapshot, studentSnapshot] = await Promise.all([
     db.collection(`students/${studentId}/evidence_records`).limit(50).get(),
     db.collection(`students/${studentId}/schedules`).limit(30).get(),
@@ -260,24 +253,39 @@ export const getSupportSummary = onCall({ region: "us-east1" }, async (request) 
       title: String(schedule.title || schedule.label || "学習予定").slice(0, 80),
       date: String(schedule.date || schedule.start || "").slice(0, 30)
     })).slice(0, permissions.schedule === "detail" ? 10 : 3);
-  const rawSummary = {
-    progress: {
-      latestLearningDate: latestDate,
-      status: completed ? "学習記録あり" : "記録なし"
-    },
-    studyTime: {
-      minutes: records.reduce((sum, record) => sum + Math.max(0, Number(record.studyMinutes || 0)), 0)
-    },
-    completion: { completed, recorded: records.length },
-    scores: permissions.scores === "detail"
-      ? { average, count: scores.length, recent: scores.slice(-10) }
-      : { average, count: scores.length },
-    weaknesses: permissions.weaknesses === "detail" ? weaknesses : weaknesses.slice(0, 1),
-    schedule: nextSchedules,
-    evidence: { submittedCount: records.filter((record) => record.evidenceStoragePath).length },
-    fatigue: { level: null, note: "本人の自己申告がある場合だけ表示" }
+  return {
+    studentName: String(studentSnapshot.data()?.display_name || "生徒").slice(0, 80),
+    raw: {
+      progress: {
+        latestLearningDate: latestDate,
+        status: completed ? "学習記録あり" : "記録なし"
+      },
+      studyTime: {
+        minutes: records.reduce((sum, record) => sum + Math.max(0, Number(record.studyMinutes || 0)), 0)
+      },
+      completion: { completed, recorded: records.length },
+      scores: permissions.scores === "detail"
+        ? { average, count: scores.length, recent: scores.slice(-10) }
+        : { average, count: scores.length },
+      weaknesses: permissions.weaknesses === "detail" ? weaknesses : weaknesses.slice(0, 1),
+      schedule: nextSchedules,
+      evidence: { submittedCount: records.filter((record) => record.evidenceStoragePath).length },
+      fatigue: { level: null, note: "本人の自己申告がある場合だけ表示" }
+    }
   };
-  const filtered = filterSupportSummary(rawSummary, permissions);
+}
+
+export const getSupportSummary = onCall({ region: "us-east1" }, async (request) => {
+  const uid = requireAuth(request);
+  const { data: user } = await requireUser(uid);
+  const studentId = String(request.data?.studentId || "").trim();
+  const { role, permissions } = await sharingContext(uid, user, studentId);
+  if (!["parent", "supporter", "teacher"].includes(role)) {
+    throw new HttpsError("permission-denied", "SUPPORT_ROLE_REQUIRED");
+  }
+  const db = getFirestore();
+  const summaryData = await loadSupportSummaryData(db, studentId, permissions);
+  const filtered = filterSupportSummary(summaryData.raw, permissions);
   await db.collection(`students/${studentId}/access_logs`).add({
     viewer_uid: uid,
     viewer_role: role,
@@ -288,10 +296,70 @@ export const getSupportSummary = onCall({ region: "us-east1" }, async (request) 
   });
   return {
     student: {
-      displayName: String(studentSnapshot.data()?.display_name || "生徒").slice(0, 80)
+      displayName: summaryData.studentName
     },
     role,
     fields: filtered
+  };
+});
+
+export const submitGuardianQuestion = onCall({ region: "us-east1" }, async (request) => {
+  const uid = requireAuth(request);
+  const { data: user } = await requireUser(uid);
+  const studentId = String(request.data?.studentId || "").trim();
+  const question = String(request.data?.question || "").trim().slice(0, 300);
+  if (!question) throw new HttpsError("invalid-argument", "QUESTION_REQUIRED");
+  const { role, permissions } = await sharingContext(uid, user, studentId);
+  if (role !== "parent") throw new HttpsError("permission-denied", "PARENT_REQUIRED");
+  const db = getFirestore();
+  const summaryData = await loadSupportSummaryData(db, studentId, permissions);
+  const fields = filterSupportSummary(summaryData.raw, permissions);
+  const result = buildGuardianAnswer(question, fields);
+  const questionRef = db.collection(`students/${studentId}/guardian_questions`).doc();
+  await questionRef.set({
+    asked_by_uid: uid,
+    asked_by_name: String(user.displayName || user.email || "保護者").slice(0, 80),
+    question,
+    answer: result.answer,
+    topic: result.field,
+    fields_used: result.fieldsUsed,
+    answer_type: "privacy_filtered_rule",
+    status: "answered",
+    created_at: FieldValue.serverTimestamp(),
+    answered_at: FieldValue.serverTimestamp()
+  });
+  await db.collection(`students/${studentId}/access_logs`).add({
+    viewer_uid: uid,
+    viewer_role: "parent",
+    viewer_name: String(user.displayName || user.email || "保護者").slice(0, 80),
+    action: "guardian_question.answer",
+    fields: result.fieldsUsed,
+    created_at: FieldValue.serverTimestamp()
+  });
+  return { id: questionRef.id, answer: result.answer, fieldsUsed: result.fieldsUsed };
+});
+
+export const listGuardianQuestions = onCall({ region: "us-east1" }, async (request) => {
+  const uid = requireAuth(request);
+  const { data: user } = await requireUser(uid);
+  const studentId = String(request.data?.studentId || "").trim();
+  if (!canManageSharing(user, studentId) || !["student", "parent", "admin", "lead_teacher"].includes(user.role)) {
+    throw new HttpsError("permission-denied", "GUARDIAN_QUESTION_HISTORY_NOT_ALLOWED");
+  }
+  const snapshot = await getFirestore().collection(`students/${studentId}/guardian_questions`)
+    .orderBy("created_at", "desc").limit(30).get();
+  return {
+    questions: snapshot.docs.map((document) => {
+      const item = document.data();
+      return {
+        id: document.id,
+        askedByName: item.asked_by_name || "保護者",
+        question: item.question || "",
+        answer: item.answer || "",
+        fieldsUsed: Array.isArray(item.fields_used) ? item.fields_used : [],
+        createdAt: item.created_at?.toDate().toISOString() || ""
+      };
+    })
   };
 });
 

@@ -23,19 +23,19 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.19.10";
-import { initMathTraining } from "./training/math-training.js?v=4.19.10";
-import { initEnglishTraining } from "./training/english-training.js?v=4.19.10";
+} from "../../config/app_config.js?v=4.19.11";
+import { initMathTraining } from "./training/math-training.js?v=4.19.11";
+import { initEnglishTraining } from "./training/english-training.js?v=4.19.11";
 import {
   loadMemoryQueue,
   memorySummary as summarizeMemory,
   renderAdaptiveMemory
-} from "./learning/memory.js?v=4.19.10";
-import { renderYuiCoachCard } from "./coach/yui-coach.js?v=4.19.10";
+} from "./learning/memory.js?v=4.19.11";
+import { renderYuiCoachCard } from "./coach/yui-coach.js?v=4.19.11";
 import {
   sharingPreferencesFromForm,
   sharingSettingsMarkup
-} from "./privacy/sharing-settings.js?v=4.19.10";
+} from "./privacy/sharing-settings.js?v=4.19.11";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -94,6 +94,7 @@ import {
     let sharingPreferences = null;
     let supportSummary = null;
     let accessLogs = [];
+    let guardianQuestions = [];
     let examSchedule = FALLBACK_EXAMS;
     let summerPlan = FALLBACK_SUMMER;
     let levelTasks = FALLBACK_LEVELS;
@@ -579,6 +580,7 @@ import {
       if (currentRole === "parent" || currentRole === "lead_teacher") await loadGroupInvites();
       if (["student", "parent"].includes(currentRole)) await loadSharingPreferences();
       if (["student", "parent", "admin", "lead_teacher"].includes(currentRole)) await loadAccessLogs();
+      if (["student", "parent", "admin", "lead_teacher"].includes(currentRole)) await loadGuardianQuestions();
       if (currentRole === "student" || currentRole === "parent") await recoverStalledEvidenceAnalyses();
     }
 
@@ -1644,6 +1646,30 @@ function renderAdaptivePlan() {
       }
     }
 
+    async function loadGuardianQuestions() {
+      guardianQuestions = [];
+      if (!firebaseBridge.currentUser || !firebaseBridge.studentId) return;
+      try {
+        const result = await callGroupFunction("listGuardianQuestions", {
+          studentId: firebaseBridge.studentId
+        });
+        guardianQuestions = Array.isArray(result?.questions) ? result.questions : [];
+      } catch (error) {
+        addDiagnosticLog("privacy.guardian_questions.load_error", {
+          message: String(error?.message || error).slice(0, 200)
+        });
+      }
+    }
+
+    async function submitGuardianQuestion(question) {
+      const result = await callGroupFunction("submitGuardianQuestion", {
+        studentId: firebaseBridge.studentId,
+        question
+      });
+      await Promise.all([loadGuardianQuestions(), loadAccessLogs()]);
+      return result;
+    }
+
     async function syncPrivateLearningState(kind, value) {
       if (currentRole !== "student" || !firebaseBridge.currentUser || !firebaseBridge.studentId) return;
       try {
@@ -1688,7 +1714,8 @@ function renderAdaptivePlan() {
           hasEvidence: summary.evidenceRecords.length > 0
         },
         onNavigate: setActiveView,
-        onDialogueChange: (dialogue) => syncPrivateLearningState("yui_dialogue", dialogue)
+        onDialogueChange: (dialogue) => syncPrivateLearningState("yui_dialogue", dialogue),
+        onGuardianQuestion: currentRole === "parent" ? submitGuardianQuestion : null
       });
     }
 
@@ -3072,6 +3099,22 @@ function renderScheduleDrawer() {
             </div>`).join("") : `<div class="empty">閲覧履歴はまだありません。</div>`}
         </div>`;
       card.appendChild(history);
+
+      const questionHistory = document.createElement("div");
+      questionHistory.className = "sharing-access-history";
+      questionHistory.innerHTML = `
+        <strong>保護者からユイ先生への質問履歴</strong>
+        <span>生徒本人と保護者の双方が確認できます。回答に使った情報項目も表示します。</span>
+        <div class="guardian-question-list">
+          ${guardianQuestions.length ? guardianQuestions.map((item) => `
+            <article class="guardian-question-row">
+              <small>${escapeHtml(item.askedByName || "保護者")}・${escapeHtml(formatAccessLogTime(item.createdAt))}</small>
+              <strong>質問：${escapeHtml(item.question)}</strong>
+              <span>回答：${escapeHtml(item.answer)}</span>
+              <small>使用した情報：${escapeHtml((item.fieldsUsed || []).map(accessFieldLabel).join("・") || "個別情報なし")}</small>
+            </article>`).join("") : `<div class="empty">質問履歴はまだありません。</div>`}
+        </div>`;
+      card.appendChild(questionHistory);
     }
 
     function formatAccessLogTime(value) {
