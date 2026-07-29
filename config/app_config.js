@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.19.2-dev";
-export const APP_RELEASE_NAME = "画面数式の教科書表記修正";
+export const APP_VERSION = "v4.19.3-dev";
+export const APP_RELEASE_NAME = "数式英字フォント統一";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -42,6 +42,16 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.19.3-dev",
+    date: "2026-07-29",
+    title: "x・yなどの数式英字を教科書調へ統一",
+    items: [
+      "画面の数式英字を端末依存のCambria MathからSTIX Two Textへ変更",
+      "変数は細身のイタリック体、関数名と数字は立体として表示",
+      "OFLライセンスのフォントを同梱し端末間の字形差を解消"
+    ]
+  },
   {
     version: "v4.19.2-dev",
     date: "2026-07-29",

@@ -1,4 +1,20 @@
-:root {
+@font-face {
+      font-family: "Limit Break STIX";
+      src: url("../fonts/stix-two/STIXTwoText-Regular.ttf") format("truetype");
+      font-style: normal;
+      font-weight: 400;
+      font-display: swap;
+    }
+
+    @font-face {
+      font-family: "Limit Break STIX";
+      src: url("../fonts/stix-two/STIXTwoText-Italic.ttf") format("truetype");
+      font-style: italic;
+      font-weight: 400;
+      font-display: swap;
+    }
+
+    :root {
       color-scheme: dark;
       --bg: #050816;
       --bg-2: #08111f;
@@ -729,14 +745,17 @@
     }
 
     .math-expression {
-      font-family: "Cambria Math", "STIX Two Math", "Times New Roman", serif;
+      font-family: "Limit Break STIX", "Times New Roman", serif;
+      font-weight: 400;
       font-size: clamp(1.12rem, 2.3vw, 1.42rem);
       line-height: 1.85;
       color: var(--text);
     }
 
     .math-expression .mi {
+      font-family: "Limit Break STIX", "Times New Roman", serif;
       font-style: italic;
+      font-weight: 400;
     }
 
     .math-expression .upright {
@@ -837,7 +856,9 @@
     }
 
     .math-answer-grid input {
-      font-family: "Cambria Math", "STIX Two Math", "Times New Roman", serif;
+      font-family: "Limit Break STIX", "Times New Roman", serif;
+      font-style: italic;
+      font-weight: 400;
       font-size: 1.05rem;
     }
 
