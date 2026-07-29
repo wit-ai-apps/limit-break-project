@@ -1,4 +1,6 @@
-const STORAGE_KEY = "limitBreakMathTrainingHighSchoolDay1V1";
+const STORAGE_KEY_BASE = "limitBreakMathTrainingHighSchoolDay1V2";
+const TIME_LIMIT_MS = 30 * 60 * 1000;
+const DAILY_RESET_OFFSET_MS = (8 * 60 + 55) * 60 * 1000;
 
 const QUESTIONS = [
   {
@@ -131,6 +133,8 @@ const QUESTIONS = [
 ];
 
 let initialized = false;
+let timerId = null;
+let activeForm = null;
 
 export function initMathTraining() {
   if (initialized) return;
@@ -138,12 +142,14 @@ export function initMathTraining() {
   const list = document.querySelector("#mathTrainingList");
   if (!form || !list) return;
   initialized = true;
+  activeForm = form;
 
   const stored = loadState();
   renderQuestions(list, stored.answers || {});
   updateProgress();
   if (stored.submittedAt && Array.isArray(stored.results)) {
     showResults(stored.results, stored.submittedAt, stored.attempts || 1);
+    lockTraining(stored.finishReason || "submitted");
   }
 
   form.addEventListener("input", () => {
@@ -159,21 +165,21 @@ export function initMathTraining() {
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
+    if (isTrainingFinished(loadState())) return;
     const answers = collectAnswers(form);
-    const results = gradeMathTrainingAnswers(answers);
-    const previous = loadState();
-    const submittedAt = new Date().toISOString();
-    const attempts = Number(previous.attempts || 0) + 1;
-    saveState({ answers, results, submittedAt, updatedAt: submittedAt, attempts });
-    showResults(results, submittedAt, attempts);
-    setStatus("採点結果と提出履歴をこの端末へ保存しました。");
-    document.querySelector("#mathTrainingResult")?.scrollIntoView({ behavior: "smooth", block: "center" });
+    finishTraining(answers, "submitted");
   });
 
   document.querySelector("#mathTrainingReset")?.addEventListener("click", () => {
-    if (!window.confirm("この10題の回答と採点結果を消しますか？")) return;
-    localStorage.removeItem(STORAGE_KEY);
+    if (isTrainingFinished(loadState())) return;
+    if (!window.confirm("入力内容だけを消しますか？ 残り時間は戻りません。")) return;
     form.reset();
+    const current = loadState();
+    saveState({
+      ...current,
+      answers: {},
+      updatedAt: new Date().toISOString()
+    });
     clearQuestionResults();
     const resultPanel = document.querySelector("#mathTrainingResult");
     if (resultPanel) {
@@ -181,8 +187,15 @@ export function initMathTraining() {
       resultPanel.innerHTML = "";
     }
     updateProgress();
-    setStatus("回答を消しました。");
+    setStatus("入力内容を消しました。残り時間はそのまま進みます。");
   });
+
+  const observer = new MutationObserver(() => startTimerWhenEligible());
+  observer.observe(document.body, {
+    attributes: true,
+    attributeFilter: ["data-auth", "data-role", "data-view"]
+  });
+  startTimerWhenEligible();
 }
 
 export function gradeMathTrainingAnswers(answers = {}) {
@@ -243,6 +256,140 @@ function updateProgress() {
   ).length;
   const badge = document.querySelector("#mathTrainingProgressBadge");
   if (badge) badge.textContent = `${completed} / ${QUESTIONS.length}`;
+}
+
+function startTimerWhenEligible() {
+  const eligible =
+    document.body.dataset.auth === "in" &&
+    document.body.dataset.role === "student" &&
+    document.body.dataset.view === "training";
+  if (!eligible) {
+    stopTimer();
+    return;
+  }
+
+  let state = loadState();
+  if (!state.startedAt) {
+    const startedAt = new Date().toISOString();
+    state = {
+      ...state,
+      startedAt,
+      answers: state.answers || {},
+      updatedAt: startedAt
+    };
+    saveState(state);
+    setStatus("30分計測を開始しました。更新しても残り時間は戻りません。");
+  }
+
+  updateTimer();
+  if (!isTrainingFinished(loadState()) && timerId === null) {
+    timerId = window.setInterval(updateTimer, 1000);
+  }
+}
+
+function updateTimer() {
+  const state = loadState();
+  if (!state.startedAt) return;
+  const remaining = remainingTimeMs(state.startedAt);
+  const badge = document.querySelector("#mathTrainingTimerBadge");
+  if (badge) {
+    badge.textContent = formatRemainingTime(remaining);
+    badge.classList.toggle("urgent", remaining > 0 && remaining <= 5 * 60 * 1000);
+    badge.classList.toggle("finished", remaining <= 0 || isTrainingFinished(state));
+  }
+
+  if (isTrainingFinished(state)) {
+    lockTraining(state.finishReason || "submitted");
+    stopTimer();
+    return;
+  }
+
+  if (remaining <= 0) {
+    finishTraining(collectAnswers(activeForm), "time_limit");
+  }
+}
+
+function finishTraining(answers, finishReason) {
+  const previous = loadState();
+  if (isTrainingFinished(previous)) return;
+  const results = gradeMathTrainingAnswers(answers);
+  const submittedAt = new Date().toISOString();
+  const attempts = 1;
+  saveState({
+    ...previous,
+    answers,
+    results,
+    submittedAt,
+    finishedAt: submittedAt,
+    finishReason,
+    updatedAt: submittedAt,
+    attempts
+  });
+  showResults(results, submittedAt, attempts);
+  lockTraining(finishReason);
+  stopTimer();
+  setStatus(
+    finishReason === "time_limit"
+      ? "30分が終了したため自動提出しました。回答の変更はできません。"
+      : "提出しました。本日の回答は確定され、変更できません。"
+  );
+  document.querySelector("#mathTrainingResult")?.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function lockTraining(reason) {
+  const form = activeForm || document.querySelector("#mathTrainingForm");
+  if (!form) return;
+  form.querySelectorAll("input").forEach((input) => {
+    input.disabled = true;
+  });
+  const submit = document.querySelector("#mathTrainingSubmit");
+  const reset = document.querySelector("#mathTrainingReset");
+  if (submit) {
+    submit.disabled = true;
+    submit.textContent = reason === "time_limit" ? "時間終了・自動提出済み" : "提出済み";
+  }
+  if (reset) reset.disabled = true;
+  document.querySelector(".math-training")?.classList.add("time-finished");
+  const badge = document.querySelector("#mathTrainingTimerBadge");
+  if (badge && reason !== "submitted") badge.textContent = "00:00";
+  badge?.classList.add("finished");
+}
+
+function stopTimer() {
+  if (timerId === null) return;
+  window.clearInterval(timerId);
+  timerId = null;
+}
+
+function isTrainingFinished(state) {
+  return Boolean(state?.finishedAt || state?.submittedAt);
+}
+
+export function remainingTimeMs(startedAt, now = Date.now()) {
+  const start = new Date(startedAt).getTime();
+  if (!Number.isFinite(start)) return 0;
+  return Math.max(0, TIME_LIMIT_MS - (now - start));
+}
+
+export function dailyStorageKey(date = new Date()) {
+  // 「学習日」は日本時間の午前8:55に切り替える。
+  // 8:55を日界として扱うため、時刻を8時間55分戻してからJSTの日付を求める。
+  const trainingDate = new Date(date.getTime() - DAILY_RESET_OFFSET_MS);
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Tokyo",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).formatToParts(trainingDate);
+  const value = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${STORAGE_KEY_BASE}:${value.year}-${value.month}-${value.day}`;
+}
+
+function formatRemainingTime(milliseconds) {
+  const totalSeconds = Math.max(0, Math.ceil(milliseconds / 1000));
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
 function showResults(results, submittedAt, attempts) {
@@ -340,7 +487,7 @@ function near(actual, expected, tolerance = 0.000001) {
 
 function loadState() {
   try {
-    const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+    const parsed = JSON.parse(localStorage.getItem(dailyStorageKey()) || "{}");
     return parsed && typeof parsed === "object" ? parsed : {};
   } catch {
     return {};
@@ -348,7 +495,7 @@ function loadState() {
 }
 
 function saveState(state) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  localStorage.setItem(dailyStorageKey(), JSON.stringify(state));
 }
 
 function setStatus(message) {

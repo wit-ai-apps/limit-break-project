@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.19.4-dev";
-export const APP_RELEASE_NAME = "指数位置の微調整";
+export const APP_VERSION = "v4.19.5-dev";
+export const APP_RELEASE_NAME = "毎日10題・30分制限";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -42,6 +42,17 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.19.5-dev",
+    date: "2026-07-29",
+    title: "毎日10題を30分制トレーニングへ変更",
+    items: [
+      "生徒が演習画面を開いた時点から30分の計測を開始",
+      "更新や画面の開き直しでも開始時刻と残り時間を維持",
+      "時間終了時に現在の回答を自動提出して入力を完全にロック",
+      "同じ日は再挑戦できず、毎朝8:55に新しい記録を開始"
+    ]
+  },
   {
     version: "v4.19.4-dev",
     date: "2026-07-29",

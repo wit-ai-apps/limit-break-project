@@ -696,6 +696,38 @@
       margin-bottom: 18px;
     }
 
+    .math-training-badges {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .math-timer-badge {
+      min-width: 74px;
+      border-color: rgba(250, 204, 21, 0.5);
+      color: var(--warning);
+      font-variant-numeric: tabular-nums;
+      font-size: 1rem;
+      text-align: center;
+    }
+
+    .math-timer-badge.urgent {
+      border-color: rgba(239, 68, 68, 0.75);
+      color: #fecaca;
+      animation: math-timer-pulse 1s ease-in-out infinite alternate;
+    }
+
+    .math-timer-badge.finished {
+      border-color: rgba(148, 163, 184, 0.45);
+      color: var(--muted);
+      animation: none;
+    }
+
+    @keyframes math-timer-pulse {
+      from { opacity: 1; }
+      to { opacity: 0.62; }
+    }
+
     .button-link {
       display: inline-flex;
       align-items: center;
@@ -723,6 +755,15 @@
     .math-question.incorrect {
       border-color: rgba(236, 173, 64, 0.75);
       background: rgba(236, 173, 64, 0.08);
+    }
+
+    .math-training.time-finished .math-question {
+      opacity: 0.86;
+    }
+
+    .math-training.time-finished input {
+      cursor: not-allowed;
+      background: rgba(148, 163, 184, 0.08);
     }
 
     .math-question-heading {

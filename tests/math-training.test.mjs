@@ -1,7 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { gradeMathTrainingAnswers } from "../assets/js/training/math-training.js";
+import {
+  dailyStorageKey,
+  gradeMathTrainingAnswers,
+  remainingTimeMs
+} from "../assets/js/training/math-training.js";
 
 test("高校数学スライド式10題の模範解答を全問正解にする", () => {
   const results = gradeMathTrainingAnswers({
@@ -24,4 +28,22 @@ test("高校数学スライド式10題の模範解答を全問正解にする", 
 test("空欄は全問不正解として安全に扱う", () => {
   const results = gradeMathTrainingAnswers({});
   assert.equal(results.every((result) => result.correct === false), true);
+});
+
+test("30分の残り時間は更新しても開始時刻から計算する", () => {
+  const startedAt = "2026-07-29T00:00:00.000Z";
+  const now = new Date("2026-07-29T00:12:34.000Z").getTime();
+  assert.equal(remainingTimeMs(startedAt, now), 17 * 60 * 1000 + 26 * 1000);
+  assert.equal(remainingTimeMs(startedAt, now + 18 * 60 * 1000), 0);
+});
+
+test("毎日の記録キーは日本時間の午前8時55分に切り替わる", () => {
+  assert.equal(
+    dailyStorageKey(new Date("2026-07-28T23:54:59.000Z")),
+    "limitBreakMathTrainingHighSchoolDay1V2:2026-07-28"
+  );
+  assert.equal(
+    dailyStorageKey(new Date("2026-07-28T23:55:00.000Z")),
+    "limitBreakMathTrainingHighSchoolDay1V2:2026-07-29"
+  );
 });

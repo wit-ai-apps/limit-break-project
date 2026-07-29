@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.svg">
-  <link rel="stylesheet" href="assets/css/style.css?v=4.19.4">
+  <link rel="stylesheet" href="assets/css/style.css?v=4.19.5">
 </head>
 <body data-role="student" data-auth="out">
   <div class="app-startup-gate" id="appStartupGate" role="status" aria-live="polite">
@@ -192,10 +192,13 @@
               <p class="math-training-kicker">高校数学・スライド式トレーニング Day 1</p>
               <h2 id="math-training-heading">毎日10題</h2>
             </div>
-            <span class="badge" id="mathTrainingProgressBadge">0 / 10</span>
+            <div class="math-training-badges">
+              <span class="badge math-timer-badge" id="mathTrainingTimerBadge">30:00</span>
+              <span class="badge" id="mathTrainingProgressBadge">0 / 10</span>
+            </div>
           </div>
           <p class="math-training-lead">
-            展開からベクトルまでを1題ずつ解きます。途中の回答はこの端末へ自動保存されます。
+            開いた時点から30分です。時間終了時に自動提出され、回答欄はロックされます。更新しても残り時間は戻りません。毎朝8:55に翌日分へ切り替わります。
           </p>
           <div class="math-training-toolbar">
             <a class="secondary button-link" href="assets/worksheets/high-school-slide-training-day1.pdf" target="_blank" rel="noopener">
@@ -207,7 +210,7 @@
             <div id="mathTrainingList" class="math-training-list"></div>
             <div class="math-training-actions">
               <button type="submit" id="mathTrainingSubmit">採点して提出</button>
-              <button class="secondary" type="button" id="mathTrainingReset">回答を消す</button>
+              <button class="secondary" type="button" id="mathTrainingReset">入力内容だけ消す</button>
             </div>
             <p class="button-note" id="mathTrainingSaveStatus" role="status" aria-live="polite"></p>
           </form>
@@ -532,6 +535,6 @@
     </div>
   </dialog>
 
-  <script type="module" src="assets/js/app.js?v=4.19.4"></script>
+  <script type="module" src="assets/js/app.js?v=4.19.5"></script>
 </body>
 </html>
