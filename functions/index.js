@@ -27,7 +27,8 @@ import {
   DEFAULT_SHARING,
   canManageSharing,
   effectiveSharing,
-  normalizeSharingPreferences
+  normalizeSharingPreferences,
+  resolveSharingRole
 } from "./sharing-policy.js";
 import { filterSupportSummary, supportSummaryAccessFields } from "./support-summary.js";
 import { buildGuardianAnswer } from "./guardian-answer.js";
@@ -219,10 +220,24 @@ async function sharingContext(uid, user, studentId) {
     db.doc(`students/${studentId}/privacy_preferences/student`).get(),
     db.doc(`students/${studentId}/privacy_preferences/guardian`).get()
   ]);
-  if (!memberSnapshot.exists || memberSnapshot.data().status !== "active") {
+  const role = resolveSharingRole(user, memberSnapshot.exists ? memberSnapshot.data() : null);
+  if (!role) {
     throw new HttpsError("permission-denied", "ACTIVE_MEMBERSHIP_REQUIRED");
   }
-  const role = String(memberSnapshot.data().role || user.role || "supporter");
+  if (!memberSnapshot.exists && ["student", "parent"].includes(role)) {
+    await db.doc(`students/${studentId}/members/${uid}`).set({
+      uid,
+      role,
+      relationship: role === "student" ? "本人" : "保護者",
+      permissions: role === "parent"
+        ? INVITE_PERMISSIONS.parent
+        : ["progress.read", "evidence.read", "evidence.write", "schedule.read", "schedule.write"],
+      status: "active",
+      migrated_from_legacy_link: true,
+      created_at: FieldValue.serverTimestamp(),
+      updated_at: FieldValue.serverTimestamp()
+    }, { merge: true });
+  }
   const student = studentPrefSnapshot.exists
     ? studentPrefSnapshot.data().permissions : DEFAULT_SHARING.student;
   const guardian = guardianPrefSnapshot.exists

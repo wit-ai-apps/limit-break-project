@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.19.11-dev";
-export const APP_RELEASE_NAME = "保護者からユイ先生へ質問";
+export const APP_VERSION = "v4.19.12-dev";
+export const APP_RELEASE_NAME = "保護者質問の旧アカウント対応";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -42,6 +42,16 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.19.12-dev",
+    date: "2026-07-29",
+    title: "保護者質問が反応しない問題を修正",
+    items: [
+      "旧版で連携した保護者アカウントを新しいmember形式へ安全に移行",
+      "外部サポーターは従来どおり承認済みmember文書を必須化",
+      "質問送信中の状態と権限エラーを画面上へ明示"
+    ]
+  },
   {
     version: "v4.19.11-dev",
     date: "2026-07-29",

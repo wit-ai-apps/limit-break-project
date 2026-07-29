@@ -75,3 +75,13 @@ export function canManageSharing(user, studentId) {
     && user.linked_student_ids.includes(studentId)
     && ["student", "parent", "admin", "lead_teacher"].includes(user.role));
 }
+
+export function resolveSharingRole(user, member) {
+  if (member) {
+    if (member.status !== "active") return "";
+    return String(member.role || "");
+  }
+  // 旧版ではusers.linked_student_idsだけで本人・保護者を連携していた。
+  // 外部サポーターと教師は必ず承認済みmember文書を要求する。
+  return ["student", "parent"].includes(user?.role) ? user.role : "";
+}

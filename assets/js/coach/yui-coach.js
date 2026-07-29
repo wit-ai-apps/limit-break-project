@@ -200,7 +200,7 @@ export function renderYuiCoachCard({
           placeholder="例：今日の提出状況はどうでしたか？" required>
       </label>
       <button type="submit" class="secondary">質問する</button>
-      <small>生徒本人の共有設定の範囲内で回答します。本人とユイ先生との会話内容は回答しません。</small>`;
+      <small class="yui-question-status" role="status" aria-live="polite">生徒本人の共有設定の範囲内で回答します。本人とユイ先生との会話内容は回答しません。</small>`;
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
       const question = new FormData(form).get("question")?.toString().trim() || "";
@@ -208,6 +208,8 @@ export function renderYuiCoachCard({
       const button = form.querySelector("button[type=submit]");
       button.disabled = true;
       button.textContent = "確認中";
+      const status = form.querySelector(".yui-question-status");
+      status.textContent = "共有範囲を確認して回答を作成しています。";
       try {
         const result = await onGuardianQuestion(question);
         const response = document.createElement("p");
@@ -217,8 +219,10 @@ export function renderYuiCoachCard({
       } catch (error) {
         button.disabled = false;
         button.textContent = "質問する";
-        const status = form.querySelector("small");
-        status.textContent = `回答できませんでした。${error?.message || error}`;
+        const code = String(error?.code || "");
+        status.textContent = code.includes("permission-denied")
+          ? "この保護者アカウントと生徒の連携を確認できませんでした。設定の「支援者・招待」を確認してください。"
+          : `回答できませんでした。${error?.message || error}`;
       }
     });
     actionsElement.appendChild(form);
