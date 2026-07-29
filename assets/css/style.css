@@ -743,12 +743,43 @@
       font-style: normal;
     }
 
+    .math-expression sup {
+      position: relative;
+      top: -0.38em;
+      vertical-align: baseline;
+      font-size: 0.58em;
+      line-height: 0;
+    }
+
+    .math-expression sub {
+      position: relative;
+      bottom: -0.16em;
+      vertical-align: baseline;
+      font-size: 0.62em;
+      line-height: 0;
+    }
+
+    .math-equation-row {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.55em;
+      margin-top: 0.28em;
+      white-space: nowrap;
+    }
+
+    .math-operator {
+      display: inline-flex;
+      align-items: center;
+      align-self: center;
+      line-height: 1;
+    }
+
     .math-frac {
       display: inline-grid;
       grid-template-rows: auto auto;
       align-items: center;
       justify-items: center;
-      vertical-align: -0.58em;
+      vertical-align: middle;
       margin-inline: 0.12em;
       line-height: 1.05;
       font-size: 1em;
@@ -775,11 +806,19 @@
 
     .math-system-brace {
       grid-row: 1 / 4;
-      font-size: 3.9em;
-      font-weight: 200;
-      line-height: 0.7;
-      transform: scaleX(0.65);
-      transform-origin: right center;
+      width: 0.78em;
+      height: 4.7em;
+      align-self: center;
+      overflow: visible;
+    }
+
+    .math-system-brace path {
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 1.15;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      vector-effect: non-scaling-stroke;
     }
 
     .math-answer-grid {

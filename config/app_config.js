@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.19.1-dev";
-export const APP_RELEASE_NAME = "毎日10題・画面演習";
+export const APP_VERSION = "v4.19.2-dev";
+export const APP_RELEASE_NAME = "画面数式の教科書表記修正";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -42,6 +42,16 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.19.2-dev",
+    date: "2026-07-29",
+    title: "毎日10題の数式表示修正",
+    items: [
+      "指数を本文より小さい教科書準拠の比率へ修正",
+      "分数式の加減号・等号を分数の中心線へ配置",
+      "連立方程式の波括弧を細い数式用線へ変更"
+    ]
+  },
   {
     version: "v4.19.1-dev",
     date: "2026-07-29",

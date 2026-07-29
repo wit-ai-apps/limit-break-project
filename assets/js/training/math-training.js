@@ -29,11 +29,13 @@ const QUESTIONS = [
     id: "q3",
     topic: "分数方程式",
     prompt: `次の方程式を解きなさい（<span class="mi">x</span>≠±1）。<br>
-      <span class="math-frac"><span><span class="mi">x</span>＋1</span><span><span class="mi">x</span>−1</span></span>
-      ＋
-      <span class="math-frac"><span><span class="mi">x</span>−1</span><span><span class="mi">x</span>＋1</span></span>
-      ＝
-      <span class="math-frac"><span>5</span><span>2</span></span>`,
+      <span class="math-equation-row">
+        <span class="math-frac"><span><span class="mi">x</span>＋1</span><span><span class="mi">x</span>−1</span></span>
+        <span class="math-operator">＋</span>
+        <span class="math-frac"><span><span class="mi">x</span>−1</span><span><span class="mi">x</span>＋1</span></span>
+        <span class="math-operator">＝</span>
+        <span class="math-frac"><span>5</span><span>2</span></span>
+      </span>`,
     fields: [{ id: "answer", label: "x の値（複数はコンマ区切り）" }],
     model: "x＝−3，3",
     check: ({ answer }) => isNumberSet(answer, [-3, 3])
@@ -43,7 +45,9 @@ const QUESTIONS = [
     topic: "連立3元1次方程式",
     prompt: `次の連立方程式を解きなさい。<br>
       <span class="math-system">
-        <span class="math-system-brace">{</span>
+        <svg class="math-system-brace" viewBox="0 0 24 100" aria-hidden="true" focusable="false">
+          <path d="M22 2 C10 2 13 18 13 29 C13 42 8 48 2 50 C8 52 13 58 13 71 C13 82 10 98 22 98"></path>
+        </svg>
         <span>2<span class="mi">x</span>−<span class="mi">y</span>＋<span class="mi">z</span>＝4</span>
         <span><span class="mi">x</span>＋2<span class="mi">y</span>−<span class="mi">z</span>＝1</span>
         <span>3<span class="mi">x</span>＋<span class="mi">y</span>＋2<span class="mi">z</span>＝9</span>
