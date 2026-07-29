@@ -109,7 +109,7 @@ export function memorySummary(queue, now = new Date()) {
   };
 }
 
-export function renderAdaptiveMemory(summaryElement, listElement) {
+export function renderAdaptiveMemory(summaryElement, listElement, options = {}) {
   if (!summaryElement || !listElement) return;
   const queue = loadMemoryQueue();
   const summary = memorySummary(queue);
@@ -174,7 +174,8 @@ export function renderAdaptiveMemory(summaryElement, listElement) {
         const updated = current.map((entry) =>
           entry.id === item.id ? applyMemoryRating(entry, button.dataset.memoryRating) : entry);
         saveMemoryQueue(updated);
-        renderAdaptiveMemory(summaryElement, listElement);
+        options.onChange?.(updated);
+        renderAdaptiveMemory(summaryElement, listElement, options);
       });
     });
     listElement.appendChild(card);

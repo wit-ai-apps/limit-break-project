@@ -111,7 +111,9 @@ export function buildYuiBriefing(context = {}, role = "student") {
   };
 }
 
-export function renderYuiCoachCard({ messageElement, actionsElement, role, context, onNavigate }) {
+export function renderYuiCoachCard({
+  messageElement, actionsElement, role, context, onNavigate, onDialogueChange
+}) {
   if (!messageElement || !actionsElement) return;
   const briefing = buildYuiBriefing(context, role);
   const saved = loadDailyDialogue();
@@ -134,13 +136,17 @@ export function renderYuiCoachCard({ messageElement, actionsElement, role, conte
       button.className = "secondary";
       button.textContent = choice.label;
       button.addEventListener("click", () => {
-        saveDailyDialogue({
+        const dialogue = {
           choice: choice.value,
           choiceLabel: choice.label,
           response: choice.response,
           answeredAt: new Date().toISOString()
+        };
+        saveDailyDialogue(dialogue);
+        onDialogueChange?.(dialogue);
+        renderYuiCoachCard({
+          messageElement, actionsElement, role, context, onNavigate, onDialogueChange
         });
-        renderYuiCoachCard({ messageElement, actionsElement, role, context, onNavigate });
         if (choice.view) onNavigate?.(choice.view);
       });
       choiceRow.appendChild(button);
@@ -170,11 +176,13 @@ export function renderYuiCoachCard({ messageElement, actionsElement, role, conte
       event.preventDefault();
       const freeMessage = new FormData(form).get("message")?.toString().trim() || "";
       if (!freeMessage) return;
-      saveDailyDialogue({
+      const dialogue = {
         ...loadDailyDialogue(),
         freeMessage,
         freeMessageAt: new Date().toISOString()
-      });
+      };
+      saveDailyDialogue(dialogue);
+      onDialogueChange?.(dialogue);
       const status = document.createElement("p");
       status.className = "yui-response";
       status.textContent = "ユイ先生：教えてくれてありがとう。今日の学習判断に記録しました。";

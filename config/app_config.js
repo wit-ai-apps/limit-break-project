@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.19.8-dev";
-export const APP_RELEASE_NAME = "毎日のAIユイ先生";
+export const APP_VERSION = "v4.19.9-dev";
+export const APP_RELEASE_NAME = "学習情報の共有範囲";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -42,6 +42,17 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.19.9-dev",
+    date: "2026-07-29",
+    title: "生徒・保護者の情報共有設定を追加",
+    items: [
+      "学習進度・時間・点数・弱点・予定・答案画像を項目別に設定",
+      "生徒本人と保護者の設定を照合し、狭い方を実効権限として採用",
+      "ユイ先生との会話と暗記履歴を本人専用のFirestore領域へ同期",
+      "外部サポーターには会話・個人メモ・答案画像を公開しない"
+    ]
+  },
   {
     version: "v4.19.8-dev",
     date: "2026-07-29",

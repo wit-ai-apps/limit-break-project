@@ -23,6 +23,12 @@ import {
 } from "./invite-policy.js";
 import { buildVerifiedLearningIssues } from "./learning-issues.js";
 import { buildMaterialStudyPlan } from "./material-planner.js";
+import {
+  DEFAULT_SHARING,
+  canManageSharing,
+  effectiveSharing,
+  normalizeSharingPreferences
+} from "./sharing-policy.js";
 
 initializeApp();
 
@@ -128,6 +134,77 @@ export const createStudentForParent = onCall({ region: "us-east1" }, async (requ
   });
   await batch.commit();
   return { studentId };
+});
+
+export const getSharingPreferences = onCall({ region: "us-east1" }, async (request) => {
+  const uid = requireAuth(request);
+  const { data: user } = await requireUser(uid);
+  const studentId = String(request.data?.studentId || "").trim();
+  if (!canManageSharing(user, studentId)) {
+    throw new HttpsError("permission-denied", "SHARING_SETTINGS_NOT_ALLOWED");
+  }
+  const db = getFirestore();
+  const [studentSnapshot, guardianSnapshot] = await Promise.all([
+    db.doc(`students/${studentId}/privacy_preferences/student`).get(),
+    db.doc(`students/${studentId}/privacy_preferences/guardian`).get()
+  ]);
+  const student = normalizeSharingPreferences(
+    studentSnapshot.exists ? studentSnapshot.data().permissions : DEFAULT_SHARING.student,
+    "student"
+  );
+  const guardian = normalizeSharingPreferences(
+    guardianSnapshot.exists ? guardianSnapshot.data().permissions : DEFAULT_SHARING.guardian,
+    "parent"
+  );
+  return {
+    student,
+    guardian,
+    effective: {
+      parent: effectiveSharing(student, guardian, "parent"),
+      supporter: effectiveSharing(student, guardian, "supporter"),
+      teacher: effectiveSharing(student, guardian, "teacher")
+    }
+  };
+});
+
+export const saveSharingPreferences = onCall({ region: "us-east1" }, async (request) => {
+  const uid = requireAuth(request);
+  const { data: user } = await requireUser(uid);
+  const studentId = String(request.data?.studentId || "").trim();
+  if (!canManageSharing(user, studentId) || !["student", "parent"].includes(user.role)) {
+    throw new HttpsError("permission-denied", "SHARING_SETTINGS_NOT_ALLOWED");
+  }
+  const owner = user.role === "student" ? "student" : "guardian";
+  const permissions = normalizeSharingPreferences(request.data?.permissions, user.role);
+  await getFirestore().doc(`students/${studentId}/privacy_preferences/${owner}`).set({
+    owner_uid: uid,
+    owner_role: user.role,
+    permissions,
+    updated_at: FieldValue.serverTimestamp()
+  }, { merge: true });
+  return { owner, permissions };
+});
+
+export const savePrivateLearningState = onCall({ region: "us-east1" }, async (request) => {
+  const uid = requireAuth(request);
+  const { data: user } = await requireUser(uid);
+  const studentId = String(request.data?.studentId || "").trim();
+  if (user.role !== "student" || !canManageSharing(user, studentId)) {
+    throw new HttpsError("permission-denied", "STUDENT_PRIVATE_STATE_ONLY");
+  }
+  const kind = String(request.data?.kind || "");
+  if (!["memory", "yui_dialogue"].includes(kind)) {
+    throw new HttpsError("invalid-argument", "INVALID_PRIVATE_STATE_KIND");
+  }
+  const value = request.data?.value;
+  const serialized = JSON.stringify(value ?? null);
+  if (serialized.length > 750000) throw new HttpsError("invalid-argument", "PRIVATE_STATE_TOO_LARGE");
+  await getFirestore().doc(`students/${studentId}/private_learning_state/${kind}`).set({
+    owner_uid: uid,
+    value,
+    updated_at: FieldValue.serverTimestamp()
+  }, { merge: true });
+  return { saved: true };
 });
 
 export const inspectGroupInvite = onCall({ region: "us-east1" }, async (request) => {

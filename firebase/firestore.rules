@@ -158,6 +158,28 @@ service cloud.firestore {
         allow read: if canReadStudent(studentId);
         allow write: if false;
       }
+
+      // 生徒と保護者の共有希望。書き込みと実効権限の計算はCloud Functionsだけが行う。
+      match /privacy_preferences/{preferenceId} {
+        allow read: if signedIn() && studentId in linkedStudentIds()
+          && (userRole() == "student" || userRole() == "parent"
+            || userRole() == "admin" || userRole() == "lead_teacher");
+        allow write: if false;
+      }
+
+      // ユイ先生との会話・暗記履歴は本人専用。支援者向けには別途要約だけを生成する。
+      match /private_learning_state/{stateId} {
+        allow read: if signedIn() && userRole() == "student"
+          && studentId in linkedStudentIds();
+        allow write: if false;
+      }
+
+      // 誰がどの情報を閲覧したかはCloud Functionsで記録し、本人と保護者だけが確認する。
+      match /access_logs/{logId} {
+        allow read: if signedIn() && studentId in linkedStudentIds()
+          && (userRole() == "student" || userRole() == "parent");
+        allow write: if false;
+      }
     }
 
     // 招待トークンと承認状態はCloud Functionsだけが扱う。

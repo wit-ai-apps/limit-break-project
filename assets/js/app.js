@@ -23,15 +23,19 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.19.8";
-import { initMathTraining } from "./training/math-training.js?v=4.19.8";
-import { initEnglishTraining } from "./training/english-training.js?v=4.19.8";
+} from "../../config/app_config.js?v=4.19.9";
+import { initMathTraining } from "./training/math-training.js?v=4.19.9";
+import { initEnglishTraining } from "./training/english-training.js?v=4.19.9";
 import {
   loadMemoryQueue,
   memorySummary as summarizeMemory,
   renderAdaptiveMemory
-} from "./learning/memory.js?v=4.19.8";
-import { renderYuiCoachCard } from "./coach/yui-coach.js?v=4.19.8";
+} from "./learning/memory.js?v=4.19.9";
+import { renderYuiCoachCard } from "./coach/yui-coach.js?v=4.19.9";
+import {
+  sharingPreferencesFromForm,
+  sharingSettingsMarkup
+} from "./privacy/sharing-settings.js?v=4.19.9";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -87,6 +91,7 @@ import {
 } from "./data/fallbacks.js";
 
     let dailyPlan = FALLBACK_DAILY;
+    let sharingPreferences = null;
     let examSchedule = FALLBACK_EXAMS;
     let summerPlan = FALLBACK_SUMMER;
     let levelTasks = FALLBACK_LEVELS;
@@ -561,6 +566,7 @@ import {
       await loadLinkDirectory();
       if (pendingInviteToken) await claimPendingInvite();
       if (currentRole === "parent" || currentRole === "lead_teacher") await loadGroupInvites();
+      if (["student", "parent"].includes(currentRole)) await loadSharingPreferences();
       if (currentRole === "student" || currentRole === "parent") await recoverStalledEvidenceAnalyses();
     }
 
@@ -1583,6 +1589,36 @@ function renderAdaptivePlan() {
       return dailyPlan.coach_message || "今日は次の一手だけ見て進めましょう。";
     }
 
+    async function loadSharingPreferences() {
+      sharingPreferences = null;
+      if (!firebaseBridge.currentUser || !firebaseBridge.studentId) return;
+      try {
+        sharingPreferences = await callGroupFunction("getSharingPreferences", {
+          studentId: firebaseBridge.studentId
+        });
+      } catch (error) {
+        addDiagnosticLog("privacy.preferences.load_error", {
+          message: String(error?.message || error).slice(0, 200)
+        });
+      }
+    }
+
+    async function syncPrivateLearningState(kind, value) {
+      if (currentRole !== "student" || !firebaseBridge.currentUser || !firebaseBridge.studentId) return;
+      try {
+        await callGroupFunction("savePrivateLearningState", {
+          studentId: firebaseBridge.studentId,
+          kind,
+          value
+        });
+      } catch (error) {
+        addDiagnosticLog("privacy.private_state.sync_error", {
+          kind,
+          message: String(error?.message || error).slice(0, 200)
+        });
+      }
+    }
+
     function renderYuiCoach() {
       const summary = todayOutcomeSummary();
       const latest = [...records]
@@ -1603,7 +1639,8 @@ function renderAdaptivePlan() {
           fatigue: Number(latest.fatigue || 0),
           hasEvidence: summary.evidenceRecords.length > 0
         },
-        onNavigate: setActiveView
+        onNavigate: setActiveView,
+        onDialogueChange: (dialogue) => syncPrivateLearningState("yui_dialogue", dialogue)
       });
     }
 
@@ -2625,7 +2662,9 @@ function renderScheduleDrawer() {
     }
 
     function renderMemory() {
-      renderAdaptiveMemory(memorySummary, memoryList);
+      renderAdaptiveMemory(memorySummary, memoryList, {
+        onChange: (queue) => syncPrivateLearningState("memory", queue)
+      });
     }
 
     function renderRetentionTests() {
@@ -2916,6 +2955,42 @@ function renderScheduleDrawer() {
       });
     }
 
+    function renderSharingSettings() {
+      if (!groupSettingsList || !["student", "parent"].includes(currentRole)) return;
+      const card = document.createElement("article");
+      card.className = "settings-card sharing-settings-card";
+      const ownerKey = currentRole === "student" ? "student" : "guardian";
+      const defaults = {
+        progress: "detail", studyTime: "summary", completion: "detail", scores: "summary",
+        weaknesses: "summary", schedule: "detail", evidence: "none", fatigue: "none"
+      };
+      card.innerHTML = sharingSettingsMarkup(
+        sharingPreferences?.[ownerKey] || defaults,
+        currentRole === "student" ? "生徒本人" : "保護者"
+      );
+      groupSettingsList.prepend(card);
+      card.querySelector("#sharingSettingsForm")?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const form = event.currentTarget;
+        const status = form.querySelector(".sharing-settings-status");
+        const button = form.querySelector("button[type=submit]");
+        button.disabled = true;
+        status.textContent = "保存しています。";
+        try {
+          await callGroupFunction("saveSharingPreferences", {
+            studentId: firebaseBridge.studentId,
+            permissions: sharingPreferencesFromForm(form)
+          });
+          await loadSharingPreferences();
+          status.textContent = "保存しました。生徒と保護者のうち、狭い方の範囲を適用します。";
+        } catch (error) {
+          status.textContent = `保存できませんでした。${error.message || error}`;
+        } finally {
+          button.disabled = false;
+        }
+      });
+    }
+
     function renderSettings() {
       if (!settingsList || !scheduleSettingsList || !aiSettingsList || !groupSettingsList) return;
       settingsList.innerHTML = "";
@@ -2945,6 +3020,7 @@ function renderScheduleDrawer() {
       renderPersonalMaterialPlanner();
       renderAiReferenceTextIndex();
       renderGroupInviteManager();
+      renderSharingSettings();
       const startDateCard = document.createElement("article");
       startDateCard.className = "settings-card";
       startDateCard.innerHTML = `
