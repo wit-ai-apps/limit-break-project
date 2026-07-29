@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.svg">
-  <link rel="stylesheet" href="assets/css/style.css?v=4.19.7">
+  <link rel="stylesheet" href="assets/css/style.css?v=4.19.8">
 </head>
 <body data-role="student" data-auth="out">
   <div class="app-startup-gate" id="appStartupGate" role="status" aria-live="polite">
@@ -89,11 +89,9 @@
       </section>
 
       <aside class="coach glass">
-        <div class="coach-title">AIユイ先生からの一言 <span aria-hidden="true"></span></div>
+        <div class="coach-title">今日のAIユイ先生 <span aria-hidden="true"></span></div>
         <p class="coach-message" id="coachMessage">今日は英語構文を3つ覚えましょう。</p>
-        <div class="coach-actions" aria-label="よく使う画面">
-          <button class="secondary view-link" type="button" data-target-view="evidence">提出画像を見る</button>
-        </div>
+        <div class="coach-actions" id="coachActions" aria-label="AIユイ先生との会話"></div>
       </aside>
     </header>
 
@@ -570,6 +568,6 @@
     </div>
   </dialog>
 
-  <script type="module" src="assets/js/app.js?v=4.19.7"></script>
+  <script type="module" src="assets/js/app.js?v=4.19.8"></script>
 </body>
 </html>

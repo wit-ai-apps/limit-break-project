@@ -1,7 +1,7 @@
 const STORAGE_KEY_BASE = "limitBreakEnglishTrainingDemoV1";
 const TIME_LIMIT_MS = 30 * 60 * 1000;
 const DAILY_RESET_OFFSET_MS = (8 * 60 + 55) * 60 * 1000;
-import { recordEnglishTrainingResults } from "../learning/memory.js?v=4.19.7";
+import { recordEnglishTrainingResults } from "../learning/memory.js?v=4.19.8";
 
 const sentence = (value) => String(value || "").toLowerCase()
   .replace(/[.,!?'"’]/g, "").replace(/\s+/g, " ").trim();

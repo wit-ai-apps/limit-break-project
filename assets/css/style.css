@@ -363,6 +363,80 @@
       min-height: 42px;
     }
 
+    .yui-message-main,
+    .yui-message-detail {
+      display: block;
+    }
+
+    .yui-message-main {
+      font-weight: 850;
+    }
+
+    .yui-message-detail {
+      margin-top: 6px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .yui-question,
+    .yui-response,
+    .yui-free-form {
+      grid-column: 1 / -1;
+    }
+
+    .yui-question {
+      display: grid;
+      gap: 8px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(56, 189, 248, 0.07);
+    }
+
+    .yui-choice-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 8px;
+    }
+
+    .yui-response {
+      margin: 0;
+      padding: 10px 12px;
+      border-left: 3px solid var(--accent);
+      color: var(--text);
+      background: rgba(56, 189, 248, 0.08);
+      line-height: 1.55;
+    }
+
+    .yui-free-form {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: end;
+    }
+
+    .yui-free-form label {
+      display: grid;
+      gap: 5px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+
+    .yui-free-form button {
+      width: auto;
+      min-width: 86px;
+    }
+
+    @media (max-width: 700px) {
+      .yui-free-form {
+        grid-template-columns: 1fr;
+      }
+      .yui-free-form button {
+        width: 100%;
+      }
+    }
+
     .settings-gear {
       display: inline-grid;
       place-items: center;

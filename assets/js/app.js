@@ -23,10 +23,15 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.19.7";
-import { initMathTraining } from "./training/math-training.js?v=4.19.7";
-import { initEnglishTraining } from "./training/english-training.js?v=4.19.7";
-import { renderAdaptiveMemory } from "./learning/memory.js?v=4.19.7";
+} from "../../config/app_config.js?v=4.19.8";
+import { initMathTraining } from "./training/math-training.js?v=4.19.8";
+import { initEnglishTraining } from "./training/english-training.js?v=4.19.8";
+import {
+  loadMemoryQueue,
+  memorySummary as summarizeMemory,
+  renderAdaptiveMemory
+} from "./learning/memory.js?v=4.19.8";
+import { renderYuiCoachCard } from "./coach/yui-coach.js?v=4.19.8";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -1455,7 +1460,7 @@ import {
       document.querySelector("#dayBadge").textContent = `開始 ${studyStartDate} / ${studyElapsedDays()}日目`;
       document.querySelector("#levelLabel").textContent = levelLabelJa(dailyPlan.level);
       document.querySelector("#phaseDateLabel").textContent = todayJapanKey();
-      document.querySelector("#coachMessage").textContent = roleCoachMessage();
+      renderYuiCoach();
       if (loginVersionBadge) loginVersionBadge.textContent = APP_VERSION;
       loginStatus.textContent = firebaseBridge.message;
       renderRoleOptions();
@@ -1576,6 +1581,30 @@ function renderAdaptivePlan() {
       }
 
       return dailyPlan.coach_message || "今日は次の一手だけ見て進めましょう。";
+    }
+
+    function renderYuiCoach() {
+      const summary = todayOutcomeSummary();
+      const latest = [...records]
+        .filter((record) => record.savedAt || record.date)
+        .sort((a, b) => String(b.savedAt || b.date).localeCompare(String(a.savedAt || a.date)))[0] || {};
+      const memory = summarizeMemory(loadMemoryQueue());
+      renderYuiCoachCard({
+        messageElement: document.querySelector("#coachMessage"),
+        actionsElement: document.querySelector("#coachActions"),
+        role: currentRole,
+        context: {
+          name: loginName,
+          submitted: summary.evidenceRecords.length,
+          total: summary.total,
+          averageScore: summary.averageScore,
+          dueMemory: memory.due.length,
+          weakness: latest.mistakeReason || latest.weaknessReason || "",
+          fatigue: Number(latest.fatigue || 0),
+          hasEvidence: summary.evidenceRecords.length > 0
+        },
+        onNavigate: setActiveView
+      });
     }
 
 function renderScheduleDrawer() {

@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.19.7-dev";
-export const APP_RELEASE_NAME = "暗記・定着復習";
+export const APP_VERSION = "v4.19.8-dev";
+export const APP_RELEASE_NAME = "毎日のAIユイ先生";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -42,6 +42,17 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.19.8-dev",
+    date: "2026-07-29",
+    title: "AIユイ先生を毎日の対話型担任へ変更",
+    items: [
+      "進度・提出・正答率・弱点・疲労・暗記期限から毎日の声かけを作成",
+      "生徒へ一日一問を提示し、選択回答と自由入力を保存",
+      "保護者・サポーター・講師へ役割別の報告と声かけ案を表示",
+      "提出画像ボタンは実際の提出画像がある場合だけ表示"
+    ]
+  },
   {
     version: "v4.19.7-dev",
     date: "2026-07-29",
