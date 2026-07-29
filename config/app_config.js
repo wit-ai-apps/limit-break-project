@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.19.0-dev";
-export const APP_RELEASE_NAME = "教材PDF個別学習プラン";
+export const APP_VERSION = "v4.19.1-dev";
+export const APP_RELEASE_NAME = "毎日10題・画面演習";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -31,6 +31,7 @@ export const APP_VIEWS = [
   { id: "long", label: "長期計画" },
   { id: "week", label: "今週" },
   { id: "today", label: "今日の手順" },
+  { id: "training", label: "毎日10題" },
   { id: "memory", label: "暗記" },
   { id: "review", label: "復習" },
   { id: "evidence", label: "提出画像" },
@@ -41,6 +42,16 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.19.1-dev",
+    date: "2026-07-29",
+    title: "高校数学スライド式10題",
+    items: [
+      "生徒役が画面上で高校数学10題へ直接解答",
+      "提出時に自動採点し、設問別の結果と模範解答を表示",
+      "回答途中と提出履歴を端末へ保存し、該当画面からだけA4印刷版を開ける"
+    ]
+  },
   {
     version: "v4.19.0-dev",
     date: "2026-07-28",

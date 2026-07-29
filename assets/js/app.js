@@ -23,7 +23,8 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.19.0";
+} from "../../config/app_config.js?v=4.19.1";
+import { initMathTraining } from "./training/math-training.js?v=4.19.1";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -1362,7 +1363,7 @@ import {
     function visibleAppViews() {
       const menuViews = APP_VIEWS.filter((view) => view.id !== "admin");
       if (uiMode !== "focus") return menuViews;
-      const focusIds = new Set(["home", "today", "evidence", "progress", "ai"]);
+      const focusIds = new Set(["home", "today", "training", "evidence", "progress", "ai"]);
       return menuViews
         .filter((view) => focusIds.has(view.id))
         .map((view) => ({
@@ -1370,6 +1371,7 @@ import {
           label: {
             home: "いまやる",
             today: "今日",
+            training: "10題",
             evidence: "提出",
             progress: "進み具合",
             ai: "AI先生"
@@ -4550,5 +4552,6 @@ function renderScheduleDrawer() {
       });
     }
 
+    initMathTraining();
     registerServiceWorker();
     init();

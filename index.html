@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.svg">
-  <link rel="stylesheet" href="assets/css/style.css?v=4.19.0">
+  <link rel="stylesheet" href="assets/css/style.css?v=4.19.1">
 </head>
 <body data-role="student" data-auth="out">
   <div class="app-startup-gate" id="appStartupGate" role="status" aria-live="polite">
@@ -184,6 +184,34 @@
             <h2 id="home-brief-heading">学習の現在地</h2>
           </div>
           <div class="journey-map" id="journeyMap"></div>
+        </section>
+
+        <section class="view-section view-training math-training" aria-labelledby="math-training-heading">
+          <div class="topline math-training-topline">
+            <div>
+              <p class="math-training-kicker">高校数学・スライド式トレーニング Day 1</p>
+              <h2 id="math-training-heading">毎日10題</h2>
+            </div>
+            <span class="badge" id="mathTrainingProgressBadge">0 / 10</span>
+          </div>
+          <p class="math-training-lead">
+            展開からベクトルまでを1題ずつ解きます。途中の回答はこの端末へ自動保存されます。
+          </p>
+          <div class="math-training-toolbar">
+            <a class="secondary button-link" href="assets/worksheets/high-school-slide-training-day1.pdf" target="_blank" rel="noopener">
+              A4問題プリントを開く
+            </a>
+            <span class="button-note">印刷ボタンはこの演習画面だけに表示します。</span>
+          </div>
+          <form id="mathTrainingForm" class="math-training-form">
+            <div id="mathTrainingList" class="math-training-list"></div>
+            <div class="math-training-actions">
+              <button type="submit" id="mathTrainingSubmit">採点して提出</button>
+              <button class="secondary" type="button" id="mathTrainingReset">回答を消す</button>
+            </div>
+            <p class="button-note" id="mathTrainingSaveStatus" role="status" aria-live="polite"></p>
+          </form>
+          <section class="math-training-result" id="mathTrainingResult" aria-live="polite" hidden></section>
         </section>
 
         <section class="view-section view-long" aria-labelledby="long-plan-heading">
@@ -504,6 +532,6 @@
     </div>
   </dialog>
 
-  <script type="module" src="assets/js/app.js?v=4.19.0"></script>
+  <script type="module" src="assets/js/app.js?v=4.19.1"></script>
 </body>
 </html>

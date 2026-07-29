@@ -642,6 +642,7 @@
     body[data-view="long"] .view-long,
     body[data-view="week"] .view-week,
     body[data-view="today"] .view-today,
+    body[data-view="training"] .view-training,
     body[data-view="memory"] .view-memory,
     body[data-view="review"] .view-review,
     body[data-view="evidence"] .view-evidence,
@@ -650,6 +651,192 @@
     body[data-view="support"] .view-support,
     body[data-view="admin"] .view-admin {
       display: block;
+    }
+
+    .math-training {
+      max-width: 980px;
+      margin-inline: auto;
+    }
+
+    .math-training-kicker {
+      margin: 0 0 4px;
+      color: var(--accent);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+    }
+
+    .math-training-lead {
+      margin: -4px 0 16px;
+      color: var(--muted);
+    }
+
+    .math-training-toolbar,
+    .math-training-actions {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+
+    .button-link {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+    }
+
+    .math-training-list {
+      display: grid;
+      gap: 14px;
+    }
+
+    .math-question {
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .math-question.correct {
+      border-color: rgba(75, 192, 137, 0.7);
+      background: rgba(75, 192, 137, 0.08);
+    }
+
+    .math-question.incorrect {
+      border-color: rgba(236, 173, 64, 0.75);
+      background: rgba(236, 173, 64, 0.08);
+    }
+
+    .math-question-heading {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .math-question-number {
+      flex: 0 0 auto;
+      color: var(--accent);
+      font-weight: 900;
+    }
+
+    .math-question-topic {
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .math-expression {
+      font-family: "Cambria Math", "STIX Two Math", "Times New Roman", serif;
+      font-size: clamp(1.12rem, 2.3vw, 1.42rem);
+      line-height: 1.85;
+      color: var(--text);
+    }
+
+    .math-expression .mi {
+      font-style: italic;
+    }
+
+    .math-expression .upright {
+      font-style: normal;
+    }
+
+    .math-frac {
+      display: inline-grid;
+      grid-template-rows: auto auto;
+      align-items: center;
+      justify-items: center;
+      vertical-align: -0.58em;
+      margin-inline: 0.12em;
+      line-height: 1.05;
+      font-size: 1em;
+    }
+
+    .math-frac > span:first-child {
+      min-width: 100%;
+      padding: 0 0.18em 0.08em;
+      border-bottom: 1px solid currentColor;
+      text-align: center;
+    }
+
+    .math-frac > span:last-child {
+      padding-top: 0.08em;
+    }
+
+    .math-system {
+      display: inline-grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.25em 0.45em;
+      align-items: center;
+      vertical-align: middle;
+    }
+
+    .math-system-brace {
+      grid-row: 1 / 4;
+      font-size: 3.9em;
+      font-weight: 200;
+      line-height: 0.7;
+      transform: scaleX(0.65);
+      transform-origin: right center;
+    }
+
+    .math-answer-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .math-answer-grid label {
+      display: grid;
+      gap: 5px;
+      color: var(--muted);
+      font-size: 0.78rem;
+      font-weight: 700;
+    }
+
+    .math-answer-grid input {
+      font-family: "Cambria Math", "STIX Two Math", "Times New Roman", serif;
+      font-size: 1.05rem;
+    }
+
+    .math-answer-feedback {
+      margin: 10px 0 0;
+      font-size: 0.88rem;
+      font-weight: 700;
+    }
+
+    .math-training-result {
+      margin-top: 18px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      padding: 16px;
+      background: rgba(255, 255, 255, 0.045);
+    }
+
+    .math-training-result h3 {
+      margin: 0 0 8px;
+    }
+
+    .math-result-list {
+      margin: 12px 0 0;
+      padding-left: 1.4em;
+    }
+
+    @media (max-width: 700px) {
+      .math-question {
+        padding: 13px;
+      }
+
+      .math-answer-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .math-training-actions > button {
+        flex: 1 1 140px;
+      }
     }
 
     .topline {
