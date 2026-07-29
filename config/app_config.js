@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.19.12-dev";
-export const APP_RELEASE_NAME = "保護者質問の旧アカウント対応";
+export const APP_VERSION = "v4.19.13-dev";
+export const APP_RELEASE_NAME = "保護者との継続対話";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -42,6 +42,16 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.19.13-dev",
+    date: "2026-07-29",
+    title: "保護者質問の回答内容と継続対話を改善",
+    items: [
+      "学習状況の質問へ、許可済みの提出・点数・時間・予定をまとめて回答",
+      "非公開項目は総合回答にも混在させない",
+      "回答後も入力欄を残し、続けて質問できる会話形式へ変更"
+    ]
+  },
   {
     version: "v4.19.12-dev",
     date: "2026-07-29",

@@ -215,7 +215,11 @@ export function renderYuiCoachCard({
         const response = document.createElement("p");
         response.className = "yui-response";
         response.textContent = `ユイ先生：${result?.answer || "回答を保存しました。"}`;
-        form.replaceWith(response);
+        form.before(response);
+        form.reset();
+        button.disabled = false;
+        button.textContent = "質問する";
+        status.textContent = "続けて質問できます。回答は共有設定の範囲内に限られます。";
       } catch (error) {
         button.disabled = false;
         button.textContent = "質問する";
