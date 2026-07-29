@@ -732,6 +732,50 @@
       font-style: normal;
     }
 
+    .adaptive-memory-card {
+      display: grid;
+      gap: 10px;
+    }
+
+    .memory-front {
+      white-space: normal;
+      line-height: 1.7;
+    }
+
+    .memory-answer-label {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .memory-answer-label input {
+      font-family: "Limit Break STIX", "Times New Roman", serif;
+      font-size: 1rem;
+      font-style: normal;
+    }
+
+    .memory-reveal {
+      display: grid;
+      gap: 8px;
+    }
+
+    .memory-reveal[hidden] {
+      display: none !important;
+    }
+
+    .memory-match {
+      margin: 0;
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+
+    .memory-empty {
+      display: grid;
+      gap: 8px;
+    }
+
     .math-training-kicker {
       margin: 0 0 4px;
       color: var(--accent);

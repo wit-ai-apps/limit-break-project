@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.svg">
-  <link rel="stylesheet" href="assets/css/style.css?v=4.19.6">
+  <link rel="stylesheet" href="assets/css/style.css?v=4.19.7">
 </head>
 <body data-role="student" data-auth="out">
   <div class="app-startup-gate" id="appStartupGate" role="status" aria-live="polite">
@@ -292,9 +292,10 @@
 
         <section class="view-section view-memory" aria-labelledby="memory-heading">
           <div class="topline">
-            <h2 id="memory-heading">今日の暗記</h2>
-            <span class="badge">暗記チェック</span>
+            <h2 id="memory-heading">暗記・定着復習</h2>
+            <span class="badge">1・3・7・14・30日</span>
           </div>
+          <p class="math-training-lead">毎日トレーニングの誤答を、答えを隠して別の日に思い出します。</p>
           <div class="memory-summary" id="memorySummary"></div>
           <div class="memory-list" id="memoryList"></div>
         </section>
@@ -569,6 +570,6 @@
     </div>
   </dialog>
 
-  <script type="module" src="assets/js/app.js?v=4.19.6"></script>
+  <script type="module" src="assets/js/app.js?v=4.19.7"></script>
 </body>
 </html>

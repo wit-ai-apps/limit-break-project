@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.19.6-dev";
-export const APP_RELEASE_NAME = "英語・毎日10文デモ";
+export const APP_VERSION = "v4.19.7-dev";
+export const APP_RELEASE_NAME = "暗記・定着復習";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -42,6 +42,17 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.19.7-dev",
+    date: "2026-07-29",
+    title: "暗記メニューを定着復習機能へ変更",
+    items: [
+      "英語・毎日10文の誤答を暗記キューへ自動登録",
+      "回答前は模範解答を隠し、答え合わせ後に○・△・×で自己判定",
+      "1日後・3日後・7日後・14日後・30日後の間隔復習に対応",
+      "今日の復習数・登録数・定着数・正答率を表示"
+    ]
+  },
   {
     version: "v4.19.6-dev",
     date: "2026-07-29",

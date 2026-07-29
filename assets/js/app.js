@@ -23,9 +23,10 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.19.6";
-import { initMathTraining } from "./training/math-training.js?v=4.19.6";
-import { initEnglishTraining } from "./training/english-training.js?v=4.19.6";
+} from "../../config/app_config.js?v=4.19.7";
+import { initMathTraining } from "./training/math-training.js?v=4.19.7";
+import { initEnglishTraining } from "./training/english-training.js?v=4.19.7";
+import { renderAdaptiveMemory } from "./learning/memory.js?v=4.19.7";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -2595,45 +2596,7 @@ function renderScheduleDrawer() {
     }
 
     function renderMemory() {
-      const target = memoryData.today_target || {};
-      const summary = [
-        ["単語", `${target.words || 0}語`],
-        ["基本文", `${target.sentences || 0}文`],
-        ["構文", `${target.structures || 0}文`],
-        ["チェック", (target.checks || []).join(" / ")]
-      ];
-      memorySummary.innerHTML = "";
-      summary.forEach(([label, value]) => {
-        const card = document.createElement("div");
-        card.className = "load-card";
-        card.innerHTML = `<strong>${value}</strong><span>${label}</span>`;
-        memorySummary.appendChild(card);
-      });
-      memoryList.innerHTML = "";
-      memoryData.items.slice(0, 6).forEach((item) => {
-        const result = memoryResults[item.id] || "未チェック";
-        const card = document.createElement("article");
-        card.className = "memory-card";
-        card.innerHTML = `
-          <strong>${item.front}</strong>
-          <span>${item.type} / ${item.source} / ${item.level}</span>
-          <div class="mission-note">答え: ${item.back}</div>
-          <div class="memory-actions" aria-label="${item.front}の暗記判定">
-            <button type="button" data-result="○">○</button>
-            <button type="button" data-result="△" class="secondary">△</button>
-            <button type="button" data-result="×" class="warning">×</button>
-            <span class="badge">判定: ${result}</span>
-          </div>
-        `;
-        card.querySelectorAll("button").forEach((button) => {
-          button.addEventListener("click", () => {
-            memoryResults[item.id] = button.dataset.result;
-            saveMemoryResults();
-            renderMemory();
-          });
-        });
-        memoryList.appendChild(card);
-      });
+      renderAdaptiveMemory(memorySummary, memoryList);
     }
 
     function renderRetentionTests() {

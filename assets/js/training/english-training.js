@@ -1,6 +1,7 @@
 const STORAGE_KEY_BASE = "limitBreakEnglishTrainingDemoV1";
 const TIME_LIMIT_MS = 30 * 60 * 1000;
 const DAILY_RESET_OFFSET_MS = (8 * 60 + 55) * 60 * 1000;
+import { recordEnglishTrainingResults } from "../learning/memory.js?v=4.19.7";
 
 const sentence = (value) => String(value || "").toLowerCase()
   .replace(/[.,!?'"’]/g, "").replace(/\s+/g, " ").trim();
@@ -181,6 +182,7 @@ function finishTraining(reason) {
   const results = gradeEnglishTrainingAnswers(answers);
   const submittedAt = new Date().toISOString();
   saveState({ ...loadState(), answers, results, submittedAt, finishReason: reason });
+  recordEnglishTrainingResults(ENGLISH_QUESTIONS, results, answers, new Date(submittedAt));
   showResults(results, submittedAt);
   lockTraining();
   setStatus(reason === "time_limit" ? "30分終了のため自動提出しました。" :
