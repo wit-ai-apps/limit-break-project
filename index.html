@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.svg">
-  <link rel="stylesheet" href="assets/css/style.css?v=4.19.5">
+  <link rel="stylesheet" href="assets/css/style.css?v=4.19.6">
 </head>
 <body data-role="student" data-auth="out">
   <div class="app-startup-gate" id="appStartupGate" role="status" aria-live="polite">
@@ -186,7 +186,12 @@
           <div class="journey-map" id="journeyMap"></div>
         </section>
 
-        <section class="view-section view-training math-training" aria-labelledby="math-training-heading">
+        <nav class="view-section view-training training-subject-tabs" aria-label="毎日のトレーニング科目">
+          <button type="button" class="secondary active" data-training-subject="math">数学・毎日10題</button>
+          <button type="button" class="secondary" data-training-subject="english">英語・毎日10文（デモ）</button>
+        </nav>
+
+        <section class="view-section view-training math-training training-subject-panel" data-training-panel="math" aria-labelledby="math-training-heading">
           <div class="topline math-training-topline">
             <div>
               <p class="math-training-kicker">高校数学・スライド式トレーニング Day 1</p>
@@ -215,6 +220,35 @@
             <p class="button-note" id="mathTrainingSaveStatus" role="status" aria-live="polite"></p>
           </form>
           <section class="math-training-result" id="mathTrainingResult" aria-live="polite" hidden></section>
+        </section>
+
+        <section class="view-section view-training math-training english-training training-subject-panel" data-training-panel="english" aria-labelledby="english-training-heading" hidden>
+          <div class="topline math-training-topline">
+            <div>
+              <p class="math-training-kicker">英文構文・30分トレーニング デモ Day 1</p>
+              <h2 id="english-training-heading">毎日10文</h2>
+            </div>
+            <div class="math-training-badges">
+              <span class="badge math-timer-badge" id="englishTrainingTimerBadge">30:00</span>
+              <span class="badge" id="englishTrainingProgressBadge">0 / 10</span>
+            </div>
+          </div>
+          <p class="math-training-lead">
+            前半5文で構造を理解し、後半5文で自力再現します。開いた時点から30分、毎朝8:55に翌日分へ切り替わります。
+          </p>
+          <div class="english-training-guide">
+            <strong>本日の構文：</strong>基本文型・時制・不定詞・助動詞・関係詞・比較
+            <span>教材原文を複製せず、同じ学習ポイントから作成したデモ問題です。</span>
+          </div>
+          <form id="englishTrainingForm" class="math-training-form">
+            <div id="englishTrainingList" class="math-training-list"></div>
+            <div class="math-training-actions">
+              <button type="submit" id="englishTrainingSubmit">採点して提出</button>
+              <button class="secondary" type="button" id="englishTrainingReset">入力内容だけ消す</button>
+            </div>
+            <p class="button-note" id="englishTrainingSaveStatus" role="status" aria-live="polite"></p>
+          </form>
+          <section class="math-training-result" id="englishTrainingResult" aria-live="polite" hidden></section>
         </section>
 
         <section class="view-section view-long" aria-labelledby="long-plan-heading">
@@ -535,6 +569,6 @@
     </div>
   </dialog>
 
-  <script type="module" src="assets/js/app.js?v=4.19.5"></script>
+  <script type="module" src="assets/js/app.js?v=4.19.6"></script>
 </body>
 </html>

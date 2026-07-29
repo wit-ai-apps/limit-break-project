@@ -23,8 +23,9 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.19.5";
-import { initMathTraining } from "./training/math-training.js?v=4.19.5";
+} from "../../config/app_config.js?v=4.19.6";
+import { initMathTraining } from "./training/math-training.js?v=4.19.6";
+import { initEnglishTraining } from "./training/english-training.js?v=4.19.6";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -4553,5 +4554,6 @@ function renderScheduleDrawer() {
     }
 
     initMathTraining();
+    initEnglishTraining();
     registerServiceWorker();
     init();

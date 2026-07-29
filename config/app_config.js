@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.19.5-dev";
-export const APP_RELEASE_NAME = "毎日10題・30分制限";
+export const APP_VERSION = "v4.19.6-dev";
+export const APP_RELEASE_NAME = "英語・毎日10文デモ";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -42,6 +42,17 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.19.6-dev",
+    date: "2026-07-29",
+    title: "英文構文・毎日10文デモを追加",
+    items: [
+      "構造理解・穴埋め・並べ替え・英作文・構文説明を10文に統合",
+      "映像授業の関連講義を各問題へ表示",
+      "数学と同じ30分制限と毎朝8:55の日次切替に対応",
+      "教材原文を公開せず抽象化した学習ポイントからデモ問題を生成"
+    ]
+  },
   {
     version: "v4.19.5-dev",
     date: "2026-07-29",

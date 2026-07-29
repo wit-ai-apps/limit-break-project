@@ -193,7 +193,7 @@ export function initMathTraining() {
   const observer = new MutationObserver(() => startTimerWhenEligible());
   observer.observe(document.body, {
     attributes: true,
-    attributeFilter: ["data-auth", "data-role", "data-view"]
+    attributeFilter: ["data-auth", "data-role", "data-view", "data-training-subject"]
   });
   startTimerWhenEligible();
 }
@@ -262,7 +262,8 @@ function startTimerWhenEligible() {
   const eligible =
     document.body.dataset.auth === "in" &&
     document.body.dataset.role === "student" &&
-    document.body.dataset.view === "training";
+    document.body.dataset.view === "training" &&
+    (!document.body.dataset.trainingSubject || document.body.dataset.trainingSubject === "math");
   if (!eligible) {
     stopTimer();
     return;

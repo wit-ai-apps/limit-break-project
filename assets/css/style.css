@@ -674,6 +674,64 @@
       margin-inline: auto;
     }
 
+    .training-subject-tabs {
+      max-width: 980px;
+      margin: 0 auto 12px;
+      padding: 10px;
+      border-radius: 14px;
+    }
+
+    .training-subject-tabs button {
+      margin-right: 8px;
+    }
+
+    .training-subject-tabs button.active {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: rgba(56, 189, 248, 0.12);
+    }
+
+    .training-subject-panel[hidden] {
+      display: none !important;
+    }
+
+    .english-training-guide {
+      display: grid;
+      gap: 5px;
+      margin: 0 0 16px;
+      padding: 12px 14px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      color: var(--muted);
+      background: rgba(56, 189, 248, 0.06);
+      font-size: 0.86rem;
+    }
+
+    .english-prompt {
+      font-size: 1rem;
+      line-height: 1.75;
+    }
+
+    .english-sentence {
+      display: block;
+      margin-top: 6px;
+      font-family: "Limit Break STIX", "Times New Roman", serif;
+      font-size: 1.18rem;
+      color: var(--text);
+    }
+
+    .english-video-link {
+      display: inline-flex;
+      margin-top: 10px;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .english-training .math-answer-grid input {
+      font-style: normal;
+    }
+
     .math-training-kicker {
       margin: 0 0 4px;
       color: var(--accent);
