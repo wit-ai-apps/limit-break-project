@@ -38,6 +38,10 @@ service cloud.firestore {
       );
     }
 
+    function canReadStudentDetails(studentId) {
+      return canReadStudent(studentId) && userRole() != "supporter";
+    }
+
     function canWriteStudentEvidence(studentId) {
       return signedIn() && (
         userRole() == "admin" ||
@@ -98,13 +102,13 @@ service cloud.firestore {
       allow delete: if signedIn() && userRole() == "admin";
 
       match /evidence_records/{recordId} {
-        allow read: if canReadStudent(studentId);
+        allow read: if canReadStudentDetails(studentId);
         allow create, update: if canWriteStudentEvidence(studentId);
         allow delete: if signedIn() && (userRole() == "admin" || userRole() == "teacher");
       }
 
       match /materials/{materialId} {
-        allow read: if canReadStudent(studentId);
+        allow read: if canReadStudentDetails(studentId);
         allow create: if canWriteStudentMaterial(studentId)
           && request.resource.data.createdByUid == request.auth.uid
           && request.resource.data.analysisStatus == "uploading";
@@ -115,7 +119,7 @@ service cloud.firestore {
       }
 
       match /missions/{missionId} {
-        allow read: if canReadStudent(studentId);
+        allow read: if canReadStudentDetails(studentId);
         allow create, update: if signedIn() && (userRole() == "admin" || userRole() == "teacher");
         allow delete: if signedIn() && userRole() == "admin";
       }
@@ -139,23 +143,23 @@ service cloud.firestore {
       }
 
       match /adaptive_plans/{planDate} {
-        allow read: if canReadStudent(studentId);
+        allow read: if canReadStudentDetails(studentId);
         allow write: if false;
       }
 
       match /adaptive_state/{stateId} {
-        allow read: if canReadStudent(studentId);
+        allow read: if canReadStudentDetails(studentId);
         allow write: if false;
       }
 
       // AI解析で構造化した弱点。作成・集計・克服状態の更新はCloud Functionsだけが行う。
       match /learning_issues/{issueId} {
-        allow read: if canReadStudent(studentId);
+        allow read: if canReadStudentDetails(studentId);
         allow write: if false;
       }
 
       match /members/{memberUid} {
-        allow read: if canReadStudent(studentId);
+        allow read: if canReadStudentDetails(studentId);
         allow write: if false;
       }
 

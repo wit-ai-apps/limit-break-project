@@ -29,6 +29,7 @@ import {
   effectiveSharing,
   normalizeSharingPreferences
 } from "./sharing-policy.js";
+import { filterSupportSummary, supportSummaryAccessFields } from "./support-summary.js";
 
 initializeApp();
 
@@ -205,6 +206,117 @@ export const savePrivateLearningState = onCall({ region: "us-east1" }, async (re
     updated_at: FieldValue.serverTimestamp()
   }, { merge: true });
   return { saved: true };
+});
+
+async function sharingContext(uid, user, studentId) {
+  if (!linkedToStudent(user, studentId)) {
+    throw new HttpsError("permission-denied", "STUDENT_LINK_REQUIRED");
+  }
+  const db = getFirestore();
+  const [memberSnapshot, studentPrefSnapshot, guardianPrefSnapshot] = await Promise.all([
+    db.doc(`students/${studentId}/members/${uid}`).get(),
+    db.doc(`students/${studentId}/privacy_preferences/student`).get(),
+    db.doc(`students/${studentId}/privacy_preferences/guardian`).get()
+  ]);
+  if (!memberSnapshot.exists || memberSnapshot.data().status !== "active") {
+    throw new HttpsError("permission-denied", "ACTIVE_MEMBERSHIP_REQUIRED");
+  }
+  const role = String(memberSnapshot.data().role || user.role || "supporter");
+  const student = studentPrefSnapshot.exists
+    ? studentPrefSnapshot.data().permissions : DEFAULT_SHARING.student;
+  const guardian = guardianPrefSnapshot.exists
+    ? guardianPrefSnapshot.data().permissions : DEFAULT_SHARING.guardian;
+  return { role, permissions: effectiveSharing(student, guardian, role) };
+}
+
+export const getSupportSummary = onCall({ region: "us-east1" }, async (request) => {
+  const uid = requireAuth(request);
+  const { data: user } = await requireUser(uid);
+  const studentId = String(request.data?.studentId || "").trim();
+  const { role, permissions } = await sharingContext(uid, user, studentId);
+  if (!["parent", "supporter", "teacher"].includes(role)) {
+    throw new HttpsError("permission-denied", "SUPPORT_ROLE_REQUIRED");
+  }
+  const db = getFirestore();
+  const [evidenceSnapshot, schedulesSnapshot, studentSnapshot] = await Promise.all([
+    db.collection(`students/${studentId}/evidence_records`).limit(50).get(),
+    db.collection(`students/${studentId}/schedules`).limit(30).get(),
+    db.doc(`students/${studentId}`).get()
+  ]);
+  const records = evidenceSnapshot.docs.map((document) => document.data());
+  const completed = records.filter((record) =>
+    record.submitted === true || record.status === "completed"
+      || Number.isFinite(Number(record.score)) && String(record.score ?? "").trim() !== "").length;
+  const scores = records.map((record) => Number(record.score))
+    .filter((score) => Number.isFinite(score) && score >= 0);
+  const average = scores.length
+    ? Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length) : null;
+  const weaknesses = [...new Set(records.map((record) =>
+    String(record.weaknessAnalysis || record.mistakeReason || "").trim()).filter(Boolean))].slice(0, 3);
+  const latestDate = records.map((record) =>
+    String(record.savedAt || record.submittedAt || record.date || "")).sort().reverse()[0] || "";
+  const nextSchedules = schedulesSnapshot.docs.map((document) => document.data())
+    .map((schedule) => ({
+      title: String(schedule.title || schedule.label || "学習予定").slice(0, 80),
+      date: String(schedule.date || schedule.start || "").slice(0, 30)
+    })).slice(0, permissions.schedule === "detail" ? 10 : 3);
+  const rawSummary = {
+    progress: {
+      latestLearningDate: latestDate,
+      status: completed ? "学習記録あり" : "記録なし"
+    },
+    studyTime: {
+      minutes: records.reduce((sum, record) => sum + Math.max(0, Number(record.studyMinutes || 0)), 0)
+    },
+    completion: { completed, recorded: records.length },
+    scores: permissions.scores === "detail"
+      ? { average, count: scores.length, recent: scores.slice(-10) }
+      : { average, count: scores.length },
+    weaknesses: permissions.weaknesses === "detail" ? weaknesses : weaknesses.slice(0, 1),
+    schedule: nextSchedules,
+    evidence: { submittedCount: records.filter((record) => record.evidenceStoragePath).length },
+    fatigue: { level: null, note: "本人の自己申告がある場合だけ表示" }
+  };
+  const filtered = filterSupportSummary(rawSummary, permissions);
+  await db.collection(`students/${studentId}/access_logs`).add({
+    viewer_uid: uid,
+    viewer_role: role,
+    viewer_name: String(user.displayName || user.email || role).slice(0, 80),
+    action: "support_summary.read",
+    fields: supportSummaryAccessFields(filtered),
+    created_at: FieldValue.serverTimestamp()
+  });
+  return {
+    student: {
+      displayName: String(studentSnapshot.data()?.display_name || "生徒").slice(0, 80)
+    },
+    role,
+    fields: filtered
+  };
+});
+
+export const listAccessLogs = onCall({ region: "us-east1" }, async (request) => {
+  const uid = requireAuth(request);
+  const { data: user } = await requireUser(uid);
+  const studentId = String(request.data?.studentId || "").trim();
+  if (!canManageSharing(user, studentId) || !["student", "parent", "admin", "lead_teacher"].includes(user.role)) {
+    throw new HttpsError("permission-denied", "ACCESS_LOG_NOT_ALLOWED");
+  }
+  const snapshot = await getFirestore().collection(`students/${studentId}/access_logs`)
+    .orderBy("created_at", "desc").limit(50).get();
+  return {
+    logs: snapshot.docs.map((document) => {
+      const log = document.data();
+      return {
+        id: document.id,
+        viewerRole: log.viewer_role || "",
+        viewerName: log.viewer_name || "",
+        action: log.action || "",
+        fields: Array.isArray(log.fields) ? log.fields : [],
+        createdAt: log.created_at?.toDate().toISOString() || ""
+      };
+    })
+  };
 });
 
 export const inspectGroupInvite = onCall({ region: "us-east1" }, async (request) => {

@@ -23,19 +23,19 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.19.9";
-import { initMathTraining } from "./training/math-training.js?v=4.19.9";
-import { initEnglishTraining } from "./training/english-training.js?v=4.19.9";
+} from "../../config/app_config.js?v=4.19.10";
+import { initMathTraining } from "./training/math-training.js?v=4.19.10";
+import { initEnglishTraining } from "./training/english-training.js?v=4.19.10";
 import {
   loadMemoryQueue,
   memorySummary as summarizeMemory,
   renderAdaptiveMemory
-} from "./learning/memory.js?v=4.19.9";
-import { renderYuiCoachCard } from "./coach/yui-coach.js?v=4.19.9";
+} from "./learning/memory.js?v=4.19.10";
+import { renderYuiCoachCard } from "./coach/yui-coach.js?v=4.19.10";
 import {
   sharingPreferencesFromForm,
   sharingSettingsMarkup
-} from "./privacy/sharing-settings.js?v=4.19.9";
+} from "./privacy/sharing-settings.js?v=4.19.10";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -92,6 +92,8 @@ import {
 
     let dailyPlan = FALLBACK_DAILY;
     let sharingPreferences = null;
+    let supportSummary = null;
+    let accessLogs = [];
     let examSchedule = FALLBACK_EXAMS;
     let summerPlan = FALLBACK_SUMMER;
     let levelTasks = FALLBACK_LEVELS;
@@ -558,15 +560,25 @@ import {
         profile: userSnap.exists() ? "ready" : "missing"
       });
       await writeLoginLog(user, userData);
-      subscribeFirebaseRecords();
+      if (currentRole === "supporter") {
+        records = [];
+        evidenceUnsubscribe?.();
+        evidenceUnsubscribe = null;
+        await loadSupportSummary();
+      } else {
+        subscribeFirebaseRecords();
+      }
       subscribeFirebaseSchedules();
-      subscribeAdaptivePlan();
-      subscribePersonalMaterials();
+      if (currentRole !== "supporter") {
+        subscribeAdaptivePlan();
+        subscribePersonalMaterials();
+      }
       await loadLinkedStudentIdentity();
       await loadLinkDirectory();
       if (pendingInviteToken) await claimPendingInvite();
       if (currentRole === "parent" || currentRole === "lead_teacher") await loadGroupInvites();
       if (["student", "parent"].includes(currentRole)) await loadSharingPreferences();
+      if (["student", "parent", "admin", "lead_teacher"].includes(currentRole)) await loadAccessLogs();
       if (currentRole === "student" || currentRole === "parent") await recoverStalledEvidenceAnalyses();
     }
 
@@ -1603,6 +1615,35 @@ function renderAdaptivePlan() {
       }
     }
 
+    async function loadSupportSummary() {
+      supportSummary = null;
+      if (!firebaseBridge.currentUser || !firebaseBridge.studentId) return;
+      try {
+        supportSummary = await callGroupFunction("getSupportSummary", {
+          studentId: firebaseBridge.studentId
+        });
+      } catch (error) {
+        addDiagnosticLog("privacy.support_summary.load_error", {
+          message: String(error?.message || error).slice(0, 200)
+        });
+      }
+    }
+
+    async function loadAccessLogs() {
+      accessLogs = [];
+      if (!firebaseBridge.currentUser || !firebaseBridge.studentId) return;
+      try {
+        const result = await callGroupFunction("listAccessLogs", {
+          studentId: firebaseBridge.studentId
+        });
+        accessLogs = Array.isArray(result?.logs) ? result.logs : [];
+      } catch (error) {
+        addDiagnosticLog("privacy.access_logs.load_error", {
+          message: String(error?.message || error).slice(0, 200)
+        });
+      }
+    }
+
     async function syncPrivateLearningState(kind, value) {
       if (currentRole !== "student" || !firebaseBridge.currentUser || !firebaseBridge.studentId) return;
       try {
@@ -1625,15 +1666,22 @@ function renderAdaptivePlan() {
         .filter((record) => record.savedAt || record.date)
         .sort((a, b) => String(b.savedAt || b.date).localeCompare(String(a.savedAt || a.date)))[0] || {};
       const memory = summarizeMemory(loadMemoryQueue());
+      const sharedFields = supportSummary?.fields || {};
+      const sharedCompletion = sharedFields.completion?.value || {};
+      const sharedScores = sharedFields.scores?.value || {};
       renderYuiCoachCard({
         messageElement: document.querySelector("#coachMessage"),
         actionsElement: document.querySelector("#coachActions"),
         role: currentRole,
         context: {
           name: loginName,
-          submitted: summary.evidenceRecords.length,
+          submitted: currentRole === "supporter"
+            ? Number(sharedCompletion.completed || 0)
+            : summary.evidenceRecords.length,
           total: summary.total,
-          averageScore: summary.averageScore,
+          averageScore: currentRole === "supporter"
+            ? (Number.isFinite(sharedScores.average) ? sharedScores.average : null)
+            : summary.averageScore,
           dueMemory: memory.due.length,
           weakness: latest.mistakeReason || latest.weaknessReason || "",
           fatigue: Number(latest.fatigue || 0),
@@ -2989,6 +3037,57 @@ function renderScheduleDrawer() {
           button.disabled = false;
         }
       });
+
+      if (sharingPreferences?.effective?.supporter) {
+        const labels = {
+          progress: "学習進度", studyTime: "学習時間", completion: "提出・完了",
+          scores: "点数・正答率", weaknesses: "弱点", schedule: "学習予定",
+          evidence: "答案画像", fatigue: "疲労", yuiDialogue: "ユイ先生との会話",
+          privateNotes: "個人メモ"
+        };
+        const effective = document.createElement("div");
+        effective.className = "sharing-effective";
+        effective.innerHTML = `
+          <strong>現在サポーターへ適用される範囲</strong>
+          <div class="sharing-effective-grid">
+            ${Object.entries(sharingPreferences.effective.supporter).map(([key, level]) =>
+              `<span>${escapeHtml(labels[key] || key)}：${escapeHtml({
+                none: "非公開", summary: "要約", detail: "詳細"
+              }[level] || level)}</span>`).join("")}
+          </div>`;
+        card.appendChild(effective);
+      }
+
+      const history = document.createElement("div");
+      history.className = "sharing-access-history";
+      history.innerHTML = `
+        <strong>情報の閲覧履歴</strong>
+        <span>支援者向け画面で要約を開いた履歴です。直近50件を表示します。</span>
+        <div class="sharing-access-list">
+          ${accessLogs.length ? accessLogs.map((log) => `
+            <div class="sharing-access-row">
+              <span>${escapeHtml(log.viewerName || log.viewerRole || "閲覧者")}</span>
+              <span>${escapeHtml((log.fields || []).map(accessFieldLabel).join("・") || "項目なし")}</span>
+              <time>${escapeHtml(formatAccessLogTime(log.createdAt))}</time>
+            </div>`).join("") : `<div class="empty">閲覧履歴はまだありません。</div>`}
+        </div>`;
+      card.appendChild(history);
+    }
+
+    function formatAccessLogTime(value) {
+      const date = new Date(value);
+      return Number.isNaN(date.getTime()) ? "時刻記録中" : new Intl.DateTimeFormat("ja-JP", {
+        timeZone: "Asia/Tokyo", year: "numeric", month: "2-digit", day: "2-digit",
+        hour: "2-digit", minute: "2-digit"
+      }).format(date);
+    }
+
+    function accessFieldLabel(value) {
+      return {
+        progress: "学習進度", studyTime: "学習時間", completion: "提出・完了",
+        scores: "点数・正答率", weaknesses: "弱点", schedule: "学習予定",
+        evidence: "答案数", fatigue: "疲労"
+      }[value] || value;
     }
 
     function renderSettings() {

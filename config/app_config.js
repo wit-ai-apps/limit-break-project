@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.19.9-dev";
-export const APP_RELEASE_NAME = "学習情報の共有範囲";
+export const APP_VERSION = "v4.19.10-dev";
+export const APP_RELEASE_NAME = "支援者向け安全な要約";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -42,6 +42,17 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.19.10-dev",
+    date: "2026-07-29",
+    title: "支援者向け要約と閲覧履歴を追加",
+    items: [
+      "外部サポーターによるFirestore詳細記録の直接閲覧を禁止",
+      "生徒・保護者の実効共有範囲に含まれる項目だけを要約APIで返却",
+      "要約を見た人・時刻・閲覧項目を履歴として保存",
+      "生徒・保護者の設定画面で実効範囲と直近50件の閲覧履歴を確認"
+    ]
+  },
   {
     version: "v4.19.9-dev",
     date: "2026-07-29",
