@@ -23,19 +23,19 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.19.16";
-import { initMathTraining } from "./training/math-training.js?v=4.19.16";
-import { initEnglishTraining } from "./training/english-training.js?v=4.19.16";
+} from "../../config/app_config.js?v=4.19.17";
+import { initMathTraining } from "./training/math-training.js?v=4.19.17";
+import { initEnglishTraining } from "./training/english-training.js?v=4.19.17";
 import {
   loadMemoryQueue,
   memorySummary as summarizeMemory,
   renderAdaptiveMemory
-} from "./learning/memory.js?v=4.19.16";
-import { renderYuiCoachCard } from "./coach/yui-coach.js?v=4.19.16";
+} from "./learning/memory.js?v=4.19.17";
+import { renderYuiCoachCard } from "./coach/yui-coach.js?v=4.19.17";
 import {
   sharingPreferencesFromForm,
   sharingSettingsMarkup
-} from "./privacy/sharing-settings.js?v=4.19.16";
+} from "./privacy/sharing-settings.js?v=4.19.17";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,

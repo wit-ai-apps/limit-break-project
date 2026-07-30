@@ -169,7 +169,11 @@ export function initMathTraining(options = {}) {
     };
   }
 
-  form.addEventListener("input", () => {
+  form.addEventListener("input", (event) => {
+    if (event.target instanceof HTMLInputElement) {
+      updateAnswerPreview(event.target);
+      if (event.target === activeInput) updateMathPreview(event.target.value);
+    }
     const current = loadState();
     saveState({
       ...current,
@@ -191,6 +195,7 @@ export function initMathTraining(options = {}) {
     if (isTrainingFinished(loadState())) return;
     if (!window.confirm("入力内容だけを消しますか？ 残り時間は戻りません。")) return;
     form.reset();
+    form.querySelectorAll("input").forEach(updateAnswerPreview);
     const current = loadState();
     saveState({
       ...current,
@@ -228,7 +233,10 @@ export function gradeMathTrainingAnswers(answers = {}) {
 
 function renderQuestions(list, answers) {
   list.innerHTML = QUESTIONS.map((question, index) => {
-    const fields = question.fields.map((field) => `
+    const fields = question.fields.map((field) => {
+      const name = `${question.id}.${field.id}`;
+      const value = answers?.[question.id]?.[field.id] || "";
+      return `
       <label>
         ${field.label}
         <input
@@ -236,12 +244,15 @@ function renderQuestions(list, answers) {
           inputmode="text"
           autocomplete="off"
           spellcheck="false"
-          name="${question.id}.${field.id}"
-          value="${escapeAttribute(answers?.[question.id]?.[field.id] || "")}"
+          name="${name}"
+          value="${escapeAttribute(value)}"
           aria-label="問題${index + 1} ${field.label}"
         >
+        <span class="math-answer-preview-label">教科書表記</span>
+        <span class="math-answer-live-preview" data-math-preview-for="${name}">${mathPreviewMarkup(value) || "入力するとここに数式表示されます"}</span>
       </label>
-    `).join("");
+    `;
+    }).join("");
     return `
       <article class="math-question" id="math-${question.id}">
         <div class="math-question-heading">
@@ -325,11 +336,35 @@ function updateMathPreview(value) {
 
 export function mathPreviewMarkup(value) {
   let markup = escapeHtml(String(value || ""));
+  const held = [];
+  const hold = (html) => {
+    const token = `\uE000${held.length}\uE001`;
+    held.push(html);
+    return token;
+  };
   markup = markup
-    .replace(/\^([0-9a-zA-Z]+)/g, "<sup>$1</sup>")
+    .replace(/\^([0-9a-zA-Z]+)/g, (_, exponent) =>
+      hold(`<sup>${wrapMathVariables(exponent)}</sup>`))
     .replace(/([−-]?(?:\([^()]*\)|[A-Za-z0-9√π]+))\/((?:\([^()]*\)|[A-Za-z0-9√π]+))/g,
-      '<span class="math-input-frac"><span>$1</span><span>$2</span></span>');
+      (_, numerator, denominator) => hold(
+        `<span class="math-input-frac"><span>${wrapMathVariables(numerator)}</span><span>${wrapMathVariables(denominator)}</span></span>`
+      ));
+  markup = markup.replace(/&(amp|lt|gt|quot|#039);/g, (entity) => hold(entity));
+  markup = wrapMathVariables(markup);
+  markup = markup.replace(/\uE000(\d+)\uE001/g, (_, index) => held[Number(index)] || "");
   return markup;
+}
+
+function wrapMathVariables(value) {
+  return String(value || "").replace(/([A-Za-z])/g, '<span class="math-variable">$1</span>');
+}
+
+function updateAnswerPreview(input) {
+  const name = input?.name || "";
+  document.querySelectorAll("[data-math-preview-for]").forEach((preview) => {
+    if (preview.dataset.mathPreviewFor !== name) return;
+    preview.innerHTML = mathPreviewMarkup(input.value) || "入力するとここに数式表示されます";
+  });
 }
 
 function initParentReview() {

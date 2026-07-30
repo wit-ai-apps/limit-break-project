@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.svg">
-  <link rel="stylesheet" href="assets/css/style.css?v=4.19.16">
+  <link rel="stylesheet" href="assets/css/style.css?v=4.19.17">
 </head>
 <body data-role="student" data-auth="out">
   <div class="app-startup-gate" id="appStartupGate" role="status" aria-live="polite">
@@ -239,32 +239,32 @@
             </div>
             <div class="math-keypad-preview" id="mathKeypadPreview" aria-label="入力中の数式プレビュー">入力確認</div>
             <div class="math-keypad-grid">
-              <button type="button" data-math-key="7">7</button>
-              <button type="button" data-math-key="8">8</button>
-              <button type="button" data-math-key="9">9</button>
+              <button type="button" class="math-key-number" data-math-key="7">7</button>
+              <button type="button" class="math-key-number" data-math-key="8">8</button>
+              <button type="button" class="math-key-number" data-math-key="9">9</button>
               <button type="button" data-math-key="＋">＋</button>
               <button type="button" data-math-key="−">−</button>
               <button type="button" data-math-action="backspace">⌫</button>
-              <button type="button" data-math-key="4">4</button>
-              <button type="button" data-math-key="5">5</button>
-              <button type="button" data-math-key="6">6</button>
+              <button type="button" class="math-key-number" data-math-key="4">4</button>
+              <button type="button" class="math-key-number" data-math-key="5">5</button>
+              <button type="button" class="math-key-number" data-math-key="6">6</button>
               <button type="button" data-math-key="×">×</button>
               <button type="button" data-math-key="÷">÷</button>
               <button type="button" data-math-action="clear">クリア</button>
-              <button type="button" data-math-key="1">1</button>
-              <button type="button" data-math-key="2">2</button>
-              <button type="button" data-math-key="3">3</button>
+              <button type="button" class="math-key-number" data-math-key="1">1</button>
+              <button type="button" class="math-key-number" data-math-key="2">2</button>
+              <button type="button" class="math-key-number" data-math-key="3">3</button>
               <button type="button" data-math-key="(">（</button>
               <button type="button" data-math-key=")">）</button>
               <button type="button" data-math-key="＝">＝</button>
-              <button type="button" data-math-key="0">0</button>
+              <button type="button" class="math-key-number" data-math-key="0">0</button>
               <button type="button" data-math-key=".">.</button>
               <button type="button" data-math-key=",">，</button>
               <button type="button" data-math-key="x"><span class="mi">x</span></button>
               <button type="button" data-math-key="y"><span class="mi">y</span></button>
               <button type="button" data-math-key="z"><span class="mi">z</span></button>
-              <button type="button" data-math-key="²"><span class="mi">x</span>²</button>
-              <button type="button" data-math-key="³"><span class="mi">x</span>³</button>
+              <button type="button" data-math-key="²" aria-label="直前の文字または数字を2乗">□²</button>
+              <button type="button" data-math-key="³" aria-label="直前の文字または数字を3乗">□³</button>
               <button type="button" data-math-key="√">√</button>
               <button type="button" data-math-key="π">π</button>
               <button type="button" data-math-key="i"><span class="mi">i</span></button>
@@ -621,6 +621,6 @@
     </div>
   </dialog>
 
-  <script type="module" src="assets/js/app.js?v=4.19.16"></script>
+  <script type="module" src="assets/js/app.js?v=4.19.17"></script>
 </body>
 </html>

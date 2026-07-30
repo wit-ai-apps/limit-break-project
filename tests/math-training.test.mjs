@@ -53,6 +53,8 @@ test("数式入力プレビューは分数と指数を教科書形式で表示�
   const markup = mathPreviewMarkup("√3/2＋x^2");
   assert.match(markup, /math-input-frac/);
   assert.match(markup, /<sup>2<\/sup>/);
+  assert.match(markup, /math-variable">x<\/span>/);
+  assert.doesNotMatch(markup, /math-variable">2<\/span>/);
 });
 
 test("数式入力プレビューはHTMLを無害化する", () => {

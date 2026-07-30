@@ -1074,9 +1074,32 @@
 
     .math-answer-grid input {
       font-family: "Limit Break STIX", "Times New Roman", serif;
-      font-style: italic;
+      font-style: normal;
       font-weight: 400;
       font-size: 1.05rem;
+    }
+
+    .math-answer-preview-label {
+      margin-top: 2px;
+      color: #6b7f90;
+      font-family: system-ui, sans-serif;
+      font-size: 0.68rem;
+      font-weight: 700;
+    }
+
+    .math-answer-live-preview {
+      min-height: 38px;
+      padding: 7px 10px;
+      overflow-x: auto;
+      border: 1px solid #d3e2ec;
+      border-radius: 9px;
+      background: #f9fcfe;
+      color: #243345;
+      font-family: "Limit Break STIX", "Times New Roman", serif;
+      font-size: 1.12rem;
+      font-style: normal;
+      font-weight: 400;
+      white-space: nowrap;
     }
 
     .math-keypad {
@@ -1135,6 +1158,12 @@
       white-space: nowrap;
     }
 
+    .math-variable {
+      font-family: "Limit Break STIX", "Times New Roman", serif;
+      font-style: italic;
+      font-weight: 400;
+    }
+
     .math-input-frac {
       display: inline-grid;
       grid-template-rows: auto auto;
@@ -1155,18 +1184,38 @@
 
     .math-keypad-grid {
       display: grid;
-      grid-template-columns: repeat(6, minmax(44px, 1fr));
+      grid-template-columns: repeat(6, 52px);
+      justify-content: center;
       gap: 6px;
     }
 
     .math-keypad-grid button {
-      min-height: 42px;
-      padding: 6px;
+      display: grid;
+      place-items: center;
+      width: 52px;
+      height: 52px;
+      min-height: 52px;
+      padding: 0;
       border-color: #aac8dc;
+      border-radius: 12px;
       background: #fff;
       color: #21374b;
       font-family: "Limit Break STIX", "Times New Roman", serif;
       font-size: 1.05rem;
+    }
+
+    .math-keypad-grid .math-key-number {
+      font-size: 1.22rem;
+      font-variant-numeric: tabular-nums;
+      font-weight: 500;
+    }
+
+    .math-keypad-grid button[data-math-action="clear"],
+    .math-keypad-grid button[data-math-action="backspace"],
+    .math-keypad-grid button[data-math-action="fraction"] {
+      font-family: system-ui, sans-serif;
+      font-size: 0.76rem;
+      font-weight: 700;
     }
 
     .math-parent-review {
@@ -1249,11 +1298,14 @@
       }
 
       .math-keypad-grid {
-        grid-template-columns: repeat(6, minmax(38px, 1fr));
+        grid-template-columns: repeat(6, minmax(42px, 52px));
       }
 
       .math-keypad-grid button {
-        min-height: 38px;
+        width: 100%;
+        height: auto;
+        min-height: 42px;
+        aspect-ratio: 1;
         font-size: 0.95rem;
       }
 
