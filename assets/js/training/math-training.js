@@ -135,21 +135,38 @@ const QUESTIONS = [
 let initialized = false;
 let timerId = null;
 let activeForm = null;
+let activeInput = null;
+let submissionHandler = null;
+let parentReviewLoader = null;
+let parentReviewLoadedFor = "";
+let pendingSubmission = null;
+let submissionSyncing = false;
 
-export function initMathTraining() {
+export function initMathTraining(options = {}) {
   if (initialized) return;
   const form = document.querySelector("#mathTrainingForm");
   const list = document.querySelector("#mathTrainingList");
   if (!form || !list) return;
   initialized = true;
   activeForm = form;
+  submissionHandler = typeof options.onSubmit === "function" ? options.onSubmit : null;
+  parentReviewLoader = typeof options.loadParentReview === "function" ? options.loadParentReview : null;
 
   const stored = loadState();
   renderQuestions(list, stored.answers || {});
+  initMathKeypad(form);
+  initParentReview();
   updateProgress();
   if (stored.submittedAt && Array.isArray(stored.results)) {
     showResults(stored.results, stored.submittedAt, stored.attempts || 1);
     lockTraining(stored.finishReason || "submitted");
+    pendingSubmission = {
+      dateKey: trainingDateKey(),
+      answers: stored.answers || {},
+      finishReason: stored.finishReason || "submitted",
+      startedAt: stored.startedAt || "",
+      submittedAt: stored.submittedAt
+    };
   }
 
   form.addEventListener("input", () => {
@@ -190,12 +207,16 @@ export function initMathTraining() {
     setStatus("入力内容を消しました。残り時間はそのまま進みます。");
   });
 
-  const observer = new MutationObserver(() => startTimerWhenEligible());
+  const observer = new MutationObserver(() => {
+    startTimerWhenEligible();
+    updateRoleSpecificDisplay();
+  });
   observer.observe(document.body, {
     attributes: true,
     attributeFilter: ["data-auth", "data-role", "data-view", "data-training-subject"]
   });
   startTimerWhenEligible();
+  updateRoleSpecificDisplay();
 }
 
 export function gradeMathTrainingAnswers(answers = {}) {
@@ -233,6 +254,142 @@ function renderQuestions(list, answers) {
       </article>
     `;
   }).join("");
+}
+
+function initMathKeypad(form) {
+  const keypad = document.querySelector("#mathKeypad");
+  if (!keypad) return;
+  form.addEventListener("focusin", (event) => {
+    if (!(event.target instanceof HTMLInputElement) || event.target.disabled) return;
+    activeInput = event.target;
+    keypad.hidden = false;
+    document.querySelector("#mathKeypadTarget").textContent = event.target.getAttribute("aria-label") || "回答入力";
+    updateMathPreview(activeInput.value);
+  });
+  keypad.addEventListener("pointerdown", (event) => {
+    if (event.target.closest("button")) event.preventDefault();
+  });
+  keypad.addEventListener("click", (event) => {
+    const button = event.target.closest("button");
+    if (!button || button.id === "mathKeypadClose") return;
+    if (!activeInput || activeInput.disabled) return;
+    const action = button.dataset.mathAction;
+    if (action === "clear") {
+      setInputValue(activeInput, "");
+    } else if (action === "backspace") {
+      replaceInputSelection(activeInput, "", true);
+    } else if (action === "fraction") {
+      insertFraction(activeInput);
+    } else if (button.dataset.mathKey) {
+      replaceInputSelection(activeInput, button.dataset.mathKey);
+    }
+    activeInput.focus({ preventScroll: true });
+  });
+  document.querySelector("#mathKeypadClose")?.addEventListener("click", () => {
+    keypad.hidden = true;
+  });
+}
+
+function replaceInputSelection(input, text, backspace = false) {
+  const start = Number.isFinite(input.selectionStart) ? input.selectionStart : input.value.length;
+  const end = Number.isFinite(input.selectionEnd) ? input.selectionEnd : start;
+  let from = start;
+  if (backspace && start === end && start > 0) from = start - 1;
+  const next = `${input.value.slice(0, from)}${text}${input.value.slice(end)}`;
+  setInputValue(input, next, from + text.length);
+}
+
+function insertFraction(input) {
+  const start = Number.isFinite(input.selectionStart) ? input.selectionStart : input.value.length;
+  const end = Number.isFinite(input.selectionEnd) ? input.selectionEnd : start;
+  const selected = input.value.slice(start, end);
+  const token = selected ? `(${selected})/()` : `()/()`;
+  setInputValue(
+    input,
+    `${input.value.slice(0, start)}${token}${input.value.slice(end)}`,
+    start + (selected ? token.length - 1 : 1)
+  );
+}
+
+function setInputValue(input, value, cursor = value.length) {
+  input.value = value;
+  input.setSelectionRange(cursor, cursor);
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+  updateMathPreview(value);
+}
+
+function updateMathPreview(value) {
+  const preview = document.querySelector("#mathKeypadPreview");
+  if (preview) preview.innerHTML = mathPreviewMarkup(value) || "入力確認";
+}
+
+export function mathPreviewMarkup(value) {
+  let markup = escapeHtml(String(value || ""));
+  markup = markup
+    .replace(/\^([0-9a-zA-Z]+)/g, "<sup>$1</sup>")
+    .replace(/([−-]?(?:\([^()]*\)|[A-Za-z0-9√π]+))\/((?:\([^()]*\)|[A-Za-z0-9√π]+))/g,
+      '<span class="math-input-frac"><span>$1</span><span>$2</span></span>');
+  return markup;
+}
+
+function initParentReview() {
+  document.querySelector("#mathParentReviewReload")?.addEventListener("click", () => {
+    parentReviewLoadedFor = "";
+    updateRoleSpecificDisplay();
+  });
+}
+
+function updateRoleSpecificDisplay() {
+  const role = document.body.dataset.role || "";
+  const panel = document.querySelector("#mathParentReview");
+  if (panel) panel.hidden = role !== "parent";
+  if (role === "parent" && document.body.dataset.view === "training") loadParentReview();
+  if (role === "student" && document.body.dataset.auth === "in") syncPendingSubmission();
+}
+
+async function loadParentReview() {
+  if (!parentReviewLoader) return;
+  const dateKey = trainingDateKey();
+  if (parentReviewLoadedFor === dateKey) return;
+  parentReviewLoadedFor = dateKey;
+  const status = document.querySelector("#mathParentReviewStatus");
+  if (status) status.textContent = "提出回答を読み込んでいます...";
+  try {
+    const review = await parentReviewLoader({ dateKey });
+    renderParentReview(review);
+  } catch (error) {
+    parentReviewLoadedFor = "";
+    if (status) status.textContent = `回答を読み込めませんでした。${error?.message || error}`;
+  }
+}
+
+function renderParentReview(review) {
+  const status = document.querySelector("#mathParentReviewStatus");
+  const list = document.querySelector("#mathParentReviewList");
+  if (!list) return;
+  if (!review?.submitted) {
+    if (status) status.textContent = "この学習日の提出回答はまだありません。";
+    list.innerHTML = "";
+    return;
+  }
+  if (status) {
+    status.textContent = `${formatDateTime(review.submittedAt)} 提出・${review.correctCount ?? 0}/${review.total ?? QUESTIONS.length}問正解`;
+  }
+  list.innerHTML = `
+    <table class="math-parent-review-table">
+      <thead><tr><th>問題</th><th>生徒の回答</th><th>模範解答</th><th>判定</th></tr></thead>
+      <tbody>
+        ${(review.items || []).map((item, index) => `
+          <tr>
+            <td>問題${index + 1}<br>${escapeHtml(item.topic || "")}</td>
+            <td class="math-parent-review-answer">${mathPreviewMarkup(item.studentAnswer || "未回答")}</td>
+            <td class="math-parent-review-answer">${mathPreviewMarkup(item.modelAnswer || "")}</td>
+            <td>${item.correct ? "〇 正解" : "要復習"}</td>
+          </tr>
+        `).join("")}
+      </tbody>
+    </table>
+  `;
 }
 
 function collectAnswers(form) {
@@ -316,7 +473,7 @@ function finishTraining(answers, finishReason) {
   const results = gradeMathTrainingAnswers(answers);
   const submittedAt = new Date().toISOString();
   const attempts = 1;
-  saveState({
+  const submission = {
     ...previous,
     answers,
     results,
@@ -325,7 +482,18 @@ function finishTraining(answers, finishReason) {
     finishReason,
     updatedAt: submittedAt,
     attempts
-  });
+  };
+  saveState(submission);
+  if (submissionHandler) {
+    pendingSubmission = {
+      dateKey: trainingDateKey(),
+      answers,
+      finishReason,
+      startedAt: submission.startedAt || "",
+      submittedAt
+    };
+    syncPendingSubmission();
+  }
   showResults(results, submittedAt, attempts);
   lockTraining(finishReason);
   stopTimer();
@@ -335,6 +503,20 @@ function finishTraining(answers, finishReason) {
       : "提出しました。本日の回答は確定され、変更できません。"
   );
   document.querySelector("#mathTrainingResult")?.scrollIntoView({ behavior: "smooth", block: "center" });
+}
+
+function syncPendingSubmission() {
+  if (!submissionHandler || !pendingSubmission || submissionSyncing) return;
+  submissionSyncing = true;
+  Promise.resolve(submissionHandler(pendingSubmission)).then(() => {
+    pendingSubmission = null;
+    setStatus("提出しました。回答は保護者モードにも保存されました。");
+  }).catch((error) => {
+    console.warn("Math training submission sync failed:", error);
+    setStatus("端末には提出済みです。保護者モードへの同期は次回接続時に再確認してください。");
+  }).finally(() => {
+    submissionSyncing = false;
+  });
 }
 
 function lockTraining(reason) {
@@ -394,6 +576,7 @@ function formatRemainingTime(milliseconds) {
 }
 
 function showResults(results, submittedAt, attempts) {
+  const parentMode = document.body.dataset.role === "parent";
   clearQuestionResults();
   results.forEach((result) => {
     const card = document.querySelector(`#math-${result.id}`);
@@ -403,8 +586,8 @@ function showResults(results, submittedAt, attempts) {
     if (feedback && question) {
       feedback.hidden = false;
       feedback.textContent = result.correct
-        ? `〇 正解　模範解答：${question.model}`
-        : `要復習　模範解答：${question.model}`;
+        ? `〇 正解${parentMode ? `　模範解答：${question.model}` : ""}`
+        : `要復習${parentMode ? `　模範解答：${question.model}` : ""}`;
     }
   });
 
@@ -417,10 +600,23 @@ function showResults(results, submittedAt, attempts) {
     <p>${formatDateTime(submittedAt)} に第${attempts}回の回答を提出しました。</p>
     <ol class="math-result-list">
       ${results.map((result, index) => `
-        <li>問題${index + 1}：${result.correct ? "〇 正解" : `要復習（${QUESTIONS[index].model}）`}</li>
+        <li>問題${index + 1}：${result.correct ? "〇 正解" : "要復習"}${parentMode ? `（模範解答：${QUESTIONS[index].model}）` : ""}</li>
       `).join("")}
     </ol>
   `;
+}
+
+function trainingDateKey() {
+  return dailyStorageKey().split(":").at(-1);
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
 }
 
 function clearQuestionResults() {

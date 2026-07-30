@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.19.13-dev";
-export const APP_RELEASE_NAME = "保護者との継続対話";
+export const APP_VERSION = "v4.19.14-dev";
+export const APP_RELEASE_NAME = "数学キーパッド・保護者答案確認";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -43,7 +43,7 @@ export const APP_VIEWS = [
 
 export const RELEASE_NOTES = [
   {
-    version: "v4.19.13-dev",
+    version: "v4.19.14-dev",
     date: "2026-07-29",
     title: "保護者質問の回答内容と継続対話を改善",
     items: [

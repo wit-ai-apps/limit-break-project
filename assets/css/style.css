@@ -1079,6 +1079,132 @@
       font-size: 1.05rem;
     }
 
+    .math-keypad {
+      position: fixed;
+      z-index: 1200;
+      left: 50%;
+      bottom: 14px;
+      width: min(680px, calc(100vw - 24px));
+      transform: translateX(-50%);
+      padding: 12px;
+      border: 1px solid #9abbd4;
+      border-radius: 16px;
+      background: rgba(247, 252, 255, 0.98);
+      box-shadow: 0 14px 38px rgba(28, 58, 82, 0.26);
+      color: #273548;
+      backdrop-filter: blur(10px);
+    }
+
+    .math-keypad[hidden] {
+      display: none;
+    }
+
+    .math-keypad-heading,
+    .math-parent-review-heading {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .math-keypad-heading > div {
+      display: grid;
+      gap: 2px;
+    }
+
+    .math-keypad-heading span {
+      color: #5b6f83;
+      font-size: 0.75rem;
+    }
+
+    .math-keypad-close {
+      padding: 6px 12px;
+      min-height: 0;
+    }
+
+    .math-keypad-preview {
+      min-height: 44px;
+      margin: 10px 0;
+      padding: 8px 12px;
+      overflow-x: auto;
+      border: 1px solid #c9dbe8;
+      border-radius: 10px;
+      background: #fff;
+      font-family: "Limit Break STIX", "Times New Roman", serif;
+      font-size: 1.2rem;
+      white-space: nowrap;
+    }
+
+    .math-input-frac {
+      display: inline-grid;
+      grid-template-rows: auto auto;
+      margin: 0 0.16em;
+      vertical-align: -0.48em;
+      text-align: center;
+      line-height: 1.08;
+    }
+
+    .math-input-frac > span:first-child {
+      padding: 0 0.22em 0.08em;
+      border-bottom: 1px solid currentColor;
+    }
+
+    .math-input-frac > span:last-child {
+      padding: 0.08em 0.22em 0;
+    }
+
+    .math-keypad-grid {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(44px, 1fr));
+      gap: 6px;
+    }
+
+    .math-keypad-grid button {
+      min-height: 42px;
+      padding: 6px;
+      border-color: #aac8dc;
+      background: #fff;
+      color: #21374b;
+      font-family: "Limit Break STIX", "Times New Roman", serif;
+      font-size: 1.05rem;
+    }
+
+    .math-parent-review {
+      margin: 14px 0;
+      padding: 14px;
+      border: 2px solid #5ca7d6;
+      border-radius: 14px;
+      background: #f5fbff;
+    }
+
+    .math-parent-review h3 {
+      margin: 2px 0 0;
+    }
+
+    .math-parent-review-table {
+      width: 100%;
+      margin-top: 10px;
+      border-collapse: collapse;
+      font-size: 0.88rem;
+    }
+
+    .math-parent-review-table th,
+    .math-parent-review-table td {
+      padding: 8px;
+      border: 1px solid #c9dbe8;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .math-parent-review-table th {
+      background: #e8f5fc;
+    }
+
+    .math-parent-review-answer {
+      font-family: "Limit Break STIX", "Times New Roman", serif;
+      font-size: 1rem;
+    }
+
     .math-answer-feedback {
       margin: 10px 0 0;
       font-size: 0.88rem;
@@ -1113,6 +1239,44 @@
 
       .math-training-actions > button {
         flex: 1 1 140px;
+      }
+
+      .math-keypad {
+        bottom: 6px;
+        width: calc(100vw - 12px);
+        max-height: 52vh;
+        overflow-y: auto;
+      }
+
+      .math-keypad-grid {
+        grid-template-columns: repeat(6, minmax(38px, 1fr));
+      }
+
+      .math-keypad-grid button {
+        min-height: 38px;
+        font-size: 0.95rem;
+      }
+
+      .math-parent-review-table thead {
+        display: none;
+      }
+
+      .math-parent-review-table,
+      .math-parent-review-table tbody,
+      .math-parent-review-table tr,
+      .math-parent-review-table td {
+        display: block;
+        width: 100%;
+      }
+
+      .math-parent-review-table tr {
+        margin-top: 10px;
+        border: 1px solid #c9dbe8;
+      }
+
+      .math-parent-review-table td {
+        border: 0;
+        border-bottom: 1px solid #dce9f2;
       }
     }
 

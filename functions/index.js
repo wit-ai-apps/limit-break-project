@@ -32,6 +32,7 @@ import {
 } from "./sharing-policy.js";
 import { filterSupportSummary, supportSummaryAccessFields } from "./support-summary.js";
 import { buildGuardianAnswer } from "./guardian-answer.js";
+import { buildMathParentReview, gradeMathSubmission, validTrainingDateKey } from "./math-training-review.js";
 
 initializeApp();
 
@@ -400,6 +401,65 @@ export const listAccessLogs = onCall({ region: "us-east1" }, async (request) => 
       };
     })
   };
+});
+
+export const saveMathTrainingSubmission = onCall({ region: "us-east1" }, async (request) => {
+  const uid = requireAuth(request);
+  const { data: user } = await requireUser(uid);
+  const studentId = String(request.data?.studentId || "").trim();
+  const dateKey = String(request.data?.dateKey || "").trim();
+  if (user.role !== "student" || !linkedToStudent(user, studentId)) {
+    throw new HttpsError("permission-denied", "STUDENT_SUBMISSION_ONLY");
+  }
+  if (!validTrainingDateKey(dateKey)) {
+    throw new HttpsError("invalid-argument", "INVALID_TRAINING_DATE");
+  }
+  const answers = request.data?.answers && typeof request.data.answers === "object"
+    ? request.data.answers : {};
+  if (JSON.stringify(answers).length > 30000) {
+    throw new HttpsError("invalid-argument", "ANSWERS_TOO_LARGE");
+  }
+  const results = gradeMathSubmission(answers);
+  const ref = getFirestore().doc(`students/${studentId}/math_training_submissions/${dateKey}`);
+  const existing = await ref.get();
+  if (existing.exists) return { saved: true, alreadySubmitted: true };
+  await ref.create({
+    owner_uid: uid,
+    date_key: dateKey,
+    worksheet_id: "high-school-slide-training-day1",
+    answers,
+    results,
+    correct_count: results.filter((result) => result.correct).length,
+    total: results.length,
+    started_at: String(request.data?.startedAt || "").slice(0, 40),
+    submitted_at: String(request.data?.submittedAt || new Date().toISOString()).slice(0, 40),
+    finish_reason: String(request.data?.finishReason || "submitted").slice(0, 30),
+    created_at: FieldValue.serverTimestamp()
+  });
+  return { saved: true, correctCount: results.filter((result) => result.correct).length };
+});
+
+export const getMathTrainingReview = onCall({ region: "us-east1" }, async (request) => {
+  const uid = requireAuth(request);
+  const { data: user } = await requireUser(uid);
+  const studentId = String(request.data?.studentId || "").trim();
+  const dateKey = String(request.data?.dateKey || "").trim();
+  const { role } = await sharingContext(uid, user, studentId);
+  if (role !== "parent") throw new HttpsError("permission-denied", "PARENT_REVIEW_ONLY");
+  if (!validTrainingDateKey(dateKey)) {
+    throw new HttpsError("invalid-argument", "INVALID_TRAINING_DATE");
+  }
+  const snapshot = await getFirestore().doc(`students/${studentId}/math_training_submissions/${dateKey}`).get();
+  if (!snapshot.exists) return { submitted: false, dateKey };
+  await getFirestore().collection(`students/${studentId}/access_logs`).add({
+    viewer_uid: uid,
+    viewer_role: "parent",
+    viewer_name: String(user.displayName || user.email || "保護者").slice(0, 80),
+    action: "math_training_review.read",
+    fields: ["student_answers", "model_answers", "grading"],
+    created_at: FieldValue.serverTimestamp()
+  });
+  return { ...buildMathParentReview(snapshot.data()), dateKey };
 });
 
 export const inspectGroupInvite = onCall({ region: "us-east1" }, async (request) => {

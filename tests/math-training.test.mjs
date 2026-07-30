@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   dailyStorageKey,
   gradeMathTrainingAnswers,
+  mathPreviewMarkup,
   remainingTimeMs
 } from "../assets/js/training/math-training.js";
 
@@ -46,4 +47,14 @@ test("毎日の記録キーは日本時間の午前8時55分に切り替わる",
     dailyStorageKey(new Date("2026-07-28T23:55:00.000Z")),
     "limitBreakMathTrainingHighSchoolDay1V2:2026-07-29"
   );
+});
+
+test("数式入力プレビューは分数と指数を教科書形式で表示する", () => {
+  const markup = mathPreviewMarkup("√3/2＋x^2");
+  assert.match(markup, /math-input-frac/);
+  assert.match(markup, /<sup>2<\/sup>/);
+});
+
+test("数式入力プレビューはHTMLを無害化する", () => {
+  assert.doesNotMatch(mathPreviewMarkup("<img src=x>"), /<img/);
 });

@@ -23,19 +23,19 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.19.13";
-import { initMathTraining } from "./training/math-training.js?v=4.19.13";
-import { initEnglishTraining } from "./training/english-training.js?v=4.19.13";
+} from "../../config/app_config.js?v=4.19.14";
+import { initMathTraining } from "./training/math-training.js?v=4.19.14";
+import { initEnglishTraining } from "./training/english-training.js?v=4.19.14";
 import {
   loadMemoryQueue,
   memorySummary as summarizeMemory,
   renderAdaptiveMemory
-} from "./learning/memory.js?v=4.19.13";
-import { renderYuiCoachCard } from "./coach/yui-coach.js?v=4.19.13";
+} from "./learning/memory.js?v=4.19.14";
+import { renderYuiCoachCard } from "./coach/yui-coach.js?v=4.19.14";
 import {
   sharingPreferencesFromForm,
   sharingSettingsMarkup
-} from "./privacy/sharing-settings.js?v=4.19.13";
+} from "./privacy/sharing-settings.js?v=4.19.14";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -4763,7 +4763,26 @@ function renderScheduleDrawer() {
       });
     }
 
-    initMathTraining();
+    initMathTraining({
+      onSubmit: async (submission) => {
+        if (currentRole !== "student" || !firebaseBridge.currentUser || !firebaseBridge.studentId) {
+          throw new Error("ログイン中の生徒だけが回答を同期できます。");
+        }
+        return callGroupFunction("saveMathTrainingSubmission", {
+          studentId: firebaseBridge.studentId,
+          ...submission
+        });
+      },
+      loadParentReview: async ({ dateKey }) => {
+        if (currentRole !== "parent" || !firebaseBridge.currentUser || !firebaseBridge.studentId) {
+          throw new Error("保護者としてログインしてください。");
+        }
+        return callGroupFunction("getMathTrainingReview", {
+          studentId: firebaseBridge.studentId,
+          dateKey
+        });
+      }
+    });
     initEnglishTraining();
     registerServiceWorker();
     init();
