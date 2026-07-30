@@ -23,19 +23,19 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.19.14";
-import { initMathTraining } from "./training/math-training.js?v=4.19.14";
-import { initEnglishTraining } from "./training/english-training.js?v=4.19.14";
+} from "../../config/app_config.js?v=4.19.15";
+import { initMathTraining } from "./training/math-training.js?v=4.19.15";
+import { initEnglishTraining } from "./training/english-training.js?v=4.19.15";
 import {
   loadMemoryQueue,
   memorySummary as summarizeMemory,
   renderAdaptiveMemory
-} from "./learning/memory.js?v=4.19.14";
-import { renderYuiCoachCard } from "./coach/yui-coach.js?v=4.19.14";
+} from "./learning/memory.js?v=4.19.15";
+import { renderYuiCoachCard } from "./coach/yui-coach.js?v=4.19.15";
 import {
   sharingPreferencesFromForm,
   sharingSettingsMarkup
-} from "./privacy/sharing-settings.js?v=4.19.14";
+} from "./privacy/sharing-settings.js?v=4.19.15";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -143,6 +143,7 @@ import {
       localStorage.setItem(mobileUiMigrationKey, "done");
     }
     let navigationStepIndex = Number(localStorage.getItem(NAV_STEP_KEY) || 0);
+    let navigationNotice = "";
     let records = loadEvidenceRecords(STORAGE_KEY);
     let memoryResults = loadMemoryResults();
     let aiTeacherLog = loadAiTeacherLog();
@@ -579,6 +580,7 @@ import {
       if (pendingInviteToken) await claimPendingInvite();
       if (currentRole === "parent" || currentRole === "lead_teacher") await loadGroupInvites();
       if (["student", "parent"].includes(currentRole)) await loadSharingPreferences();
+      if (["student", "parent"].includes(currentRole)) await loadLearningNavigationState();
       if (["student", "parent", "admin", "lead_teacher"].includes(currentRole)) await loadAccessLogs();
       if (["student", "parent", "admin", "lead_teacher"].includes(currentRole)) await loadGuardianQuestions();
       if (currentRole === "student" || currentRole === "parent") await recoverStalledEvidenceAnalyses();
@@ -1603,6 +1605,36 @@ function renderAdaptivePlan() {
       return dailyPlan.coach_message || "今日は次の一手だけ見て進めましょう。";
     }
 
+    async function loadLearningNavigationState() {
+      if (!firebaseBridge.studentId) return;
+      try {
+        const result = await callGroupFunction("getLearningNavigationState", {
+          studentId: firebaseBridge.studentId
+        });
+        if (result?.synced && Number.isInteger(result?.stepIndex) && result.stepIndex >= 0) {
+          navigationStepIndex = result.stepIndex;
+          localStorage.setItem(NAV_STEP_KEY, String(navigationStepIndex));
+        } else if (!result?.synced && currentRole === "student") {
+          await saveLearningNavigationState();
+        }
+      } catch (_) {
+        // オフライン時は端末保存の位置を使う。
+      }
+    }
+
+    async function saveLearningNavigationState() {
+      localStorage.setItem(NAV_STEP_KEY, String(navigationStepIndex));
+      if (currentRole !== "student" || !firebaseBridge.currentUser || !firebaseBridge.studentId) return;
+      try {
+        await callGroupFunction("saveLearningNavigationState", {
+          studentId: firebaseBridge.studentId,
+          stepIndex: navigationStepIndex
+        });
+      } catch (_) {
+        navigationNotice = `${navigationNotice} この端末には保存しました。通信回復後に同期します。`.trim();
+      }
+    }
+
     async function loadSharingPreferences() {
       sharingPreferences = null;
       if (!firebaseBridge.currentUser || !firebaseBridge.studentId) return;
@@ -1909,7 +1941,8 @@ function renderScheduleDrawer() {
         `;
         missionList.querySelector("#navigationResetButton").addEventListener("click", () => {
           navigationStepIndex = 0;
-          localStorage.setItem(NAV_STEP_KEY, String(navigationStepIndex));
+          navigationNotice = "翌日の学習ルートを先頭へ戻しました。";
+          void saveLearningNavigationState();
           render();
         });
         renderJourneyMap(items, currentIndex);
@@ -1922,6 +1955,7 @@ function renderScheduleDrawer() {
       const mission = findMissionById(current.missionId);
       const unit = findUnitByMissionId(current.missionId);
       const flow = learningRouteFlow(unit, mission);
+      const readOnly = currentRole !== "student";
       card.innerHTML = `
         <div class="navigation-kicker">次にやること</div>
         <p class="navigation-message">${navigationGreeting(items, currentIndex, remaining)}</p>
@@ -1931,9 +1965,20 @@ function renderScheduleDrawer() {
           <span>${current.lesson} ${current.part} / ${current.title}</span>
           <span>現在: ${current.label}</span>
         </div>
-        <div class="route-flow" aria-label="今日の流れ">${flow}</div>
-        ${renderUnitConnection(unit, mission)}
-        <button class="navigation-button" type="button" id="navigationActionButton">${current.button}</button>
+        <div class="navigation-instruction">
+          <strong>今すること</strong>
+          <span>${current.instruction || navigationGreeting(items, currentIndex, remaining)}</span>
+        </div>
+        <details class="route-details">
+          <summary>学習の流れを見る（現在：${current.label}）</summary>
+          <div class="route-flow" aria-label="今日の流れ">${flow}</div>
+        </details>
+        <details class="route-details">
+          <summary>前回・次回・復習予定を見る</summary>
+          ${renderUnitConnection(unit, mission)}
+        </details>
+        <p class="navigation-action-status" role="status" aria-live="polite">${navigationNotice || (readOnly ? "保護者モードでは進行状況を閲覧できます。操作は生徒画面で行います。" : "ボタンを押すと、この段階を完了としてPC・スマホへ同期します。")}</p>
+        <button class="navigation-button" type="button" id="navigationActionButton" ${readOnly ? "disabled" : ""}>${navigationActionLabel(current)}</button>
       `;
       missionList.appendChild(card);
       card.querySelector("#navigationActionButton").addEventListener("click", () => handleNavigationAction(current, currentIndex, items));
@@ -2148,6 +2193,12 @@ function renderScheduleDrawer() {
       return map[type] || "次へ";
     }
 
+    function navigationActionLabel(current) {
+      if (current.type === "submit") return "確認テスト結果を提出する";
+      if (current.type === "complete") return "次の講義へ進む";
+      return `「${String(current.label || "この段階")}」を完了して次へ`;
+    }
+
     function navigationGreeting(items, index, remaining) {
       const current = items[index];
       if (current.type === "submit") {
@@ -2171,11 +2222,14 @@ function renderScheduleDrawer() {
 
     function handleNavigationAction(current, index, items) {
       if (current.type === "submit") {
+        navigationNotice = "提出画面を開きました。結果画像・回答数・正答率を確認して提出してください。";
         openRecordDialog(findMissionById(current.missionId), getMissionRecord(current.missionId));
         return;
       }
       navigationStepIndex = Math.min(index + 1, items.length);
-      localStorage.setItem(NAV_STEP_KEY, String(navigationStepIndex));
+      const next = items[navigationStepIndex];
+      navigationNotice = `「${current.label}」を完了しました。${next ? `次は「${next.label}」です。` : "本日の学習ルートは完了です。"}`;
+      void saveLearningNavigationState();
       render();
     }
 
@@ -4640,7 +4694,8 @@ function renderScheduleDrawer() {
       const navItems = navigationItems();
       const nextIndex = navItems.findIndex((item) => item.type !== "complete");
       navigationStepIndex = nextIndex >= 0 ? nextIndex : navItems.length;
-      localStorage.setItem(NAV_STEP_KEY, String(navigationStepIndex));
+      navigationNotice = "確認テスト結果を提出しました。次の学習へ進みます。";
+      void saveLearningNavigationState();
       activeView = "home";
       localStorage.setItem(VIEW_KEY, activeView);
       recordDialog.close();

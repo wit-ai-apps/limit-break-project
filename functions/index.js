@@ -33,6 +33,7 @@ import {
 import { filterSupportSummary, supportSummaryAccessFields } from "./support-summary.js";
 import { buildGuardianAnswer } from "./guardian-answer.js";
 import { buildMathParentReview, gradeMathSubmission, validTrainingDateKey } from "./math-training-review.js";
+import { normalizeNavigationStepIndex } from "./navigation-state.js";
 
 initializeApp();
 
@@ -460,6 +461,37 @@ export const getMathTrainingReview = onCall({ region: "us-east1" }, async (reque
     created_at: FieldValue.serverTimestamp()
   });
   return { ...buildMathParentReview(snapshot.data()), dateKey };
+});
+
+export const saveLearningNavigationState = onCall({ region: "us-east1" }, async (request) => {
+  const uid = requireAuth(request);
+  const { data: user } = await requireUser(uid);
+  const studentId = String(request.data?.studentId || "").trim();
+  if (user.role !== "student" || !linkedToStudent(user, studentId)) {
+    throw new HttpsError("permission-denied", "STUDENT_NAVIGATION_ONLY");
+  }
+  const stepIndex = normalizeNavigationStepIndex(request.data?.stepIndex);
+  await getFirestore().doc(`students/${studentId}/learning_state/navigation`).set({
+    step_index: stepIndex,
+    updated_by_uid: uid,
+    updated_at: FieldValue.serverTimestamp()
+  }, { merge: true });
+  return { saved: true, stepIndex };
+});
+
+export const getLearningNavigationState = onCall({ region: "us-east1" }, async (request) => {
+  const uid = requireAuth(request);
+  const { data: user } = await requireUser(uid);
+  const studentId = String(request.data?.studentId || "").trim();
+  const { role } = await sharingContext(uid, user, studentId);
+  if (!["student", "parent"].includes(role)) {
+    throw new HttpsError("permission-denied", "NAVIGATION_STATE_NOT_ALLOWED");
+  }
+  const snapshot = await getFirestore().doc(`students/${studentId}/learning_state/navigation`).get();
+  return {
+    stepIndex: normalizeNavigationStepIndex(snapshot.exists ? snapshot.data().step_index : 0),
+    synced: snapshot.exists
+  };
 });
 
 export const inspectGroupInvite = onCall({ region: "us-east1" }, async (request) => {

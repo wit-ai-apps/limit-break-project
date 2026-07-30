@@ -2959,7 +2959,64 @@
     .route-flow {
       display: grid;
       gap: 8px;
+      margin: 12px 0 2px;
+    }
+
+    .navigation-instruction {
+      display: grid;
+      gap: 6px;
       margin: 16px 0;
+      padding: 16px 18px;
+      border-left: 5px solid var(--primary);
+      border-radius: 10px;
+      background: #eef9fd;
+      text-align: left;
+    }
+
+    .navigation-instruction strong {
+      color: var(--primary);
+      font-size: 0.86rem;
+    }
+
+    .navigation-instruction span {
+      color: #2f3748;
+      font-size: 1.04rem;
+      font-weight: 800;
+      line-height: 1.55;
+    }
+
+    .route-details {
+      margin-top: 10px;
+      border: 1px solid #dbeaf2;
+      border-radius: 12px;
+      background: #fbfdff;
+      text-align: left;
+    }
+
+    .route-details summary {
+      padding: 13px 15px;
+      color: #31546a;
+      font-weight: 850;
+      cursor: pointer;
+      list-style-position: inside;
+    }
+
+    .route-details[open] {
+      padding: 0 12px 12px;
+    }
+
+    .route-details[open] summary {
+      margin: 0 -12px 8px;
+      border-bottom: 1px solid #dbeaf2;
+    }
+
+    .navigation-action-status {
+      min-height: 1.5em;
+      margin: 14px 0 8px;
+      color: #3d5567;
+      font-size: 0.88rem;
+      font-weight: 750;
+      line-height: 1.5;
     }
 
     .route-step {
@@ -2991,6 +3048,10 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 10px;
       margin: 14px 0 18px;
+    }
+
+    .route-details .route-context {
+      margin: 0;
     }
 
     .route-context div {
@@ -3252,6 +3313,23 @@
 
       .navigation-card {
         min-height: auto;
+        padding: 18px 14px;
+      }
+
+      .navigation-message {
+        font-size: 1.2rem;
+      }
+
+      .navigation-current {
+        padding: 14px;
+      }
+
+      .navigation-instruction {
+        padding: 13px 14px;
+      }
+
+      .route-details summary {
+        padding: 12px;
       }
     }
 
