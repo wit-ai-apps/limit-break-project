@@ -23,19 +23,19 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.19.15";
-import { initMathTraining } from "./training/math-training.js?v=4.19.15";
-import { initEnglishTraining } from "./training/english-training.js?v=4.19.15";
+} from "../../config/app_config.js?v=4.19.16";
+import { initMathTraining } from "./training/math-training.js?v=4.19.16";
+import { initEnglishTraining } from "./training/english-training.js?v=4.19.16";
 import {
   loadMemoryQueue,
   memorySummary as summarizeMemory,
   renderAdaptiveMemory
-} from "./learning/memory.js?v=4.19.15";
-import { renderYuiCoachCard } from "./coach/yui-coach.js?v=4.19.15";
+} from "./learning/memory.js?v=4.19.16";
+import { renderYuiCoachCard } from "./coach/yui-coach.js?v=4.19.16";
 import {
   sharingPreferencesFromForm,
   sharingSettingsMarkup
-} from "./privacy/sharing-settings.js?v=4.19.15";
+} from "./privacy/sharing-settings.js?v=4.19.16";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -1612,8 +1612,14 @@ function renderAdaptivePlan() {
           studentId: firebaseBridge.studentId
         });
         if (result?.synced && Number.isInteger(result?.stepIndex) && result.stepIndex >= 0) {
-          navigationStepIndex = result.stepIndex;
+          const deviceStepIndex = Math.max(0, Number(navigationStepIndex) || 0);
+          navigationStepIndex = currentRole === "student"
+            ? Math.max(deviceStepIndex, result.stepIndex)
+            : result.stepIndex;
           localStorage.setItem(NAV_STEP_KEY, String(navigationStepIndex));
+          if (currentRole === "student" && navigationStepIndex > result.stepIndex) {
+            await saveLearningNavigationState();
+          }
         } else if (!result?.synced && currentRole === "student") {
           await saveLearningNavigationState();
         }
