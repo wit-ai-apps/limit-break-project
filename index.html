@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.svg">
-  <link rel="stylesheet" href="assets/css/style.css?v=4.19.17">
+  <link rel="stylesheet" href="assets/css/style.css?v=4.19.18">
 </head>
 <body data-role="student" data-auth="out">
   <div class="app-startup-gate" id="appStartupGate" role="status" aria-live="polite">
@@ -238,19 +238,28 @@
               <button class="secondary math-keypad-close" type="button" id="mathKeypadClose" aria-label="数学キーパッドを閉じる">閉じる</button>
             </div>
             <div class="math-keypad-preview" id="mathKeypadPreview" aria-label="入力中の数式プレビュー">入力確認</div>
+            <div class="math-keypad-edit" aria-label="入力位置と訂正">
+              <button type="button" data-math-action="cursor-left" aria-label="カーソルを左へ">←</button>
+              <button type="button" data-math-action="cursor-right" aria-label="カーソルを右へ">→</button>
+              <button type="button" data-math-action="backspace">前を1字削除</button>
+              <button type="button" data-math-action="delete-forward">次を1字削除</button>
+              <button type="button" data-math-action="select-all">全選択</button>
+              <button type="button" class="math-keypad-clear-all" data-math-action="clear">全消去</button>
+            </div>
+            <p class="math-keypad-cursor" id="mathKeypadCursor">カーソル位置 0 / 0</p>
             <div class="math-keypad-grid">
               <button type="button" class="math-key-number" data-math-key="7">7</button>
               <button type="button" class="math-key-number" data-math-key="8">8</button>
               <button type="button" class="math-key-number" data-math-key="9">9</button>
               <button type="button" data-math-key="＋">＋</button>
               <button type="button" data-math-key="−">−</button>
-              <button type="button" data-math-action="backspace">⌫</button>
+              <button type="button" data-math-key="^" aria-label="指数を入力">□ⁿ</button>
               <button type="button" class="math-key-number" data-math-key="4">4</button>
               <button type="button" class="math-key-number" data-math-key="5">5</button>
               <button type="button" class="math-key-number" data-math-key="6">6</button>
               <button type="button" data-math-key="×">×</button>
               <button type="button" data-math-key="÷">÷</button>
-              <button type="button" data-math-action="clear">クリア</button>
+              <button type="button" data-math-key="±">±</button>
               <button type="button" class="math-key-number" data-math-key="1">1</button>
               <button type="button" class="math-key-number" data-math-key="2">2</button>
               <button type="button" class="math-key-number" data-math-key="3">3</button>
@@ -621,6 +630,6 @@
     </div>
   </dialog>
 
-  <script type="module" src="assets/js/app.js?v=4.19.17"></script>
+  <script type="module" src="assets/js/app.js?v=4.19.18"></script>
 </body>
 </html>

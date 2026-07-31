@@ -241,7 +241,7 @@ function renderQuestions(list, answers) {
         ${field.label}
         <input
           type="text"
-          inputmode="text"
+          inputmode="none"
           autocomplete="off"
           spellcheck="false"
           name="${name}"
@@ -270,12 +270,29 @@ function renderQuestions(list, answers) {
 function initMathKeypad(form) {
   const keypad = document.querySelector("#mathKeypad");
   if (!keypad) return;
+  const mathOnlyInput = shouldSuppressVirtualKeyboard();
+  form.querySelectorAll("input").forEach((input) => {
+    input.inputMode = "none";
+    input.setAttribute("enterkeyhint", "done");
+    if (mathOnlyInput) {
+      input.readOnly = true;
+      input.setAttribute("aria-readonly", "true");
+      input.setAttribute("data-math-keypad-only", "true");
+    }
+  });
   form.addEventListener("focusin", (event) => {
     if (!(event.target instanceof HTMLInputElement) || event.target.disabled) return;
     activeInput = event.target;
     keypad.hidden = false;
     document.querySelector("#mathKeypadTarget").textContent = event.target.getAttribute("aria-label") || "回答入力";
     updateMathPreview(activeInput.value);
+    updateCursorStatus(activeInput);
+  });
+  form.addEventListener("pointerup", (event) => {
+    if (event.target === activeInput) requestAnimationFrame(() => updateCursorStatus(activeInput));
+  });
+  form.addEventListener("select", (event) => {
+    if (event.target === activeInput) updateCursorStatus(activeInput);
   });
   keypad.addEventListener("pointerdown", (event) => {
     if (event.target.closest("button")) event.preventDefault();
@@ -285,29 +302,81 @@ function initMathKeypad(form) {
     if (!button || button.id === "mathKeypadClose") return;
     if (!activeInput || activeInput.disabled) return;
     const action = button.dataset.mathAction;
-    if (action === "clear") {
-      setInputValue(activeInput, "");
-    } else if (action === "backspace") {
-      replaceInputSelection(activeInput, "", true);
+    if (action && action !== "fraction") {
+      applyMathEdit(activeInput, action);
     } else if (action === "fraction") {
       insertFraction(activeInput);
     } else if (button.dataset.mathKey) {
       replaceInputSelection(activeInput, button.dataset.mathKey);
     }
     activeInput.focus({ preventScroll: true });
+    updateCursorStatus(activeInput);
   });
   document.querySelector("#mathKeypadClose")?.addEventListener("click", () => {
     keypad.hidden = true;
   });
 }
 
-function replaceInputSelection(input, text, backspace = false) {
+function shouldSuppressVirtualKeyboard() {
+  return window.matchMedia?.("(pointer: coarse)")?.matches || navigator.maxTouchPoints > 0;
+}
+
+function replaceInputSelection(input, text) {
   const start = Number.isFinite(input.selectionStart) ? input.selectionStart : input.value.length;
   const end = Number.isFinite(input.selectionEnd) ? input.selectionEnd : start;
-  let from = start;
-  if (backspace && start === end && start > 0) from = start - 1;
-  const next = `${input.value.slice(0, from)}${text}${input.value.slice(end)}`;
-  setInputValue(input, next, from + text.length);
+  const next = `${input.value.slice(0, start)}${text}${input.value.slice(end)}`;
+  setInputValue(input, next, start + text.length);
+}
+
+export function mathEditOperation(value, selectionStart, selectionEnd, action) {
+  const source = String(value || "");
+  const start = Math.max(0, Math.min(source.length, Number(selectionStart) || 0));
+  const end = Math.max(start, Math.min(source.length, Number(selectionEnd) || start));
+  if (action === "cursor-left") {
+    const cursor = start !== end ? start : Math.max(0, start - 1);
+    return { value: source, start: cursor, end: cursor };
+  }
+  if (action === "cursor-right") {
+    const cursor = start !== end ? end : Math.min(source.length, end + 1);
+    return { value: source, start: cursor, end: cursor };
+  }
+  if (action === "select-all") {
+    return { value: source, start: 0, end: source.length };
+  }
+  if (action === "clear") {
+    return { value: "", start: 0, end: 0 };
+  }
+  if (action === "backspace") {
+    const from = start === end ? Math.max(0, start - 1) : start;
+    return {
+      value: `${source.slice(0, from)}${source.slice(end)}`,
+      start: from,
+      end: from
+    };
+  }
+  if (action === "delete-forward") {
+    const to = start === end ? Math.min(source.length, end + 1) : end;
+    return {
+      value: `${source.slice(0, start)}${source.slice(to)}`,
+      start,
+      end: start
+    };
+  }
+  return { value: source, start, end };
+}
+
+function applyMathEdit(input, action) {
+  const result = mathEditOperation(
+    input.value,
+    input.selectionStart ?? input.value.length,
+    input.selectionEnd ?? input.value.length,
+    action
+  );
+  if (result.value !== input.value) {
+    setInputValue(input, result.value, result.start, result.end);
+  } else {
+    input.setSelectionRange(result.start, result.end);
+  }
 }
 
 function insertFraction(input) {
@@ -322,16 +391,27 @@ function insertFraction(input) {
   );
 }
 
-function setInputValue(input, value, cursor = value.length) {
+function setInputValue(input, value, cursor = value.length, selectionEnd = cursor) {
   input.value = value;
-  input.setSelectionRange(cursor, cursor);
+  input.setSelectionRange(cursor, selectionEnd);
   input.dispatchEvent(new Event("input", { bubbles: true }));
   updateMathPreview(value);
+  updateCursorStatus(input);
 }
 
 function updateMathPreview(value) {
   const preview = document.querySelector("#mathKeypadPreview");
   if (preview) preview.innerHTML = mathPreviewMarkup(value) || "入力確認";
+}
+
+function updateCursorStatus(input) {
+  const status = document.querySelector("#mathKeypadCursor");
+  if (!status || !input) return;
+  const start = input.selectionStart ?? input.value.length;
+  const end = input.selectionEnd ?? start;
+  status.textContent = start === end
+    ? `カーソル位置 ${start} / ${input.value.length}`
+    : `${end - start}文字を選択中`;
 }
 
 export function mathPreviewMarkup(value) {

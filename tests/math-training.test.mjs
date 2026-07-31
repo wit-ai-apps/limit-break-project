@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   dailyStorageKey,
   gradeMathTrainingAnswers,
+  mathEditOperation,
   mathPreviewMarkup,
   remainingTimeMs
 } from "../assets/js/training/math-training.js";
@@ -59,4 +60,30 @@ test("数式入力プレビューは分数と指数を教科書形式で表示�
 
 test("数式入力プレビューはHTMLを無害化する", () => {
   assert.doesNotMatch(mathPreviewMarkup("<img src=x>"), /<img/);
+});
+
+test("数式キーパッドはカーソル位置の前後を1文字ずつ訂正できる", () => {
+  assert.deepEqual(
+    mathEditOperation("12x³", 3, 3, "backspace"),
+    { value: "12³", start: 2, end: 2 }
+  );
+  assert.deepEqual(
+    mathEditOperation("12x³", 2, 2, "delete-forward"),
+    { value: "12³", start: 2, end: 2 }
+  );
+});
+
+test("数式キーパッドは選択範囲とカーソルを操作できる", () => {
+  assert.deepEqual(
+    mathEditOperation("12345", 1, 4, "backspace"),
+    { value: "15", start: 1, end: 1 }
+  );
+  assert.deepEqual(
+    mathEditOperation("12345", 2, 2, "cursor-left"),
+    { value: "12345", start: 1, end: 1 }
+  );
+  assert.deepEqual(
+    mathEditOperation("12345", 2, 2, "select-all"),
+    { value: "12345", start: 0, end: 5 }
+  );
 });

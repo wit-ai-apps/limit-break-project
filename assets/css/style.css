@@ -1158,6 +1158,43 @@
       white-space: nowrap;
     }
 
+    .math-keypad-edit {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 6px;
+      margin-bottom: 4px;
+    }
+
+    .math-keypad-edit button {
+      min-height: 38px;
+      padding: 5px 4px;
+      border-color: #a9c8dc;
+      border-radius: 10px;
+      background: #eef7fc;
+      color: #254258;
+      font-size: 0.76rem;
+      font-weight: 700;
+    }
+
+    .math-keypad-edit button:first-child,
+    .math-keypad-edit button:nth-child(2) {
+      font-size: 1.18rem;
+    }
+
+    .math-keypad-edit .math-keypad-clear-all {
+      border-color: #e5b7b7;
+      background: #fff6f6;
+      color: #9b3434;
+    }
+
+    .math-keypad-cursor {
+      min-height: 1.2em;
+      margin: 2px 2px 7px;
+      color: #5b6f83;
+      font-size: 0.7rem;
+      text-align: right;
+    }
+
     .math-variable {
       font-family: "Limit Break STIX", "Times New Roman", serif;
       font-style: italic;
@@ -1210,8 +1247,6 @@
       font-weight: 500;
     }
 
-    .math-keypad-grid button[data-math-action="clear"],
-    .math-keypad-grid button[data-math-action="backspace"],
     .math-keypad-grid button[data-math-action="fraction"] {
       font-family: system-ui, sans-serif;
       font-size: 0.76rem;
@@ -1295,6 +1330,14 @@
         width: calc(100vw - 12px);
         max-height: 52vh;
         overflow-y: auto;
+      }
+
+      .math-keypad-edit {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .math-keypad-edit button {
+        min-height: 36px;
       }
 
       .math-keypad-grid {
