@@ -497,6 +497,8 @@ import {
           serverTimestamp: firebaseFirestore.serverTimestamp,
           signInWithEmailAndPassword: firebaseAuth.signInWithEmailAndPassword,
           signInWithPopup: firebaseAuth.signInWithPopup,
+          signInWithRedirect: firebaseAuth.signInWithRedirect,
+          getRedirectResult: firebaseAuth.getRedirectResult,
           googleProvider: new firebaseAuth.GoogleAuthProvider(),
           sendPasswordResetEmail: firebaseAuth.sendPasswordResetEmail,
           createUserWithEmailAndPassword: firebaseAuth.createUserWithEmailAndPassword,
@@ -513,6 +515,36 @@ import {
         addDiagnosticLog("firebase.ready", { projectId: config.firebase?.projectId || "" });
         if (typeof auth.authStateReady === "function") {
           await auth.authStateReady();
+        }
+        const pendingGoogleRole = sessionStorage.getItem("limitBreakGoogleRole");
+        if (pendingGoogleRole && firebaseBridge.getRedirectResult) {
+          try {
+            loginStatus.textContent = "Google認証の結果を確認しています…";
+            const redirectCredential = await firebaseBridge.getRedirectResult(auth);
+            if (redirectCredential?.user) {
+              currentRole = pendingGoogleRole;
+              currentSupportType = sessionStorage.getItem("limitBreakGoogleSupportType") || currentSupportType;
+              const created = await completeGoogleLogin(redirectCredential.user);
+              loginStatus.textContent = created
+                ? "Googleアカウントで新規登録してログインしました。"
+                : "Googleアカウントでログインしました。";
+              addDiagnosticLog("firebase.google_login.redirect_success", {
+                onboarding: created ? "created" : "existing"
+              });
+              sessionStorage.removeItem("limitBreakGoogleRole");
+              sessionStorage.removeItem("limitBreakGoogleSupportType");
+              render();
+              return;
+            }
+          } catch (error) {
+            addDiagnosticLog("firebase.google_login.redirect_error", {
+              code: String(error?.code || "GOOGLE_REDIRECT_FAILED"),
+              message: String(error?.message || error).slice(0, 240)
+            });
+            loginStatus.textContent = googleLoginErrorMessage(error);
+            sessionStorage.removeItem("limitBreakGoogleRole");
+            sessionStorage.removeItem("limitBreakGoogleSupportType");
+          }
         }
         if (pendingInviteToken) await inspectPendingInvite();
         if (auth.currentUser) {
@@ -746,10 +778,23 @@ import {
       return true;
     }
 
+    async function completeGoogleLogin(user) {
+      const created = await ensureGoogleUserOnboarding(user);
+      await applyFirebaseUser(user);
+      localStorage.setItem(LOGIN_NAME_KEY, loginName);
+      localStorage.setItem(ROLE_KEY, currentRole);
+      localStorage.setItem(SUPPORT_TYPE_KEY, currentSupportType);
+      localStorage.setItem(LOGIN_KEY, "true");
+      isLoggedIn = true;
+      activeView = "home";
+      localStorage.setItem(VIEW_KEY, activeView);
+      return created;
+    }
+
     function googleLoginErrorMessage(error) {
       const code = String(error?.code || "").toLowerCase();
       if (code.includes("popup-closed-by-user") || code.includes("cancelled-popup-request")) {
-        return "Googleログインを中止しました。もう一度押すと再開できます。";
+        return "Google認証画面が完了前に閉じました。スマホでは同じ画面で認証する方式に切り替えます。もう一度押してください。";
       }
       if (code.includes("popup-blocked")) {
         return "Googleログイン画面がブロックされました。ブラウザでポップアップを許可して、もう一度お試しください。";
@@ -4531,6 +4576,33 @@ function renderScheduleDrawer() {
       googleLoginButton.innerHTML = `<span class="google-mark" aria-hidden="true">G</span> Google認証画面を準備中…`;
       loginStatus.textContent = "Google認証画面を開いています。別画面が表示されるまでお待ちください。";
       addDiagnosticLog("firebase.google_login.start", { source });
+      const useRedirect = window.matchMedia("(max-width: 700px), (pointer: coarse)").matches
+        && firebaseBridge.signInWithRedirect;
+      if (useRedirect) {
+        sessionStorage.setItem("limitBreakGoogleRole", currentRole);
+        sessionStorage.setItem("limitBreakGoogleSupportType", currentSupportType);
+        loginStatus.textContent = "Google認証へ移動します。認証後は自動でこの画面へ戻ります…";
+        addDiagnosticLog("firebase.google_login.redirect_start", { source, role: currentRole });
+        try {
+          await firebaseBridge.signInWithRedirect(
+            firebaseBridge.auth,
+            firebaseBridge.googleProvider
+          );
+        } catch (error) {
+          sessionStorage.removeItem("limitBreakGoogleRole");
+          sessionStorage.removeItem("limitBreakGoogleSupportType");
+          googleLoginInProgress = false;
+          googleLoginButton.disabled = false;
+          googleLoginButton.removeAttribute("aria-busy");
+          googleLoginButton.innerHTML = googleLoginDefaultMarkup;
+          loginStatus.textContent = googleLoginErrorMessage(error);
+          addDiagnosticLog("firebase.google_login.redirect_start_error", {
+            code: String(error?.code || "GOOGLE_REDIRECT_START_FAILED"),
+            message: String(error?.message || error).slice(0, 240)
+          });
+        }
+        return;
+      }
       const popupWatchdog = window.setTimeout(() => {
         if (!googleLoginInProgress) return;
         googleLoginInProgress = false;
@@ -4548,15 +4620,7 @@ function renderScheduleDrawer() {
           firebaseBridge.googleProvider
         );
         googleUser = credential.user;
-        const created = await ensureGoogleUserOnboarding(credential.user);
-        await applyFirebaseUser(credential.user);
-        localStorage.setItem(LOGIN_NAME_KEY, loginName);
-        localStorage.setItem(ROLE_KEY, currentRole);
-        localStorage.setItem(SUPPORT_TYPE_KEY, currentSupportType);
-        localStorage.setItem(LOGIN_KEY, "true");
-        isLoggedIn = true;
-        activeView = "home";
-        localStorage.setItem(VIEW_KEY, activeView);
+        const created = await completeGoogleLogin(credential.user);
         loginStatus.textContent = created
           ? "Googleアカウントで新規登録してログインしました。"
           : "Googleアカウントでログインしました。";
