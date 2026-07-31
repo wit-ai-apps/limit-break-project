@@ -23,19 +23,19 @@ import {
   FIREBASE_CONFIG_PATH,
   BASELINE_DATE,
   APP_VIEWS
-} from "../../config/app_config.js?v=4.19.19";
-import { initMathTraining } from "./training/math-training.js?v=4.19.19";
-import { initEnglishTraining } from "./training/english-training.js?v=4.19.19";
+} from "../../config/app_config.js?v=4.19.20";
+import { initMathTraining } from "./training/math-training.js?v=4.19.20";
+import { initEnglishTraining } from "./training/english-training.js?v=4.19.20";
 import {
   loadMemoryQueue,
   memorySummary as summarizeMemory,
   renderAdaptiveMemory
-} from "./learning/memory.js?v=4.19.19";
-import { renderYuiCoachCard } from "./coach/yui-coach.js?v=4.19.19";
+} from "./learning/memory.js?v=4.19.20";
+import { renderYuiCoachCard } from "./coach/yui-coach.js?v=4.19.20";
 import {
   sharingPreferencesFromForm,
   sharingSettingsMarkup
-} from "./privacy/sharing-settings.js?v=4.19.19";
+} from "./privacy/sharing-settings.js?v=4.19.20";
 import { PUBLIC_ROLE_KEYS, ROLES, SUPPORTER_TYPES } from "./auth/roles.js";
 import {
   FALLBACK_EXAMS,
@@ -163,6 +163,9 @@ import {
     const loginVersionBadge = document.querySelector("#loginVersionBadge");
     const loginStatus = document.querySelector("#loginStatus");
     const googleLoginButton = document.querySelector("#googleLoginButton");
+    const googleLoginDefaultMarkup = googleLoginButton?.innerHTML || "Googleで登録・ログイン";
+    let googleLoginInProgress = false;
+    let lastGoogleTouchAt = 0;
     const inviteEntryPanel = document.querySelector("#inviteEntryPanel");
     const loginRoleOptions = document.querySelector("#loginRoleOptions");
     const loginSupportTypePanel = document.querySelector("#loginSupportTypePanel");
@@ -4513,13 +4516,31 @@ function renderScheduleDrawer() {
       render();
     });
 
-    googleLoginButton?.addEventListener("click", async () => {
+    async function startGoogleLogin(source = "click") {
+      if (googleLoginInProgress) {
+        loginStatus.textContent = "Google認証画面を準備しています。別画面または別タブも確認してください。";
+        return;
+      }
       if (!firebaseBridge.enabled || !firebaseBridge.signInWithPopup || !firebaseBridge.googleProvider) {
         loginStatus.textContent = "Firebaseへ接続できません。通信を確認してページを再読み込みしてください。";
         return;
       }
+      googleLoginInProgress = true;
       googleLoginButton.disabled = true;
-      loginStatus.textContent = "Googleログイン画面を開いています...";
+      googleLoginButton.setAttribute("aria-busy", "true");
+      googleLoginButton.innerHTML = `<span class="google-mark" aria-hidden="true">G</span> Google認証画面を準備中…`;
+      loginStatus.textContent = "Google認証画面を開いています。別画面が表示されるまでお待ちください。";
+      addDiagnosticLog("firebase.google_login.start", { source });
+      const popupWatchdog = window.setTimeout(() => {
+        if (!googleLoginInProgress) return;
+        googleLoginInProgress = false;
+        googleLoginButton.disabled = false;
+        googleLoginButton.removeAttribute("aria-busy");
+        googleLoginButton.innerHTML = googleLoginDefaultMarkup;
+        loginStatus.textContent =
+          "Google認証画面を開けませんでした。ブラウザのポップアップ許可を確認するか、Chromeで開いて再度押してください。メールでの新規登録も利用できます。";
+        addDiagnosticLog("firebase.google_login.popup_timeout", { source });
+      }, 8000);
       let googleUser = null;
       try {
         const credential = await firebaseBridge.signInWithPopup(
@@ -4557,8 +4578,24 @@ function renderScheduleDrawer() {
         }
         loginStatus.textContent = googleLoginErrorMessage(error);
       } finally {
+        window.clearTimeout(popupWatchdog);
+        googleLoginInProgress = false;
         googleLoginButton.disabled = false;
+        googleLoginButton.removeAttribute("aria-busy");
+        googleLoginButton.innerHTML = googleLoginDefaultMarkup;
       }
+    }
+
+    googleLoginButton?.addEventListener("pointerup", (event) => {
+      if (event.pointerType !== "touch" && event.pointerType !== "pen") return;
+      event.preventDefault();
+      lastGoogleTouchAt = Date.now();
+      startGoogleLogin(event.pointerType);
+    });
+
+    googleLoginButton?.addEventListener("click", () => {
+      if (Date.now() - lastGoogleTouchAt < 900) return;
+      startGoogleLogin("click");
     });
 
     document.querySelector("#registerAccountButton").addEventListener("click", async () => {
