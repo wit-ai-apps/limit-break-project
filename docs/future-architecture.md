@@ -22,6 +22,8 @@ The next architecture focus is:
 Detailed design:
 
 - [CORTEX Core v1.0 Design](cortex-core-v1-design.md)
+- [CORTEX EDU 基本構想 SSOT v1.0](cortex-edu-ssot-v1.md)
+- [CORTEX EDU / LIMIT BREAK 実装検証台帳](cortex-edu-implementation-status.md)
 
 ## Future
 
