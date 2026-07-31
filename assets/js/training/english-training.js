@@ -65,34 +65,49 @@ export function initEnglishTraining() {
   const stored = loadState();
   renderQuestions(list, stored.answers || {});
   updateProgress();
-  if (stored.submittedAt && stored.results) {
+  if (stored.submittedAt && stored.results && !isTeacherPreviewMode()) {
     showResults(stored.results, stored.submittedAt);
     lockTraining();
   }
 
   form.addEventListener("input", () => {
-    if (isFinished(loadState())) return;
+    if (!isTeacherPreviewMode() && isFinished(loadState())) return;
     saveState({ ...loadState(), answers: collectAnswers(), updatedAt: new Date().toISOString() });
     updateProgress();
     setStatus("回答をこの端末へ保存しました。");
   });
   form.addEventListener("submit", (event) => {
     event.preventDefault();
+    if (isTeacherPreviewMode()) {
+      const results = gradeEnglishTrainingAnswers(collectAnswers());
+      showResults(results, new Date().toISOString());
+      setStatus("教師検証：採点結果を表示しました。時間制限・提出ロック・生徒記録への反映はありません。");
+      return;
+    }
     if (!isFinished(loadState())) finishTraining("submitted");
   });
   document.querySelector("#englishTrainingReset")?.addEventListener("click", () => {
-    if (isFinished(loadState()) ||
-        !window.confirm("入力内容だけを消しますか？ 残り時間は戻りません。")) return;
+    const teacherPreview = isTeacherPreviewMode();
+    if ((!teacherPreview && isFinished(loadState())) ||
+        !window.confirm(teacherPreview
+          ? "教師検証用の入力内容を消しますか？"
+          : "入力内容だけを消しますか？ 残り時間は戻りません。")) return;
     form.reset();
     saveState({ ...loadState(), answers: {} });
     updateProgress();
-    setStatus("入力内容を消しました。残り時間はそのまま進みます。");
+    setStatus(teacherPreview
+      ? "教師検証用の入力内容を消しました。時間制限はありません。"
+      : "入力内容を消しました。残り時間はそのまま進みます。");
   });
-  new MutationObserver(startTimerWhenEligible).observe(document.body, {
+  new MutationObserver(() => {
+    startTimerWhenEligible();
+    applyRoleTrainingMode();
+  }).observe(document.body, {
     attributes: true,
     attributeFilter: ["data-auth", "data-role", "data-view", "data-training-subject"]
   });
   startTimerWhenEligible();
+  applyRoleTrainingMode();
 }
 
 function initSubjectTabs() {
@@ -229,6 +244,31 @@ function lockTraining() {
   document.querySelector("#englishTrainingTimerBadge")?.classList.add("finished");
 }
 
+export function isTeacherEnglishTrainingRole(role) {
+  return role === "teacher" || role === "lead_teacher";
+}
+
+function isTeacherPreviewMode() {
+  return isTeacherEnglishTrainingRole(document.body.dataset.role || "");
+}
+
+function applyRoleTrainingMode() {
+  if (!isTeacherPreviewMode()) return;
+  stopTimer();
+  formElement?.querySelectorAll("input, button").forEach((control) => {
+    control.disabled = false;
+  });
+  document.querySelector(".english-training")?.classList.remove("time-finished");
+  const badge = document.querySelector("#englishTrainingTimerBadge");
+  if (badge) {
+    badge.textContent = "教師検証・制限なし";
+    badge.classList.remove("urgent", "finished");
+  }
+  const submit = document.querySelector("#englishTrainingSubmit");
+  if (submit) submit.textContent = "検証採点（ロックしない）";
+  setStatus("教師検証モード：時間制限なし。採点後も回答を修正して繰り返し確認できます。");
+}
+
 function isEligible() {
   return document.body.dataset.auth === "in" && document.body.dataset.role === "student" &&
     document.body.dataset.view === "training" &&
@@ -237,10 +277,15 @@ function isEligible() {
 
 function isFinished(state) { return Boolean(state?.submittedAt); }
 function loadState() {
-  try { return JSON.parse(localStorage.getItem(englishDailyStorageKey()) || "{}"); }
+  try { return JSON.parse(localStorage.getItem(englishTrainingStorageKey()) || "{}"); }
   catch { return {}; }
 }
-function saveState(state) { localStorage.setItem(englishDailyStorageKey(), JSON.stringify(state)); }
+function saveState(state) { localStorage.setItem(englishTrainingStorageKey(), JSON.stringify(state)); }
+function englishTrainingStorageKey() {
+  return isTeacherPreviewMode()
+    ? "limitBreakEnglishTrainingTeacherPreviewV1"
+    : englishDailyStorageKey();
+}
 function stopTimer() {
   if (timerId !== null) window.clearInterval(timerId);
   timerId = null;

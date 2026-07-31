@@ -157,7 +157,7 @@ export function initMathTraining(options = {}) {
   initMathKeypad(form);
   initParentReview();
   updateProgress();
-  if (stored.submittedAt && Array.isArray(stored.results)) {
+  if (stored.submittedAt && Array.isArray(stored.results) && !isTeacherPreviewMode()) {
     showResults(stored.results, stored.submittedAt, stored.attempts || 1);
     lockTraining(stored.finishReason || "submitted");
     pendingSubmission = {
@@ -186,14 +186,24 @@ export function initMathTraining(options = {}) {
 
   form.addEventListener("submit", (event) => {
     event.preventDefault();
+    if (isTeacherPreviewMode()) {
+      const results = gradeMathTrainingAnswers(collectAnswers(form));
+      showResults(results, new Date().toISOString(), 1);
+      setStatus("教師検証：採点結果を表示しました。時間制限・提出ロック・生徒記録への同期はありません。");
+      return;
+    }
     if (isTrainingFinished(loadState())) return;
     const answers = collectAnswers(form);
     finishTraining(answers, "submitted");
   });
 
   document.querySelector("#mathTrainingReset")?.addEventListener("click", () => {
-    if (isTrainingFinished(loadState())) return;
-    if (!window.confirm("入力内容だけを消しますか？ 残り時間は戻りません。")) return;
+    const teacherPreview = isTeacherPreviewMode();
+    if (!teacherPreview && isTrainingFinished(loadState())) return;
+    const confirmation = teacherPreview
+      ? "教師検証用の入力内容を消しますか？"
+      : "入力内容だけを消しますか？ 残り時間は戻りません。";
+    if (!window.confirm(confirmation)) return;
     form.reset();
     form.querySelectorAll("input").forEach(updateAnswerPreview);
     const current = loadState();
@@ -209,12 +219,15 @@ export function initMathTraining(options = {}) {
       resultPanel.innerHTML = "";
     }
     updateProgress();
-    setStatus("入力内容を消しました。残り時間はそのまま進みます。");
+    setStatus(teacherPreview
+      ? "教師検証用の入力内容を消しました。時間制限はありません。"
+      : "入力内容を消しました。残り時間はそのまま進みます。");
   });
 
   const observer = new MutationObserver(() => {
     startTimerWhenEligible();
     updateRoleSpecificDisplay();
+    applyRoleTrainingMode();
   });
   observer.observe(document.body, {
     attributes: true,
@@ -222,6 +235,7 @@ export function initMathTraining(options = {}) {
   });
   startTimerWhenEligible();
   updateRoleSpecificDisplay();
+  applyRoleTrainingMode();
 }
 
 export function gradeMathTrainingAnswers(answers = {}) {
@@ -280,13 +294,29 @@ function initMathKeypad(form) {
       input.setAttribute("data-math-keypad-only", "true");
     }
   });
-  form.addEventListener("focusin", (event) => {
-    if (!(event.target instanceof HTMLInputElement) || event.target.disabled) return;
-    activeInput = event.target;
+  const activateMathInput = (input) => {
+    if (!(input instanceof HTMLInputElement) || input.disabled) return;
+    const changedTarget = activeInput !== input;
+    activeInput = input;
     keypad.hidden = false;
-    document.querySelector("#mathKeypadTarget").textContent = event.target.getAttribute("aria-label") || "回答入力";
-    updateMathPreview(activeInput.value);
-    updateCursorStatus(activeInput);
+    document.querySelector("#mathKeypadTarget").textContent = input.getAttribute("aria-label") || "回答入力";
+    if (changedTarget && document.activeElement !== input) {
+      input.setSelectionRange(input.value.length, input.value.length);
+    }
+    updateMathPreview(input.value);
+    updateCursorStatus(input);
+  };
+  form.addEventListener("pointerdown", (event) => {
+    if (!mathOnlyInput || !(event.target instanceof HTMLInputElement) || event.target.disabled) return;
+    event.preventDefault();
+    activateMathInput(event.target);
+    event.target.focus({ preventScroll: true });
+  });
+  form.addEventListener("click", (event) => {
+    if (event.target instanceof HTMLInputElement) activateMathInput(event.target);
+  });
+  form.addEventListener("focusin", (event) => {
+    activateMathInput(event.target);
   });
   form.addEventListener("pointerup", (event) => {
     if (event.target === activeInput) requestAnimationFrame(() => updateCursorStatus(activeInput));
@@ -460,6 +490,39 @@ function updateRoleSpecificDisplay() {
   if (panel) panel.hidden = role !== "parent";
   if (role === "parent" && document.body.dataset.view === "training") loadParentReview();
   if (role === "student" && document.body.dataset.auth === "in") syncPendingSubmission();
+}
+
+export function isTeacherTrainingRole(role) {
+  return role === "teacher" || role === "lead_teacher";
+}
+
+function isTeacherPreviewMode() {
+  return isTeacherTrainingRole(document.body.dataset.role || "");
+}
+
+function applyRoleTrainingMode() {
+  const form = activeForm || document.querySelector("#mathTrainingForm");
+  if (!form) return;
+  const teacherPreview = isTeacherPreviewMode();
+  if (!teacherPreview) return;
+  stopTimer();
+  form.querySelectorAll("input").forEach((input) => {
+    input.disabled = false;
+  });
+  const submit = document.querySelector("#mathTrainingSubmit");
+  const reset = document.querySelector("#mathTrainingReset");
+  if (submit) {
+    submit.disabled = false;
+    submit.textContent = "検証採点（ロックしない）";
+  }
+  if (reset) reset.disabled = false;
+  document.querySelector(".math-training")?.classList.remove("time-finished");
+  const badge = document.querySelector("#mathTrainingTimerBadge");
+  if (badge) {
+    badge.textContent = "教師検証・制限なし";
+    badge.classList.remove("urgent", "finished");
+  }
+  setStatus("教師検証モード：時間制限なし。採点後も回答を修正して繰り返し確認できます。");
 }
 
 async function loadParentReview() {
@@ -799,7 +862,7 @@ function near(actual, expected, tolerance = 0.000001) {
 
 function loadState() {
   try {
-    const parsed = JSON.parse(localStorage.getItem(dailyStorageKey()) || "{}");
+    const parsed = JSON.parse(localStorage.getItem(trainingStorageKey()) || "{}");
     return parsed && typeof parsed === "object" ? parsed : {};
   } catch {
     return {};
@@ -807,7 +870,13 @@ function loadState() {
 }
 
 function saveState(state) {
-  localStorage.setItem(dailyStorageKey(), JSON.stringify(state));
+  localStorage.setItem(trainingStorageKey(), JSON.stringify(state));
+}
+
+function trainingStorageKey() {
+  return isTeacherPreviewMode()
+    ? "limitBreakMathTrainingTeacherPreviewV1"
+    : dailyStorageKey();
 }
 
 function setStatus(message) {

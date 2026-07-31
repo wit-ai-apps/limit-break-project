@@ -1,5 +1,5 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.19.18-dev";
+export const APP_VERSION = "v4.19.19-dev";
 export const APP_RELEASE_NAME = "学習カード端末同期・操作改善";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
@@ -43,7 +43,7 @@ export const APP_VIEWS = [
 
 export const RELEASE_NOTES = [
   {
-    version: "v4.19.18-dev",
+    version: "v4.19.19-dev",
     date: "2026-07-29",
     title: "保護者質問の回答内容と継続対話を改善",
     items: [

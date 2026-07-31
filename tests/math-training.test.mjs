@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import {
   dailyStorageKey,
   gradeMathTrainingAnswers,
+  isTeacherTrainingRole,
   mathEditOperation,
   mathPreviewMarkup,
   remainingTimeMs
@@ -86,4 +87,11 @@ test("数式キーパッドは選択範囲とカーソルを操作できる", ()
     mathEditOperation("12345", 2, 2, "select-all"),
     { value: "12345", start: 0, end: 5 }
   );
+});
+
+test("教師と主任教師は時間制限のない検証対象として判定する", () => {
+  assert.equal(isTeacherTrainingRole("teacher"), true);
+  assert.equal(isTeacherTrainingRole("lead_teacher"), true);
+  assert.equal(isTeacherTrainingRole("student"), false);
+  assert.equal(isTeacherTrainingRole("parent"), false);
 });

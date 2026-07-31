@@ -4,7 +4,8 @@ import {
   ENGLISH_QUESTIONS,
   englishDailyStorageKey,
   englishRemainingTimeMs,
-  gradeEnglishTrainingAnswers
+  gradeEnglishTrainingAnswers,
+  isTeacherEnglishTrainingRole
 } from "../assets/js/training/english-training.js";
 
 test("英文構文デモ10文の模範解答を全問正解にする", () => {
@@ -23,4 +24,10 @@ test("英文トレーニングも30分で終了する", () => {
 test("英文トレーニングは日本時間の午前8時55分に日次切替する", () => {
   assert.match(englishDailyStorageKey(new Date("2026-07-28T23:54:59.000Z")), /:2026-07-28$/);
   assert.match(englishDailyStorageKey(new Date("2026-07-28T23:55:00.000Z")), /:2026-07-29$/);
+});
+
+test("英語も教師と主任教師は時間制限のない検証対象とする", () => {
+  assert.equal(isTeacherEnglishTrainingRole("teacher"), true);
+  assert.equal(isTeacherEnglishTrainingRole("lead_teacher"), true);
+  assert.equal(isTeacherEnglishTrainingRole("student"), false);
 });
