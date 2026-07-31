@@ -1,6 +1,6 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.19.21-dev";
-export const APP_RELEASE_NAME = "学習カード端末同期・操作改善";
+export const APP_VERSION = "v4.20.0-dev";
+export const APP_RELEASE_NAME = "塾講師・教室管理ダッシュボード";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
 export const STORAGE_KEY = "limitBreakProjectRecordsV120";
@@ -28,6 +28,7 @@ export const FIREBASE_CONFIG_PATH = "data/firebase_config.json";
 
 export const APP_VIEWS = [
   { id: "home", label: "ホーム" },
+  { id: "classroom", label: "教室管理", roles: ["teacher", "lead_teacher"] },
   { id: "long", label: "長期計画" },
   { id: "week", label: "今週" },
   { id: "today", label: "今日の手順" },
@@ -42,6 +43,17 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.20.0-dev",
+    date: "2026-07-31",
+    title: "塾講師専用の教室管理画面を追加",
+    items: [
+      "ログイン中の講師本人と閲覧対象生徒を常時明示",
+      "学年・クラス・グループ・習熟レベル別の担当生徒管理",
+      "連携済み生徒だけを選択し、個別の学習画面へ切替",
+      "招待未承認の講師には生徒情報を表示しない"
+    ]
+  },
   {
     version: "v4.19.21-dev",
     date: "2026-07-29",

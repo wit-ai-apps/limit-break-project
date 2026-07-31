@@ -105,6 +105,172 @@ export const createUserOnboarding = onCall({ region: "us-east1" }, async (reques
   return { created: true, studentId };
 });
 
+function requireTeacherRole(user) {
+  if (!["teacher", "lead_teacher", "admin"].includes(user.role)) {
+    throw new HttpsError("permission-denied", "TEACHER_REQUIRED");
+  }
+}
+
+function normalizeSubjectLevels(value) {
+  const source = value && typeof value === "object" ? value : {};
+  return ["math", "english", "japanese", "science", "social"].reduce((result, subject) => {
+    result[subject] = String(source[subject] || "標準").trim().slice(0, 30);
+    return result;
+  }, {});
+}
+
+async function teacherClassrooms(db, uid, user) {
+  if (["admin", "lead_teacher"].includes(user.role)) {
+    const snapshot = await db.collection("classrooms").limit(100).get();
+    return snapshot.docs;
+  }
+  const snapshot = await db.collection("classrooms")
+    .where("teacher_uids", "array-contains", uid)
+    .limit(100)
+    .get();
+  return snapshot.docs;
+}
+
+function canTeacherAccessStudent(user, studentId) {
+  if (["admin", "lead_teacher"].includes(user.role)) return true;
+  return linkedToStudent(user, studentId);
+}
+
+export const getTeacherWorkspace = onCall({ region: "us-east1" }, async (request) => {
+  const uid = requireAuth(request);
+  const { data: user } = await requireUser(uid);
+  requireTeacherRole(user);
+  const db = getFirestore();
+  const classroomDocs = await teacherClassrooms(db, uid, user);
+  const studentIds = new Set(Array.isArray(user.linked_student_ids) ? user.linked_student_ids : []);
+  if (["admin", "lead_teacher"].includes(user.role)) {
+    classroomDocs.forEach((document) => {
+      const ids = document.data().student_ids;
+      if (Array.isArray(ids)) ids.forEach((studentId) => studentIds.add(studentId));
+    });
+  }
+  const students = await Promise.all([...studentIds].slice(0, 200).map(async (studentId) => {
+    const studentSnapshot = await db.doc(`students/${studentId}`).get();
+    if (!studentSnapshot.exists) return null;
+    const student = studentSnapshot.data();
+    const userSnapshot = await db.collection("users")
+      .where("linked_student_ids", "array-contains", studentId)
+      .limit(10)
+      .get();
+    const studentUser = userSnapshot.docs.map((document) => document.data())
+      .find((candidate) => candidate.role === "student");
+    const settings = student.teacher_settings && typeof student.teacher_settings === "object"
+      ? student.teacher_settings
+      : {};
+    return {
+      studentId,
+      displayName: student.display_name || studentUser?.displayName || "生徒名未設定",
+      grade: settings.grade || student.grade || "未設定",
+      schoolName: settings.school_name || student.school_name || "",
+      className: settings.class_name || "",
+      groupName: settings.group_name || "",
+      classroomId: settings.classroom_id || "",
+      courseLevel: settings.course_level || "標準",
+      subjectLevels: normalizeSubjectLevels(settings.subject_levels),
+      status: student.status || "active"
+    };
+  }));
+  return {
+    teacher: {
+      uid,
+      displayName: user.displayName || request.auth.token.name || request.auth.token.email || "講師",
+      email: user.email || request.auth.token.email || "",
+      role: user.role
+    },
+    classrooms: classroomDocs.map((document) => {
+      const classroom = document.data();
+      return {
+        id: document.id,
+        name: classroom.name || "名称未設定",
+        academicYear: classroom.academic_year || "",
+        grade: classroom.grade || "学年未設定",
+        level: classroom.level || "標準",
+        groupNames: Array.isArray(classroom.group_names) ? classroom.group_names : [],
+        studentIds: Array.isArray(classroom.student_ids) ? classroom.student_ids : []
+      };
+    }),
+    students: students.filter(Boolean)
+  };
+});
+
+export const createTeacherClassroom = onCall({ region: "us-east1" }, async (request) => {
+  const uid = requireAuth(request);
+  const { ref: userRef, data: user } = await requireUser(uid);
+  requireTeacherRole(user);
+  const name = String(request.data?.name || "").trim().slice(0, 80);
+  if (!name) throw new HttpsError("invalid-argument", "CLASSROOM_NAME_REQUIRED");
+  const db = getFirestore();
+  const classroomRef = db.collection("classrooms").doc();
+  const batch = db.batch();
+  batch.set(classroomRef, {
+    name,
+    academic_year: String(request.data?.academicYear || "").trim().slice(0, 20),
+    grade: String(request.data?.grade || "学年未設定").trim().slice(0, 30),
+    level: String(request.data?.level || "標準").trim().slice(0, 30),
+    group_names: Array.isArray(request.data?.groupNames)
+      ? request.data.groupNames.map((item) => String(item).trim().slice(0, 40)).filter(Boolean).slice(0, 20)
+      : [],
+    teacher_uids: [uid],
+    student_ids: [],
+    owner_uid: uid,
+    created_at: FieldValue.serverTimestamp(),
+    updated_at: FieldValue.serverTimestamp()
+  });
+  batch.update(userRef, {
+    classroom_ids: FieldValue.arrayUnion(classroomRef.id)
+  });
+  await batch.commit();
+  return { created: true, classroomId: classroomRef.id };
+});
+
+export const saveTeacherStudentSettings = onCall({ region: "us-east1" }, async (request) => {
+  const uid = requireAuth(request);
+  const { data: user } = await requireUser(uid);
+  requireTeacherRole(user);
+  const studentId = String(request.data?.studentId || "").trim();
+  if (!studentId) throw new HttpsError("invalid-argument", "STUDENT_REQUIRED");
+  const db = getFirestore();
+  const classroomDocs = await teacherClassrooms(db, uid, user);
+  if (!canTeacherAccessStudent(user, studentId)) {
+    throw new HttpsError("permission-denied", "STUDENT_NOT_ASSIGNED");
+  }
+  const classroomId = String(request.data?.classroomId || "").trim();
+  const classroomDoc = classroomDocs.find((document) => document.id === classroomId);
+  if (classroomId && !classroomDoc && !["admin", "lead_teacher"].includes(user.role)) {
+    throw new HttpsError("permission-denied", "CLASSROOM_NOT_ASSIGNED");
+  }
+  const studentRef = db.doc(`students/${studentId}`);
+  const studentSnapshot = await studentRef.get();
+  if (!studentSnapshot.exists) throw new HttpsError("not-found", "STUDENT_NOT_FOUND");
+  const batch = db.batch();
+  batch.set(studentRef, {
+    teacher_settings: {
+      grade: String(request.data?.grade || "未設定").trim().slice(0, 30),
+      school_name: String(request.data?.schoolName || "").trim().slice(0, 80),
+      class_name: String(request.data?.className || "").trim().slice(0, 50),
+      group_name: String(request.data?.groupName || "").trim().slice(0, 50),
+      course_level: String(request.data?.courseLevel || "標準").trim().slice(0, 30),
+      subject_levels: normalizeSubjectLevels(request.data?.subjectLevels),
+      classroom_id: classroomId,
+      updated_by_uid: uid,
+      updated_at: FieldValue.serverTimestamp()
+    }
+  }, { merge: true });
+  if (classroomId) {
+    batch.update(db.doc(`classrooms/${classroomId}`), {
+      student_ids: FieldValue.arrayUnion(studentId),
+      updated_at: FieldValue.serverTimestamp()
+    });
+  }
+  await batch.commit();
+  return { saved: true };
+});
+
 export const createStudentForParent = onCall({ region: "us-east1" }, async (request) => {
   const uid = requireAuth(request);
   const { data: parent } = await requireUser(uid);

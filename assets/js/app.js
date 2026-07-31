@@ -116,6 +116,8 @@ import {
     let personalMaterials = [];
     let linkDirectory = [];
     let linkedStudentIdentity = null;
+    let teacherWorkspace = null;
+    let teacherWorkspaceMessage = "";
     let studyStartDate = localStorage.getItem(STUDY_START_DATE_KEY) || DEFAULT_STUDY_START_DATE;
     let firebaseBridge = {
       enabled: false,
@@ -198,6 +200,8 @@ import {
     const routeSummary = document.querySelector("#routeSummary");
     const roleDashboard = document.querySelector("#roleDashboard");
     const roleDashboardBadge = document.querySelector("#roleDashboardBadge");
+    const teacherWorkspacePanel = document.querySelector("#teacherWorkspacePanel");
+    const teacherWorkspaceBadge = document.querySelector("#teacherWorkspaceBadge");
     const longPlanList = document.querySelector("#longPlanList");
     const weekPlanList = document.querySelector("#weekPlanList");
     const reviewList = document.querySelector("#reviewList");
@@ -612,6 +616,7 @@ import {
       }
       await loadLinkedStudentIdentity();
       await loadLinkDirectory();
+      if (["teacher", "lead_teacher"].includes(currentRole)) await loadTeacherWorkspace();
       if (pendingInviteToken) await claimPendingInvite();
       if (currentRole === "parent" || currentRole === "lead_teacher") await loadGroupInvites();
       if (["student", "parent"].includes(currentRole)) await loadSharingPreferences();
@@ -905,7 +910,10 @@ import {
     }
 
     async function selectLeadTeacherStudent(studentId) {
-      if (currentRole !== "lead_teacher" || !studentId) return;
+      if (!["teacher", "lead_teacher"].includes(currentRole) || !studentId) return;
+      const allowedStudent = currentRole === "lead_teacher"
+        || (teacherWorkspace?.students || []).some((student) => student.studentId === studentId);
+      if (!allowedStudent) return;
       firebaseBridge.studentId = studentId;
       records = [];
       customCountdowns = [];
@@ -1438,15 +1446,19 @@ import {
     }
 
     function visibleAppViews() {
-      const menuViews = APP_VIEWS.filter((view) => view.id !== "admin");
+      const menuViews = APP_VIEWS.filter((view) =>
+        view.id !== "admin"
+        && (!Array.isArray(view.roles) || view.roles.includes(currentRole))
+      );
       if (uiMode !== "focus") return menuViews;
-      const focusIds = new Set(["home", "today", "training", "evidence", "progress", "ai"]);
+      const focusIds = new Set(["home", "classroom", "today", "training", "evidence", "progress", "ai"]);
       return menuViews
         .filter((view) => focusIds.has(view.id))
         .map((view) => ({
           ...view,
           label: {
             home: "いまやる",
+            classroom: "教室",
             today: "今日",
             training: "10題",
             evidence: "提出",
@@ -1516,9 +1528,10 @@ import {
       if (sessionRoleBadge) {
         const supportType = SUPPORTER_TYPES.find((type) => type.value === currentSupportType);
         const roleName = ROLES[currentRole]?.label || currentRole;
+        const accountLabel = firebaseBridge.currentUser?.email || loginName || "";
         sessionRoleBadge.textContent = currentRole === "supporter" && supportType
           ? `ログイン中：${roleName}（${supportType.label}）`
-          : `ログイン中：${roleName}`;
+          : `ログイン中：${roleName}${accountLabel ? ` / ${accountLabel}` : ""}`;
       }
       if (sessionStudentBadge) {
         const studentName = linkedStudentIdentity?.displayName || "生徒名未設定";
@@ -1541,6 +1554,7 @@ import {
       renderScheduleDrawer();
       renderRouteSummary();
       renderRoleDashboard();
+      renderTeacherWorkspace();
       renderPhase();
       renderMissions();
       renderHomeBriefs();
@@ -2287,6 +2301,18 @@ function renderScheduleDrawer() {
       render();
     }
 
+    async function loadTeacherWorkspace() {
+      teacherWorkspace = null;
+      teacherWorkspaceMessage = "教室と担当生徒を読み込んでいます…";
+      if (!firebaseBridge.currentUser || !["teacher", "lead_teacher"].includes(currentRole)) return;
+      try {
+        teacherWorkspace = await callGroupFunction("getTeacherWorkspace");
+        teacherWorkspaceMessage = "";
+      } catch (error) {
+        teacherWorkspaceMessage = `教室管理を読み込めませんでした。${error.message || error}`;
+      }
+    }
+
     function renderJourneyMap(items, currentIndex) {
       const grouped = new Map();
       items.forEach((item, index) => {
@@ -2672,6 +2698,221 @@ function renderScheduleDrawer() {
             </div>
           `).join("")}
         </div>
+      `;
+    }
+
+    function renderTeacherWorkspace() {
+      if (!teacherWorkspacePanel || !teacherWorkspaceBadge) return;
+      if (!["teacher", "lead_teacher"].includes(currentRole)) {
+        teacherWorkspacePanel.innerHTML = "";
+        teacherWorkspaceBadge.textContent = "講師専用";
+        return;
+      }
+      if (!teacherWorkspace) {
+        teacherWorkspaceBadge.textContent = "読み込み中";
+        teacherWorkspacePanel.innerHTML = `
+          <div class="empty">${escapeHtml(teacherWorkspaceMessage || "教室管理データを確認しています…")}</div>
+        `;
+        return;
+      }
+      const classrooms = Array.isArray(teacherWorkspace.classrooms) ? teacherWorkspace.classrooms : [];
+      const students = Array.isArray(teacherWorkspace.students) ? teacherWorkspace.students : [];
+      const teacher = teacherWorkspace.teacher || {};
+      teacherWorkspaceBadge.textContent = `${classrooms.length}クラス / ${students.length}名`;
+      teacherWorkspacePanel.innerHTML = `
+        <div class="teacher-identity-banner">
+          <div>
+            <span>ログイン中の講師</span>
+            <strong>${escapeHtml(teacher.displayName || "講師")}</strong>
+            <small>${escapeHtml(teacher.email || "")}</small>
+          </div>
+          <div>
+            <span>現在の閲覧対象</span>
+            <strong>${escapeHtml(linkedStudentIdentity?.displayName || "未選択")}</strong>
+            <small>${escapeHtml(firebaseBridge.studentId || "担当生徒を選択してください")}</small>
+          </div>
+        </div>
+
+        <div class="teacher-workspace-layout">
+          <aside class="teacher-classroom-sidebar">
+            <div class="teacher-workspace-title">
+              <h3>クラス</h3>
+              <button type="button" class="secondary" id="teacherWorkspaceReload">更新</button>
+            </div>
+            <div class="teacher-classroom-list">
+              ${classrooms.map((classroom) => `
+                <article>
+                  <strong>${escapeHtml(classroom.name)}</strong>
+                  <span>${escapeHtml(classroom.grade)} / ${escapeHtml(classroom.level)}</span>
+                  <small>${classroom.studentIds?.length || 0}名・${(classroom.groupNames || []).map(escapeHtml).join("、") || "グループ未設定"}</small>
+                </article>
+              `).join("") || `<div class="empty">クラスはまだありません。</div>`}
+            </div>
+            <details class="teacher-create-classroom">
+              <summary>＋ クラスを作成</summary>
+              <form id="teacherClassroomForm">
+                <label>クラス名<input name="name" required placeholder="例：中3受験クラス"></label>
+                <label>年度<input name="academicYear" placeholder="例：2026"></label>
+                <label>学年<input name="grade" placeholder="例：中学3年"></label>
+                <label>全体レベル
+                  <select name="level">
+                    <option>基礎</option><option selected>標準</option><option>応用</option><option>発展</option>
+                  </select>
+                </label>
+                <label>グループ名<input name="groupNames" placeholder="例：数学A, 英語基礎"></label>
+                <button type="submit">クラスを保存</button>
+              </form>
+            </details>
+          </aside>
+
+          <div class="teacher-student-manager">
+            <div class="teacher-workspace-title">
+              <div>
+                <h3>担当生徒</h3>
+                <p>保護者または統括教師が承認した生徒だけ表示されます。</p>
+              </div>
+              <div class="teacher-student-filters">
+                <select id="teacherGradeFilter" aria-label="学年で絞り込み">
+                  <option value="">全学年</option>
+                  ${[...new Set(students.map((student) => student.grade).filter(Boolean))].map((grade) => `<option value="${escapeHtml(grade)}">${escapeHtml(grade)}</option>`).join("")}
+                </select>
+                <select id="teacherGroupFilter" aria-label="グループで絞り込み">
+                  <option value="">全グループ</option>
+                  ${[...new Set(students.map((student) => student.groupName).filter(Boolean))].map((group) => `<option value="${escapeHtml(group)}">${escapeHtml(group)}</option>`).join("")}
+                </select>
+              </div>
+            </div>
+            <div class="teacher-student-list" id="teacherStudentList">
+              ${students.map((student) => teacherStudentCard(student, classrooms)).join("") || `
+                <div class="teacher-empty-state">
+                  <strong>連携済みの生徒はいません</strong>
+                  <p>塾講師としてログインできても、招待・承認されるまでは生徒情報を閲覧できません。</p>
+                  <button type="button" class="secondary view-link" data-target-view="admin" data-settings-feature="group">招待・連携を確認</button>
+                </div>
+              `}
+            </div>
+          </div>
+        </div>
+        <p class="button-note" id="teacherWorkspaceStatus" role="status" aria-live="polite">${escapeHtml(teacherWorkspaceMessage)}</p>
+      `;
+
+      teacherWorkspacePanel.querySelector("#teacherWorkspaceReload")?.addEventListener("click", async () => {
+        await loadTeacherWorkspace();
+        renderTeacherWorkspace();
+      });
+      teacherWorkspacePanel.querySelector("#teacherClassroomForm")?.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const status = teacherWorkspacePanel.querySelector("#teacherWorkspaceStatus");
+        const form = new FormData(event.currentTarget);
+        status.textContent = "クラスを保存しています…";
+        try {
+          await callGroupFunction("createTeacherClassroom", {
+            name: form.get("name"),
+            academicYear: form.get("academicYear"),
+            grade: form.get("grade"),
+            level: form.get("level"),
+            groupNames: String(form.get("groupNames") || "").split(/[,、]/).map((item) => item.trim()).filter(Boolean)
+          });
+          await loadTeacherWorkspace();
+          renderTeacherWorkspace();
+        } catch (error) {
+          status.textContent = `クラスを保存できませんでした。${error.message || error}`;
+        }
+      });
+      teacherWorkspacePanel.querySelectorAll("[data-teacher-select-student]").forEach((button) => {
+        button.addEventListener("click", async () => {
+          button.disabled = true;
+          button.textContent = "切替中…";
+          await selectLeadTeacherStudent(button.dataset.teacherSelectStudent);
+          activeView = "home";
+          localStorage.setItem(VIEW_KEY, activeView);
+          render();
+        });
+      });
+      teacherWorkspacePanel.querySelectorAll("[data-teacher-student-form]").forEach((formElement) => {
+        formElement.addEventListener("submit", async (event) => {
+          event.preventDefault();
+          const status = teacherWorkspacePanel.querySelector("#teacherWorkspaceStatus");
+          const form = new FormData(event.currentTarget);
+          status.textContent = "生徒設定を保存しています…";
+          try {
+            await callGroupFunction("saveTeacherStudentSettings", {
+              studentId: event.currentTarget.dataset.teacherStudentForm,
+              classroomId: form.get("classroomId"),
+              grade: form.get("grade"),
+              schoolName: form.get("schoolName"),
+              className: form.get("className"),
+              groupName: form.get("groupName"),
+              courseLevel: form.get("courseLevel"),
+              subjectLevels: {
+                math: form.get("mathLevel"),
+                english: form.get("englishLevel"),
+                japanese: form.get("japaneseLevel"),
+                science: form.get("scienceLevel"),
+                social: form.get("socialLevel")
+              }
+            });
+            await loadTeacherWorkspace();
+            renderTeacherWorkspace();
+          } catch (error) {
+            status.textContent = `生徒設定を保存できませんでした。${error.message || error}`;
+          }
+        });
+      });
+      const applyFilters = () => {
+        const grade = teacherWorkspacePanel.querySelector("#teacherGradeFilter")?.value || "";
+        const group = teacherWorkspacePanel.querySelector("#teacherGroupFilter")?.value || "";
+        teacherWorkspacePanel.querySelectorAll("[data-teacher-student-card]").forEach((card) => {
+          card.hidden = Boolean((grade && card.dataset.grade !== grade) || (group && card.dataset.group !== group));
+        });
+      };
+      teacherWorkspacePanel.querySelector("#teacherGradeFilter")?.addEventListener("change", applyFilters);
+      teacherWorkspacePanel.querySelector("#teacherGroupFilter")?.addEventListener("change", applyFilters);
+      teacherWorkspacePanel.querySelector(".teacher-empty-state .view-link")?.addEventListener("click", () => {
+        setActiveView("admin");
+        selectSettingsFeature("group");
+      });
+    }
+
+    function teacherStudentCard(student, classrooms) {
+      const levels = student.subjectLevels || {};
+      const levelOptions = (selected) => ["基礎", "標準", "応用", "発展"]
+        .map((level) => `<option ${level === selected ? "selected" : ""}>${level}</option>`).join("");
+      return `
+        <article class="teacher-student-card" data-teacher-student-card data-grade="${escapeHtml(student.grade || "")}" data-group="${escapeHtml(student.groupName || "")}">
+          <div class="teacher-student-summary">
+            <div>
+              <strong>${escapeHtml(student.displayName)}</strong>
+              <span>${escapeHtml(student.grade)} / ${escapeHtml(student.className || "クラス未設定")} / ${escapeHtml(student.groupName || "グループ未設定")}</span>
+              <small>総合 ${escapeHtml(student.courseLevel || "標準")}・数学 ${escapeHtml(levels.math || "標準")}・英語 ${escapeHtml(levels.english || "標準")}</small>
+            </div>
+            <button type="button" data-teacher-select-student="${escapeHtml(student.studentId)}">この生徒を見る</button>
+          </div>
+          <details>
+            <summary>学年・クラス・科目レベルを設定</summary>
+            <form data-teacher-student-form="${escapeHtml(student.studentId)}">
+              <div class="teacher-settings-grid">
+                <label>所属クラス
+                  <select name="classroomId">
+                    <option value="">未所属</option>
+                    ${classrooms.map((classroom) => `<option value="${escapeHtml(classroom.id)}" ${classroom.id === student.classroomId ? "selected" : ""}>${escapeHtml(classroom.name)}</option>`).join("")}
+                  </select>
+                </label>
+                <label>学年<input name="grade" value="${escapeHtml(student.grade || "")}"></label>
+                <label>学校名<input name="schoolName" value="${escapeHtml(student.schoolName || "")}"></label>
+                <label>学校・塾クラス<input name="className" value="${escapeHtml(student.className || "")}"></label>
+                <label>学習グループ<input name="groupName" value="${escapeHtml(student.groupName || "")}"></label>
+                <label>総合レベル<select name="courseLevel">${levelOptions(student.courseLevel)}</select></label>
+                <label>数学<select name="mathLevel">${levelOptions(levels.math)}</select></label>
+                <label>英語<select name="englishLevel">${levelOptions(levels.english)}</select></label>
+                <label>国語<select name="japaneseLevel">${levelOptions(levels.japanese)}</select></label>
+                <label>理科<select name="scienceLevel">${levelOptions(levels.science)}</select></label>
+                <label>社会<select name="socialLevel">${levelOptions(levels.social)}</select></label>
+              </div>
+              <button type="submit">生徒設定を保存</button>
+            </form>
+          </details>
+        </article>
       `;
     }
 

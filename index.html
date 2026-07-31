@@ -13,7 +13,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icons/icon-192.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/icon-192.svg">
-  <link rel="stylesheet" href="assets/css/style.css?v=4.19.21">
+  <link rel="stylesheet" href="assets/css/style.css?v=4.20.0">
 </head>
 <body data-role="student" data-auth="out">
   <div class="app-startup-gate" id="appStartupGate" role="status" aria-live="polite">
@@ -182,6 +182,17 @@
             <h2 id="home-brief-heading">学習の現在地</h2>
           </div>
           <div class="journey-map" id="journeyMap"></div>
+        </section>
+
+        <section class="view-section view-classroom teacher-workspace" id="teacherWorkspaceSection" aria-labelledby="teacher-workspace-heading">
+          <div class="topline">
+            <div>
+              <div class="system-label">塾講師専用</div>
+              <h2 id="teacher-workspace-heading">教室・生徒管理</h2>
+            </div>
+            <span class="badge" id="teacherWorkspaceBadge">連携確認中</span>
+          </div>
+          <div id="teacherWorkspacePanel" aria-live="polite"></div>
         </section>
 
         <nav class="view-section view-training training-subject-tabs" aria-label="毎日のトレーニング科目">
@@ -630,6 +641,6 @@
     </div>
   </dialog>
 
-  <script type="module" src="assets/js/app.js?v=4.19.21"></script>
+  <script type="module" src="assets/js/app.js?v=4.20.0"></script>
 </body>
 </html>

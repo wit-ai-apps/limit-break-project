@@ -729,6 +729,7 @@
 
     .view-section { display: none; }
     body[data-view="home"] .view-home,
+    body[data-view="classroom"] .view-classroom,
     body[data-view="long"] .view-long,
     body[data-view="week"] .view-week,
     body[data-view="today"] .view-today,
@@ -741,6 +742,174 @@
     body[data-view="support"] .view-support,
     body[data-view="admin"] .view-admin {
       display: block;
+    }
+
+    .teacher-workspace {
+      display: none;
+    }
+
+    body[data-role="teacher"][data-view="classroom"] .teacher-workspace,
+    body[data-role="lead_teacher"][data-view="classroom"] .teacher-workspace {
+      display: block;
+    }
+
+    .teacher-identity-banner {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .teacher-identity-banner > div {
+      display: grid;
+      gap: 4px;
+      padding: 14px;
+      border: 1px solid rgba(14, 165, 233, 0.28);
+      border-radius: 16px;
+      background: rgba(14, 165, 233, 0.06);
+    }
+
+    .teacher-identity-banner span,
+    .teacher-identity-banner small {
+      color: var(--muted);
+    }
+
+    .teacher-workspace-layout {
+      display: grid;
+      grid-template-columns: minmax(220px, 0.7fr) minmax(0, 2fr);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .teacher-classroom-sidebar,
+    .teacher-student-manager {
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+      padding: 14px;
+      border: 1px solid rgba(125, 211, 252, 0.2);
+      border-radius: 18px;
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    .teacher-workspace-title {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .teacher-workspace-title h3,
+    .teacher-workspace-title p {
+      margin: 0;
+    }
+
+    .teacher-workspace-title p {
+      color: var(--muted);
+      font-size: 0.86rem;
+    }
+
+    .teacher-classroom-list,
+    .teacher-student-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .teacher-classroom-list article {
+      display: grid;
+      gap: 4px;
+      padding: 12px;
+      border-radius: 14px;
+      background: rgba(255, 255, 255, 0.055);
+    }
+
+    .teacher-classroom-list span,
+    .teacher-classroom-list small,
+    .teacher-student-summary span,
+    .teacher-student-summary small {
+      color: var(--muted);
+    }
+
+    .teacher-create-classroom summary,
+    .teacher-student-card summary {
+      cursor: pointer;
+      color: var(--accent);
+      font-weight: 900;
+    }
+
+    .teacher-create-classroom form,
+    .teacher-student-card form {
+      padding: 12px 0 0;
+    }
+
+    .teacher-student-filters {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .teacher-student-filters select {
+      width: auto;
+      min-width: 130px;
+    }
+
+    .teacher-student-card {
+      display: grid;
+      gap: 10px;
+      padding: 14px;
+      border: 1px solid rgba(125, 211, 252, 0.2);
+      border-radius: 16px;
+      background: rgba(2, 8, 23, 0.35);
+    }
+
+    .teacher-student-summary {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .teacher-student-summary > div {
+      display: grid;
+      gap: 4px;
+    }
+
+    .teacher-settings-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .teacher-empty-state {
+      display: grid;
+      gap: 8px;
+      padding: 24px;
+      text-align: center;
+      border: 1px dashed rgba(125, 211, 252, 0.35);
+      border-radius: 16px;
+    }
+
+    .teacher-empty-state p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    @media (max-width: 800px) {
+      .teacher-identity-banner,
+      .teacher-workspace-layout,
+      .teacher-settings-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .teacher-workspace-title,
+      .teacher-student-summary {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .teacher-student-filters select {
+        width: 100%;
+      }
     }
 
     .math-training {
