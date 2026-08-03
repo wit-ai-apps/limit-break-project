@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>提出画像の復元 | CORTEX Limit Break</title>
+  <style>
+    body { margin: 0; background: #f3f7fb; color: #27344a; font-family: system-ui, sans-serif; }
+    main { max-width: 520px; margin: 48px auto; padding: 28px; background: white; border: 1px solid #dce7f0; border-radius: 18px; }
+    button { width: 100%; min-height: 48px; border: 0; border-radius: 12px; background: #218dcc; color: white; font-weight: 700; font-size: 16px; }
+    p { line-height: 1.7; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>提出画像の復元</h1>
+    <p id="status">この端末の旧公開版に残っている提出記録を確認しています。</p>
+    <button type="button" id="transferButton" hidden>新しい公開版へ復元する</button>
+  </main>
+  <script>
+    const keys = ["limitBreakProjectRecordsV120", "limitBreakProjectRecordsV110"];
+    const status = document.querySelector("#status");
+    const button = document.querySelector("#transferButton");
+    let records = [];
+    for (const key of keys) {
+      try {
+        const candidate = JSON.parse(localStorage.getItem(key) || "[]");
+        if (Array.isArray(candidate) && candidate.length > records.length) records = candidate;
+      } catch (_) {}
+    }
+    if (!window.opener) {
+      status.textContent = "新しい公開版の「旧公開版から提出画像を復元」ボタンから、この画面を開いてください。";
+    } else if (!records.length) {
+      status.textContent = "この端末の旧公開版には、復元できる提出記録がありませんでした。";
+    } else {
+      status.textContent = `${records.length}件の提出記録が見つかりました。下のボタンで新しい公開版へ復元します。`;
+      button.hidden = false;
+      button.addEventListener("click", () => {
+        window.opener.postMessage({ type: "LIMIT_BREAK_LEGACY_EVIDENCE", records }, "https://cortex-limit-break.firebaseapp.com");
+        status.textContent = "復元データを送りました。この画面は閉じて構いません。";
+        button.hidden = true;
+        window.setTimeout(() => window.close(), 800);
+      });
+    }
+  </script>
+</body>
+</html>

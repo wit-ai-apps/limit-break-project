@@ -4495,6 +4495,53 @@ function renderScheduleDrawer() {
         onDeleteEvidenceRecord: deleteEvidenceRecord,
         onAppendEvidenceFiles: appendEvidenceFiles
       });
+      if (!records.length && window.location.hostname === "cortex-limit-break.firebaseapp.com") {
+        const recovery = document.createElement("section");
+        recovery.className = "empty-state legacy-evidence-recovery";
+        recovery.innerHTML = `
+          <strong>以前の提出画像が表示されない場合</strong>
+          <p>旧公開版のこの端末に残っている提出記録を、新しい公開版へ復元できます。Firebase上の画像は削除しません。</p>
+          <button type="button" class="secondary" data-legacy-evidence-recovery>旧公開版から提出画像を復元</button>
+        `;
+        logList.prepend(recovery);
+        recovery.querySelector("[data-legacy-evidence-recovery]")?.addEventListener("click", beginLegacyEvidenceRecovery);
+      }
+    }
+
+    function beginLegacyEvidenceRecovery() {
+      const recoveryUrl = "https://wit-ai-apps.github.io/limit-break-project/legacy-evidence-recovery.html";
+      const popup = window.open(recoveryUrl, "limitBreakLegacyEvidenceRecovery", "popup,width=560,height=640");
+      if (!popup) {
+        window.alert("復元画面を開けませんでした。ブラウザのポップアップを許可して、もう一度お試しください。");
+      }
+    }
+
+    function acceptLegacyEvidenceRecords(event) {
+      if (event.origin !== "https://wit-ai-apps.github.io") return;
+      if (event.data?.type !== "LIMIT_BREAK_LEGACY_EVIDENCE") return;
+      const legacyRecords = Array.isArray(event.data.records) ? event.data.records : [];
+      if (!legacyRecords.length) {
+        window.alert("旧公開版のこの端末には、復元できる提出記録がありませんでした。");
+        return;
+      }
+      const safeLegacyRecords = legacyRecords
+        .filter((record) => record && typeof record === "object" && (record.missionId || record.evidenceImageName))
+        .slice(0, 500)
+        .map((record) => ({
+          ...record,
+          firebaseSyncStatus: "error",
+          legacyRecoveryStatus: "recovered",
+          legacyRecoveredAt: new Date().toISOString()
+        }));
+      const merged = new Map(records.map((record) => [recordIdentity(record), record]));
+      safeLegacyRecords.forEach((record) => {
+        const key = recordIdentity(record);
+        if (!merged.has(key)) merged.set(key, record);
+      });
+      records = [...merged.values()].sort((a, b) => String(b.savedAt || "").localeCompare(String(a.savedAt || "")));
+      saveEvidenceRecords(STORAGE_KEY, records);
+      render();
+      window.alert(`${safeLegacyRecords.length}件の提出記録を復元しました。画像は削除されていません。`);
     }
 
     async function deleteEvidenceRecord(key, button) {
@@ -5189,5 +5236,6 @@ function renderScheduleDrawer() {
       }
     });
     initEnglishTraining();
+    window.addEventListener("message", acceptLegacyEvidenceRecords);
     registerServiceWorker();
     init();
