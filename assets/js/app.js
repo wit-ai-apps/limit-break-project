@@ -4817,8 +4817,10 @@ function renderScheduleDrawer() {
       googleLoginButton.innerHTML = `<span class="google-mark" aria-hidden="true">G</span> Google認証画面を準備中…`;
       loginStatus.textContent = "Google認証画面を開いています。別画面が表示されるまでお待ちください。";
       addDiagnosticLog("firebase.google_login.start", { source });
-      const useRedirect = window.matchMedia("(max-width: 700px), (pointer: coarse)").matches
-        && firebaseBridge.signInWithRedirect;
+      // The production app is served from Firebase Hosting so the auth helper
+      // and the application share the same site. Redirect sign-in avoids popup
+      // blockers and behaves consistently on PC, tablet, and mobile browsers.
+      const useRedirect = Boolean(firebaseBridge.signInWithRedirect);
       if (useRedirect) {
         sessionStorage.setItem("limitBreakGoogleRole", currentRole);
         sessionStorage.setItem("limitBreakGoogleSupportType", currentSupportType);

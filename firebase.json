@@ -1,4 +1,32 @@
 {
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      ".firebaserc",
+      ".git/**",
+      ".github/**",
+      "functions/**",
+      "firebase/**",
+      "tests/**",
+      "docs/**",
+      "output/**",
+      "tmp/**",
+      "**/*.md",
+      "**/node_modules/**"
+    ],
+    "headers": [
+      {
+        "source": "**/*.@(js|mjs|css|html|json|webmanifest)",
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache, no-store, must-revalidate"
+          }
+        ]
+      }
+    ]
+  },
   "functions": {
     "source": "functions",
     "runtime": "nodejs22"

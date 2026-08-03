@@ -1,5 +1,5 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.20.0-dev";
+export const APP_VERSION = "v4.20.1-dev";
 export const APP_RELEASE_NAME = "塾講師・教室管理ダッシュボード";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
@@ -43,6 +43,16 @@ export const APP_VIEWS = [
 ];
 
 export const RELEASE_NOTES = [
+  {
+    version: "v4.20.1-dev",
+    date: "2026-08-04",
+    title: "Googleログインの恒久修正",
+    items: [
+      "Firebase Hostingを正式なログイン入口として追加",
+      "PC・スマホともポップアップに依存しない画面遷移方式へ統一",
+      "Google認証とアプリを同一サイトで処理し、認証後に戻れない問題を解消"
+    ]
+  },
   {
     version: "v4.20.0-dev",
     date: "2026-07-31",
