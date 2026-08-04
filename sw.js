@@ -1,4 +1,4 @@
-const CACHE_NAME = "cortex-limit-break-v4-20-2-dev";
+const CACHE_NAME = "cortex-limit-break-v4-20-3-dev";
 const APP_SHELL = [
   "./",
   "./index.html",
@@ -82,6 +82,21 @@ self.addEventListener("fetch", (event) => {
     return;
   }
   if (request.method !== "GET") return;
+
+  // Keep every previously installed GitHub Pages icon working as the stable
+  // public launcher. Authentication and the application itself run on the
+  // Firebase origin, while the dedicated legacy recovery page stays here so
+  // it can read this origin's old local records.
+  if (
+    self.location.hostname === "wit-ai-apps.github.io" &&
+    request.mode === "navigate" &&
+    !requestUrl.pathname.endsWith("/legacy-evidence-recovery.html")
+  ) {
+    const destination = new URL("https://cortex-limit-break.firebaseapp.com/");
+    destination.search = requestUrl.search;
+    event.respondWith(Response.redirect(destination.href, 302));
+    return;
+  }
 
   const url = requestUrl;
   if (url.origin !== self.location.origin) return;

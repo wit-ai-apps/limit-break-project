@@ -1,5 +1,5 @@
 export const APP_NAME = "CORTEX Limit Break";
-export const APP_VERSION = "v4.20.2-dev";
+export const APP_VERSION = "v4.20.3-dev";
 export const APP_RELEASE_NAME = "塾講師・教室管理ダッシュボード";
 export const APP_RELEASE_SUBTITLE = "Preparing for CORTEX Core";
 
@@ -44,7 +44,7 @@ export const APP_VIEWS = [
 
 export const RELEASE_NOTES = [
   {
-    version: "v4.20.2-dev",
+    version: "v4.20.3-dev",
     date: "2026-08-04",
     title: "Googleログインの恒久修正",
     items: [
